@@ -2,7 +2,7 @@
   "expo": {
     "name": "Retainly",
     "slug": "expo-project",
-    "owner": "hello_kitty11",
+    "owner": "hello_kitty12",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/companyLogo.png",
@@ -45,11 +45,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {
-        "origin": false
-      },
       "eas": {
-        "projectId": "81beca1c-6b8d-48e5-8c35-a35bdc6b8aa0"
+        "projectId": "7f01bd73-927f-4625-9ce1-d871b1fa9e8a"
       }
     }
   }
