@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1082588136127",
+    "project_id": "retainly-f86ef",
+    "storage_bucket": "retainly-f86ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082588136127:android:f344885e97bc1abaaa3c0a",
+        "android_client_info": {
+          "package_name": "com.education.retainlyapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1082588136127-7i0m512012m6f5oud69f8ada59t0m5eq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.education.retainlyapp",
+            "certificate_hash": "d3267b7bba640adbd2d6297b28016256466c9a16"
+          }
+        },
+        {
+          "client_id": "1082588136127-275359t78t5i51qr73rj9r2nv8dt982a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjzIfGFuReHbcf9k1Icb9WiXBEMqwZtcE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1082588136127-275359t78t5i51qr73rj9r2nv8dt982a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
