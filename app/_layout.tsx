@@ -30,7 +30,7 @@ function AppContent() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)/login" />
       </Stack>
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
     </SafeScreen>
   );
 }
