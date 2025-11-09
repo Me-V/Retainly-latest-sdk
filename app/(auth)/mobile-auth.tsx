@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
 import { getAuth, signInWithPhoneNumber } from "@react-native-firebase/auth";
-import RNOtpVerify from "react-native-otp-verify";
+// import RNOtpVerify from "react-native-otp-verify";
 import { signupWithPhoneOTP } from "@/services/api.auth";
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
@@ -91,28 +91,28 @@ const MobileLoginScreen = () => {
   };
   const hidePopup = () => setPopupVisible(false);
 
-  useEffect(() => {
-    RNOtpVerify.getHash().catch(() => {});
-  }, []);
+  // useEffect(() => {
+  //   RNOtpVerify.getHash().catch(() => {});
+  // }, []);
 
   // OTP auto-retrieval (Android)
-  useEffect(() => {
-    let listener: any;
-    if (!confirm) return;
+  // useEffect(() => {
+  //   let listener: any;
+  //   if (!confirm) return;
 
-    RNOtpVerify.getOtp()
-      .then(() => {
-        listener = RNOtpVerify.addListener((message) => {
-          const otp = message.match(/\d{6}/);
-          if (otp) setCode(otp[0]);
-        });
-      })
-      .catch(() => {});
+  //   RNOtpVerify.getOtp()
+  //     .then(() => {
+  //       listener = RNOtpVerify.addListener((message) => {
+  //         const otp = message.match(/\d{6}/);
+  //         if (otp) setCode(otp[0]);
+  //       });
+  //     })
+  //     .catch(() => {});
 
-    return () => {
-      if (listener) RNOtpVerify.removeListener();
-    };
-  }, [confirm]);
+  //   return () => {
+  //     if (listener) RNOtpVerify.removeListener();
+  //   };
+  // }, [confirm]);
   // Inside your component
   useEffect(() => {
     if (countdown > 0) {
