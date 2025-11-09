@@ -263,7 +263,7 @@ export default function EmailSignupScreen() {
               {loading ? "Signing Up..." : "Sign Up"}
             </Text>
           </TouchableOpacity>
-          ){/* Footer */}
+          {/* Footer */}
           <Text className="text-black font-medium text-base text-center mt-20">
             Terms & Conditions
           </Text>
