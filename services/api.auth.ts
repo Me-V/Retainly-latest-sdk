@@ -105,3 +105,23 @@ export async function getme(token: string) {
     throw err;
   }
 }
+
+export async function logout(token: string) {
+  try {
+    await axios.post(
+      `${API_BASE}/service/api/login/logout/`,
+      {},
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      }
+    );
+    return true;
+  } catch (err: any) {
+    console.error("Logout error:", err.response?.data || err.message);
+    throw err;
+  }
+}

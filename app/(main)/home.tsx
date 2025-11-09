@@ -13,21 +13,19 @@ import {
   useAppSelector,
 } from "@/utils/profileHelpers/profile.storeHooks";
 import { InfoRow } from "@/components/profile/InfoRow";
-import { SelectField } from "@/components/profile/SelectField";
 import { useClassOptions } from "@/utils/profileHelpers/profile.useClassOptions";
 import { useBoardOptions } from "@/utils/profileHelpers/profile.useBoardOptions";
 import { useStreamOptions } from "@/utils/profileHelpers/profile.useStreamOptions";
 import { useUserProfile } from "@/utils/profileHelpers/profile.useUserProfile";
 import { makeNameById } from "@/utils/profileHelpers/profile.nameById";
-import {
-  setSelectedStream as setSelectedStreamAction,
-  setSelectedBoard as setSelectedBoardAction,
-} from "@/store/slices/academicsSlice";
+import { setSelectedBoard as setSelectedBoardAction } from "@/store/slices/academicsSlice";
 import { VerifiedIcon } from "@/assets/logo2";
+import { setUser } from "@/store/slices/authSlice";
+import { router } from "expo-router";
+import { logout } from "@/services/api.auth";
 
 export default function StudentProfileScreen() {
   const token = useAppSelector((s) => s.auth.token);
-  const boardInfo = useAppSelector((s) => s.academics.selectedBoard);
   const dispatch = useAppDispatch();
 
   const { classes, classesLoading, classNameById } = useClassOptions(
@@ -86,6 +84,16 @@ export default function StudentProfileScreen() {
     dispatch,
   ]);
 
+  const onLogout = async () => {
+    try {
+      if (token) await logout(token);
+    } catch (e) {
+      // optionally show a toast; proceed to clear local state
+    } finally {
+      dispatch(setUser({ token: undefined as any, userInfo: {} as any }));
+      router.replace("/(auth)/login");
+    }
+  };
   return (
     <LinearGradient
       colors={["#FFFFFF", "#FFEFE1", "#D9BEA4"]}
@@ -131,14 +139,14 @@ export default function StudentProfileScreen() {
                 className="rounded-[28px] px-6 pt-10 pb-8 shadow-md"
               >
                 {/* Username */}
-                <Text className="text-center text-[32px] font-extrabold text-[#8E1E1E] mb-8">
+                <Text className="text-center text-[32px] font-extrabold text-[#8E1E1E] my-8">
                   {profile.editing
                     ? profile.form.alias
                     : profile.userData?.alias ?? "Username"}
                 </Text>
 
                 {/* Class */}
-                <View className="mb-7">
+                {/* <View className="mb-7">
                   <Text className="text-[16px] text-[#5b5147] mb-2">Class</Text>
                   {profile.editing ? (
                     <SelectField
@@ -159,10 +167,10 @@ export default function StudentProfileScreen() {
                       {className(profile.userData?.student_class)}th
                     </Text>
                   )}
-                </View>
+                </View> */}
 
                 {/* Board + Stream two-columns */}
-                <View className="mb-7">
+                {/* <View className="mb-7">
                   <View className="flex-row">
                     <View className="flex-1 pr-3">
                       <Text className="text-[16px] text-[#5b5147] mb-2">
@@ -236,7 +244,7 @@ export default function StudentProfileScreen() {
                       )}
                     </View>
                   </View>
-                </View>
+                </View> */}
 
                 {/* School */}
                 <View className="mb-7">
@@ -367,6 +375,23 @@ export default function StudentProfileScreen() {
                   </View>
                 )}
               </LinearGradient>
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <TouchableOpacity
+                  onPress={onLogout}
+                  className="mt-5 items-center"
+                  activeOpacity={0.9}
+                >
+                  <Text className="text-[#F98455] text-[24px] font-extrabold">
+                    Logout
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </ScrollView>

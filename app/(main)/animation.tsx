@@ -12,8 +12,8 @@ export default function AnimationsScreen() {
   const router = useRouter();
   const token = useSelector((s: RootState) => s.auth.token);
   const userInfo = useSelector((state: RootState) => state.auth.userInfo);
-  const classInfo = useSelector((state: RootState) => state.academics.selectedClass);
-  const boardInfo = useSelector((state: RootState) => state.academics.selectedBoard);
+  // const classInfo = useSelector((state: RootState) => state.academics.selectedClass);
+  // const boardInfo = useSelector((state: RootState) => state.academics.selectedBoard);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [showMicroFade, setShowMicroFade] = useState(false);
   const dispatch = useDispatch();
@@ -60,7 +60,7 @@ export default function AnimationsScreen() {
             })
           );
 
-          console.log("######Data in redux", userInfo, ", Class Number", classInfo?.name, ", Board Name", boardInfo?.name);
+          console.log("######Data in redux", userInfo);
           // Normalize method
           const method = String(me?.signup_method || "").toLowerCase();
           const isPhoneLogin = method.startsWith("phone"); // phone-otp, phone-pwd, etc.
