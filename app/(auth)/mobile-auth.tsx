@@ -25,13 +25,13 @@ import VerifyPhone from "@/components/Verify-Phone";
 // ---- Firebase config ----
 if (!getApps().length) {
   initializeApp({
-    apiKey: "AIzaSyDouwNxSUac0YS4BJAcNxoObGBYS81bbsA",
-    authDomain: "retainly-f86ef.firebaseapp.com",
-    projectId: "retainly-f86ef",
-    storageBucket: "retainly-f86ef.firebasestorage.app",
-    messagingSenderId: "1082588136127",
-    appId: "1:1082588136127:web:8d008e7c4c939901aa3c0a",
-    measurementId: "G-Q6SRE9YN3V",
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID!,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID!,
   });
 }
 export const authforMobile = getAuth(getApp());

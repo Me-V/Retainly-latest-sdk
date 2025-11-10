@@ -16,7 +16,7 @@ import { BotIcon, SendIcon, UserIcon } from "@/assets/logo2";
 import PopupModal from "@/components/Popup-modal";
 import type { RootState } from "@/store";
 import { getClasses, getBoards, getStreams } from "@/services/api.edu";
-import { patchMe } from "@/services/api.auth";
+import { patchEmail, patchMe } from "@/services/api.auth";
 
 type ChatStep =
   | "name"
@@ -151,14 +151,14 @@ export default function ChatProfileScreen() {
       return;
     }
     setUserEmail(email);
-    if(userEmail){
-      
+    if (userEmail) {
     }
     addMessage(email, true, "text");
     setCurrentInput("");
 
     try {
-      await patchMe(token!, { alias: userName, email }); // save alias+email
+      await patchMe(token!, { alias: userName }); // save alias+email
+      await patchEmail(token!, { email }); // save alias+email
     } catch {
       // non-blocking; user can proceed
     }
@@ -176,6 +176,7 @@ export default function ChatProfileScreen() {
       : String(opt.name);
     addMessage(label, true, "text");
 
+    await patchMe(token!, { student_class: String(opt.id) }); // save alias+email
     // dispatch(
     //   setSelectedClassAction({ id: String(opt.id), name: String(opt.name) })
     // );
@@ -201,9 +202,7 @@ export default function ChatProfileScreen() {
   const handlePickBoard = async (opt: OptionItem) => {
     setSelectedBoard(opt);
     addMessage(opt.name, true, "text");
-    // dispatch(
-    //   setSelectedBoardAction({ id: String(opt.id), name: String(opt.name) })
-    // );
+    await patchMe(token!, { board: String(opt.id) });
 
     if (isSenior) {
       if (!selectedClass) {
@@ -235,12 +234,10 @@ export default function ChatProfileScreen() {
     }
   };
 
-  const handlePickStream = (opt: OptionItem) => {
+  const handlePickStream = async (opt: OptionItem) => {
     setSelectedStream(opt);
     addMessage(opt.name, true, "text");
-    // dispatch(
-    //   setSelectedStreamAction({ id: String(opt.id), name: String(opt.name) })
-    // );
+    await patchMe(token!, { stream: String(opt.id) });
     addMessage("Nice! What’s the school’s name?", false, "text");
     setStep("school");
   };
@@ -252,17 +249,9 @@ export default function ChatProfileScreen() {
       return;
     }
     addMessage(name, true, "text");
-
-    try {
-      await patchMe(token!, {
-        student_class: selectedClass?.id,
-        board: selectedBoard?.id,
-        stream: selectedStream?.id,
-        school: name,
-      });
-    } catch {
-      // non-blocking; allow proceed
-    }
+    await patchMe(token!, {
+      school: name,
+    });
 
     addMessage(
       "Perfect, all set! Let’s get started with personalized lessons.",
@@ -273,17 +262,6 @@ export default function ChatProfileScreen() {
   };
 
   const goHome = () => {
-    // dispatch(
-    //   setUser({
-    //     token: token!,
-    //     userInfo: {
-    //       class: selectedClass?.name,
-    //       board: selectedBoard?.name,
-    //       stream: selectedStream?.name,
-    //       school: schoolName,
-    //     } as any,
-    //   })
-    // );
     router.replace({ pathname: "/(main)/animation" }); // keep same navigation
   };
 

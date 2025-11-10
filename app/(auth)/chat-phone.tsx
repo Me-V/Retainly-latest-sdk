@@ -12,12 +12,9 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-// import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
-import { firebaseConfig } from "@/services/config";
-import { PhoneAuthProvider, signInWithCredential } from "firebase/auth";
 import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
 import { getAuth, signInWithPhoneNumber } from "@react-native-firebase/auth";
-import { patchMe } from "@/services/api.auth";
+import { patchMe, patchPhone } from "@/services/api.auth";
 import { useSelector } from "react-redux";
 import { BotIcon, SendIcon, UserIcon } from "@/assets/logo2";
 import PopupModal from "@/components/Popup-modal";
@@ -31,13 +28,13 @@ import { setSelectedStream as setSelectedStreamAction } from "@/store/slices/aca
 // ---- Firebase config ----
 if (!getApps().length) {
   initializeApp({
-    apiKey: "AIzaSyDouwNxSUac0YS4BJAcNxoObGBYS81bbsA",
-    authDomain: "retainly-f86ef.firebaseapp.com",
-    projectId: "retainly-f86ef",
-    storageBucket: "retainly-f86ef.firebasestorage.app",
-    messagingSenderId: "1082588136127",
-    appId: "1:1082588136127:web:8d008e7c4c939901aa3c0a",
-    measurementId: "G-Q6SRE9YN3V",
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID!,
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID!,
   });
 }
 const auth = getAuth(getApp());
@@ -62,7 +59,6 @@ export default function ChatOnboardingProfile() {
   const dispatch = useDispatch<AppDispatch>();
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const recaptchaVerifier = useRef<any>(null);
   const otpInputRefs = useRef<Array<TextInput | null>>([]);
   const phoneInputRef = useRef<TextInput | null>(null);
 
@@ -102,7 +98,7 @@ export default function ChatOnboardingProfile() {
   const [loadingBoards, setLoadingBoards] = useState(false);
   const [loadingStreams, setLoadingStreams] = useState(false);
 
-  const autoNavTimer = useRef<NodeJS.Timeout | null>(null);
+  const autoNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showPopup = (content: string, heading = "Alert") => {
     setPopupHeading(heading);
@@ -189,12 +185,13 @@ export default function ChatOnboardingProfile() {
     });
   };
 
-  const handleNameSubmit = () => {
+  const handleNameSubmit = async () => {
     if (!currentInput.trim()) return showPopup("Please enter your name");
     const name = currentInput.trim();
     setUserName(name);
     addMessage(name, true);
     setCurrentInput("");
+    await patchMe(token!, { alias: name });
     setStep("phone");
     setTimeout(() => {
       addMessage(
@@ -244,7 +241,10 @@ export default function ChatOnboardingProfile() {
       if (!idToken) throw new Error("Failed to get ID token from Firebase.");
 
       try {
-        await patchMe(token!, { alias: userName, phone_number: phoneNumber });
+        await patchPhone(token!, {
+          phone_number: phoneNumber,
+          phone_token: idToken,
+        });
         addMessage(code, true);
         addMessage("Great, you are verified now!", false);
         proceedToClassSelection();
@@ -299,6 +299,7 @@ export default function ChatOnboardingProfile() {
   const pickClass = async (c: OptionItem) => {
     setSelectedClass(c);
     addMessage(`Class ${c.name}`, true);
+    await patchMe(token!, { student_class: String(c.id) });
     dispatch(
       setSelectedClassAction({
         id: String(c.id),
@@ -321,7 +322,7 @@ export default function ChatOnboardingProfile() {
   const pickBoard = async (b: OptionItem) => {
     setSelectedBoard(b);
     addMessage(b.name, true);
-    
+    await patchMe(token!, { board: String(b.id) });
     dispatch(
       setSelectedBoardAction({
         id: String(b.id),
@@ -347,9 +348,15 @@ export default function ChatOnboardingProfile() {
     }
   };
 
-  const pickStream = (s: OptionItem) => {
+  const pickStream = async (s: OptionItem) => {
     setSelectedStream(s);
-    // dispatch(setSelectedStreamAction(s));
+    await patchMe(token!, { stream: String(s.id) });
+    dispatch(
+      setSelectedStreamAction({
+        id: String(s.id),
+        name: String(s.name),
+      })
+    );
     addMessage(s.name, true);
     addMessage("What’s your school’s name?", false);
     setStep("school");
@@ -406,7 +413,9 @@ export default function ChatOnboardingProfile() {
                   {otp.map((d, i) => (
                     <TextInput
                       key={i}
-                      ref={(r) => (otpInputRefs.current[i] = r)}
+                      ref={(r) => {
+                        otpInputRefs.current[i] = r;
+                      }}
                       className="w-10 h-10 bg-white border border-gray-400 mr-1 text-center rounded-lg"
                       value={d}
                       onChangeText={(v) => {
