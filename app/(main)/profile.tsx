@@ -607,14 +607,14 @@ export default function StudentProfileScreen() {
                   className="rounded-[28px] px-6 pt-10 pb-8 shadow-md"
                 >
                   {/* Username */}
-                  <Text className="text-center text-[32px] font-extrabold text-[#8E1E1E] my-8">
+                  <Text className="text-center text-[24px] font-extrabold text-[#8E1E1E] my-8">
                     {profile.editing
                       ? profile.form.alias
                       : profile.userData?.alias ?? "Username"}
                   </Text>
 
                   {/* School */}
-                  <View className="mb-7">
+                  <View className="">
                     <Text className="text-[16px] text-[#5b5147] mb-2">
                       School
                     </Text>
@@ -637,7 +637,7 @@ export default function StudentProfileScreen() {
                   </View>
 
                   {/* Email with verified icon and verify button in edit mode */}
-                  <View className="mb-7">
+                  <View className="mb-2">
                     <Text className="text-[16px] text-[#5b5147] mb-2">
                       Email
                     </Text>
@@ -692,44 +692,75 @@ export default function StudentProfileScreen() {
                   </View>
 
                   {/* Phone number with optional verified icon */}
-                  <View className="mb-10">
+                  {/* Phone number with optional verified icon */}
+                  <View className="mb-5">
                     <Text className="text-[16px] text-[#5b5147] mb-2">
                       Phone Number
                     </Text>
 
                     {profile.editing ? (
-                      <>
-                        <TouchableOpacity
-                          className="flex-row items-center bg-gray-50 border border-gray-300 rounded-l-3xl px-4 py-4"
-                          onPress={() => setShowCountryPicker(true)}
-                        >
-                          <Text className="text-sm mr-2">
-                            {selectedCountry.flag}
-                          </Text>
-                          <Text className="text-gray-900 font-medium">
-                            {selectedCountry.dialCode}
-                          </Text>
-                          <Text className="ml-2 text-gray-500">▼</Text>
-                        </TouchableOpacity>
+                      <View>
+                        {/* Country Code + Input Row */}
+                        <View className="flex-row items-center border border-gray-300 bg-white rounded-3xl overflow-hidden">
+                          {/* Country Picker Button */}
+                          <TouchableOpacity
+                            onPress={() => setShowCountryPicker(true)}
+                            activeOpacity={0.8}
+                            className="flex-row items-center px-4 py-3 bg-gray-50 border-r border-gray-300"
+                          >
+                            <Text className="text-lg mr-2">
+                              {selectedCountry.flag}
+                            </Text>
+                            <Text className="text-gray-900 font-semibold">
+                              {selectedCountry.dialCode}
+                            </Text>
+                            <Feather
+                              name="chevron-down"
+                              size={18}
+                              color="#6B7280"
+                              className="ml-1"
+                            />
+                          </TouchableOpacity>
 
-                        <TextInput
-                          className="flex-1 bg-gray-50 border border-gray-300 border-l-0 rounded-r-3xl pl-4 py-4 text-gray-900"
-                          placeholder="Phone number"
-                          placeholderTextColor="#9CA3AF"
-                          value={phone}
-                          onChangeText={setPhone}
-                          autoComplete="tel"
-                          keyboardType="phone-pad"
-                        />
+                          {/* Phone Number Input */}
+                          <TextInput
+                            className="flex-1 px-4 py-3 text-base text-gray-900"
+                            placeholder="Enter phone number"
+                            placeholderTextColor="#9CA3AF"
+                            value={phone}
+                            onChangeText={(text) => setPhone(text)}
+                            autoComplete="tel"
+                            keyboardType="phone-pad"
+                            maxLength={15}
+                          />
+                        </View>
+
+                        {/* Send Verification Code Button */}
                         <TouchableOpacity
-                          className="bg-[#F98455] py-4 rounded-3xl mb-6"
+                          className={`bg-[#F98455] py-4 rounded-3xl mt-6 shadow-md w-[60%] ${
+                            loading ||
+                            !isPhoneValidForCountry(selectedCountry.code, phone)
+                              .valid
+                              ? "opacity-60"
+                              : ""
+                          }`}
                           onPress={sendSMS}
+                          disabled={
+                            loading ||
+                            !isPhoneValidForCountry(selectedCountry.code, phone)
+                              .valid
+                          }
+                          activeOpacity={0.9}
                         >
-                          <Text className="text-white text-center text-base font-medium">
-                            Send SMS
-                          </Text>
+                          {loading ? (
+                            <ActivityIndicator color="#fff" />
+                          ) : (
+                            <Text className="text-white text-center font-semibold">
+                              Send Verification Code
+                            </Text>
+                          )}
                         </TouchableOpacity>
-                      </>
+                      </View>
                     ) : (
                       <View className="flex-row items-center">
                         <Text className="text-[20px] text-black font-semibold mr-2">
@@ -774,7 +805,7 @@ export default function StudentProfileScreen() {
                         {profile.saving ? (
                           <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
-                          <Text className="text-white text-[24px] font-extrabold">
+                          <Text className="text-white text-[20px] font-semibold">
                             Update
                           </Text>
                         )}
