@@ -170,7 +170,7 @@ const HomeDashboard: React.FC = () => {
               <Text className="text-[16px]">🔔</Text>
             </View>
             <TouchableOpacity
-              onPress={() => router.push("/(main)/home")}
+              onPress={() => router.push("/(main)/profile")}
               className="w-9 h-9 rounded-full bg-neutral-300 items-center justify-center"
             >
               <Text className="text-[16px]">👤</Text>

@@ -72,7 +72,7 @@ export default function EmailLoginScreen() {
       dispatch(setUser({ token: res.token, userInfo }));
 
       // Navigate to home (groups are not part of the URL)
-      router.replace("/home");
+      router.replace("/(main)/animation");
     } catch (err: any) {
       console.log("Login error:", err);
       let message = "Invalid credentials or something went wrong";

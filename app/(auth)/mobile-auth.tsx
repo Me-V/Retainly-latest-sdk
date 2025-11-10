@@ -20,6 +20,7 @@ import { useDispatch } from "react-redux";
 import { router } from "expo-router";
 import PopupModal from "@/components/Popup-modal";
 import { BackIcon, MobileLogo2, MobileSmsSVG, MyLogo } from "@/assets/logo";
+import VerifyPhone from "@/components/Verify-Phone";
 
 // ---- Firebase config ----
 if (!getApps().length) {
@@ -33,7 +34,7 @@ if (!getApps().length) {
     measurementId: "G-Q6SRE9YN3V",
   });
 }
-const auth = getAuth(getApp());
+export const authforMobile = getAuth(getApp());
 
 const countries = [
   { code: "IN", dialCode: "+91", name: "India", flag: "🇮🇳" },
@@ -222,7 +223,10 @@ const MobileLoginScreen = () => {
         return;
       }
       const fullNumber = formatE164(selectedCountry.dialCode, phone);
-      const confirmation = await signInWithPhoneNumber(auth, fullNumber);
+      const confirmation = await signInWithPhoneNumber(
+        authforMobile,
+        fullNumber
+      );
       setConfirm(confirmation);
 
       // Show success popup stating OTP is being/sent successfully
@@ -258,7 +262,7 @@ const MobileLoginScreen = () => {
 
       await confirm.confirm(code);
 
-      const user = auth.currentUser;
+      const user = authforMobile.currentUser;
       const idToken = await user?.getIdToken(true);
       if (!idToken) throw new Error("Failed to get ID token from Firebase.");
 
@@ -294,7 +298,7 @@ const MobileLoginScreen = () => {
     }
     try {
       const confirmation = await signInWithPhoneNumber(
-        auth,
+        authforMobile,
         formatE164(selectedCountry.dialCode, phone)
       );
       setConfirm(confirmation);
@@ -402,60 +406,17 @@ const MobileLoginScreen = () => {
                 </View>
               </>
             ) : (
-              <>
-                <View className="items-center justify-center">
-                  <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mt-40 mb-4">
-                    <MobileSmsSVG />
-                  </View>
-                  <Text className="text-2xl font-bold text-gray-900 mt-8 mb-12">
-                    Verify Your Number
-                  </Text>
-                  <Text className="text-lg text-gray-600 text-center px-8 mt-5">
-                    OTP sent to{"  "}
-                    <Text className="text-orange-500 font-normal">
-                      {selectedCountry.dialCode} {phone}
-                    </Text>
-                  </Text>
-                </View>
-                <TextInput
-                  value={code}
-                  onChangeText={setCode}
-                  placeholder="Enter OTP"
-                  keyboardType="number-pad"
-                  className="border border-gray-300 rounded-xl bg-white py-3 px-5 text-lg mb-4 mt-5"
-                  placeholderTextColor="#cab09c"
-                  autoFocus={true}
-                  maxLength={6}
-                />
-                <TouchableOpacity
-                  className={`rounded-xl py-4 mt-2 items-center ${
-                    loading ? "bg-[#f7a98a]" : "bg-[#F98455]"
-                  }`}
-                  onPress={verifyCode}
-                  disabled={loading}
-                >
-                  <Text className="text-white font-bold text-base">
-                    {loading ? "Verifying..." : "Confirm OTP"}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleResendOtp}
-                  disabled={countdown > 0 || loading}
-                  className={`rounded-xl py-4 mt-2 items-center ${
-                    countdown > 0 ? "opacity-50" : "bg-[#F98455]"
-                  }`}
-                >
-                  <Text className="text-white font-bold text-base">
-                    {countdown > 0
-                      ? `Resend OTP in 00:${countdown
-                          .toString()
-                          .padStart(2, "0")}`
-                      : loading
-                      ? "Resending..."
-                      : "Resend OTP"}
-                  </Text>
-                </TouchableOpacity>
-              </>
+              <VerifyPhone
+                selectedCountry={selectedCountry}
+                phone={phone}
+                code={code}
+                setCode={setCode}
+                loading={loading}
+                verifyCode={verifyCode}
+                handleResendOtp={handleResendOtp}
+                countdown={countdown}
+                updatingProfile={false}
+              />
             )}
             {status ? (
               <Text className="text-[#E03636] text-center text-sm mt-2">

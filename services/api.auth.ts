@@ -49,6 +49,7 @@ export async function signupWithEmailPassword(
     throw err;
   }
 }
+
 export async function loginWithEmailPassword(email: string, password: string) {
   try {
     const res = await axios.post(`${API_BASE}/service/api/login/email/`, {
@@ -77,6 +78,48 @@ export async function patchMe(
 ) {
   try {
     const res = await axios.patch(`${API_BASE}/service/api/account/me/`, data, {
+      headers: {
+        Authorization: `Token ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data;
+  } catch (err: any) {
+    console.error("patchMe error:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
+export async function patchEmail(
+  token: string,
+  data: {
+    email?: string;
+    email_token?: string;
+  }
+) {
+  try {
+    const res = await axios.patch(`${API_BASE}/service/api/account/email/`, data, {
+      headers: {
+        Authorization: `Token ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data;
+  } catch (err: any) {
+    console.error("patchMe error:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
+export async function patchPhone(
+  token: string,
+  data: {
+    phone_number?: string;
+    phone_token?: string;
+  }
+) {
+  try {
+    const res = await axios.patch(`${API_BASE}/service/api/account/phone/`, data, {
       headers: {
         Authorization: `Token ${token}`,
         "Content-Type": "application/json",
