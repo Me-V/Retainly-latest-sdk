@@ -19,7 +19,7 @@ import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { router } from "expo-router";
 import PopupModal from "@/components/Popup-modal";
-import { BackIcon, MobileLogo2, MobileSmsSVG, MyLogo } from "@/assets/logo";
+import { BackIcon, MobileLogo2, MyLogo } from "@/assets/logo";
 import VerifyPhone from "@/components/Verify-Phone";
 
 // ---- Firebase config ----
