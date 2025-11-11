@@ -5,6 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { initializeApp } from "firebase/app";
 import {
@@ -180,105 +184,119 @@ export default function EmailSignupScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      <ScrollView className="flex-1">
-        <View className="ml-6 mt-6">
-          <TouchableOpacity onPress={() => router.back()}>
-            <BackIcon />
-          </TouchableOpacity>
-        </View>
-
-        {/* Header */}
-        <View className="items-center mt-10 mb-12">
-          <MyLogo />
-        </View>
-
-        {/* Form */}
-        <View className="px-8 mt-8">
-          <Text className="text-center text-black text-[24px] mb-8 font-bold">
-            Sign Up with Email
-          </Text>
-          <Text className="text-center text-black text-[20px] mb-2 mt-4">
-            Email Address
-          </Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            className="border border-gray-300 rounded-3xl px-4 py-3 mb-4 bg-white text-gray-700"
-          />
-          <Text className="text-center text-black text-[20px] mb-2 mt-4">
-            Password
-          </Text>
-          <View className="relative">
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={isPasswordHidden}
-              className="border border-gray-300 rounded-3xl px-4 py-3 mb-6 bg-white text-gray-700 pr-16" // right padding for toggle
-            />
-            <TouchableOpacity
-              onPress={() => setIsPasswordHidden((prev) => !prev)}
-              className="absolute right-4 top-1/2 -translate-y-6"
-            >
-              <Text className="text-[#F98455] font-semibold">
-                {isPasswordHidden ? (
-                  <AntDesign name="eye" size={24} color="#F98455" />
-                ) : (
-                  <Entypo name="eye-with-line" size={24} color="#F98455" />
-                )}
-              </Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // ✅ helps on iOS
+      >
+        <ScrollView
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+          }}
+        >
+          <View className="ml-6 mt-6">
+            <TouchableOpacity onPress={() => router.back()}>
+              <BackIcon />
             </TouchableOpacity>
           </View>
-          <Text className="text-center text-black text-[20px] mb-2 mt-4">
-            Confirm Password
-          </Text>
-          <View className="relative">
-            <TextInput
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry={isConfirmPasswordHidden}
-              className="border border-gray-300 rounded-3xl px-4 py-3 mb-6 bg-white text-gray-700 pr-16"
-            />
-            <TouchableOpacity
-              onPress={() => setIsConfirmPasswordHidden((prev) => !prev)}
-              className="absolute right-4 top-1/2 -translate-y-6"
-            >
-              <Text className="text-[#F98455] font-semibold">
-                {isConfirmPasswordHidden ? (
-                  <AntDesign name="eye" size={24} color="#F98455" />
-                ) : (
-                  <Entypo name="eye-with-line" size={24} color="#F98455" />
-                )}
-              </Text>
-            </TouchableOpacity>
+
+          {/* Header */}
+          <View className="items-center mt-10 mb-12">
+            <MyLogo />
           </View>
-          <TouchableOpacity
-            onPress={handleSignup}
-            disabled={loading}
-            className="bg-[#F98455] border border-gray-300 rounded-3xl py-4 my-4"
-            style={{ opacity: loading ? 0.6 : 1 }}
-          >
-            <Text className="font-medium text-white text-base text-center">
-              {loading ? "Signing Up..." : "Sign Up"}
+
+          {/* Form */}
+          <View className="px-8 mt-8">
+            <Text className="text-center text-black text-[24px] mb-8 font-bold">
+              Sign Up with Email
             </Text>
-          </TouchableOpacity>
-          {/* Footer */}
-          <Text className="text-black font-medium text-base text-center mt-20">
-            Terms & Conditions
-          </Text>
-          <PopupModal
-            isVisible={popupVisible}
-            onClose={() => {
-              setPopupVisible(false);
-              if (popupHeading === "Email Sent!") setEmailSent(true);
-            }}
-            heading={popupHeading}
-            content={popupContent}
-            cancelShow={false}
-          />
-        </View>
-      </ScrollView>
+            <Text className="text-center text-black text-[20px] mb-2 mt-4">
+              Email Address
+            </Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              className="border border-gray-300 rounded-3xl px-4 py-3 mb-4 bg-white text-gray-700"
+            />
+            <Text className="text-center text-black text-[20px] mb-2 mt-4">
+              Password
+            </Text>
+            <View className="relative">
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={isPasswordHidden}
+                className="border border-gray-300 rounded-3xl px-4 py-3 mb-6 bg-white text-gray-700 pr-16" // right padding for toggle
+              />
+              <TouchableOpacity
+                onPress={() => setIsPasswordHidden((prev) => !prev)}
+                className="absolute right-4 top-1/2 -translate-y-6"
+              >
+                <Text className="text-[#F98455] font-semibold">
+                  {isPasswordHidden ? (
+                    <AntDesign name="eye" size={24} color="#F98455" />
+                  ) : (
+                    <Entypo name="eye-with-line" size={24} color="#F98455" />
+                  )}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text className="text-center text-black text-[20px] mb-2 mt-4">
+              Confirm Password
+            </Text>
+            <View className="relative">
+              <TextInput
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={isConfirmPasswordHidden}
+                className="border border-gray-300 rounded-3xl px-4 py-3 mb-6 bg-white text-gray-700 pr-16"
+              />
+              <TouchableOpacity
+                onPress={() => setIsConfirmPasswordHidden((prev) => !prev)}
+                className="absolute right-4 top-1/2 -translate-y-6"
+              >
+                <Text className="text-[#F98455] font-semibold">
+                  {isConfirmPasswordHidden ? (
+                    <AntDesign name="eye" size={24} color="#F98455" />
+                  ) : (
+                    <Entypo name="eye-with-line" size={24} color="#F98455" />
+                  )}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={handleSignup}
+              disabled={loading}
+              className="bg-[#F98455] border border-gray-300 rounded-3xl py-4 my-4"
+              style={{ opacity: loading ? 0.6 : 1 }}
+            >
+              <Text className="font-medium text-white text-base text-center">
+                {loading ? "Signing Up..." : "Sign Up"}
+              </Text>
+            </TouchableOpacity>
+            {/* Footer */}
+            <Text className="text-black font-medium text-base text-center mt-20">
+              Terms & Conditions
+            </Text>
+            <PopupModal
+              isVisible={popupVisible}
+              onClose={() => {
+                setPopupVisible(false);
+                if (popupHeading === "Email Sent!") setEmailSent(true);
+              }}
+              heading={popupHeading}
+              content={popupContent}
+              cancelShow={false}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </LinearGradient>
   );
 }

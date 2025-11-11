@@ -8,8 +8,8 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import AntDesign from '@expo/vector-icons/AntDesign';
-import Entypo from '@expo/vector-icons/Entypo';
+import AntDesign from "@expo/vector-icons/AntDesign";
+import Entypo from "@expo/vector-icons/Entypo";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { BackIcon, MailSVG } from "@/assets/logo";
@@ -111,12 +111,18 @@ export default function EmailLoginScreen() {
       className="flex-1 px-6"
     >
       <KeyboardAvoidingView
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // ✅ helps on iOS
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
+          className="flex-1"
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            flexGrow: 1,
+            paddingBottom: 0,
+          }}
         >
           <View className="ml-1 mt-4">
             <TouchableOpacity onPress={() => router.back()}>
@@ -165,7 +171,11 @@ export default function EmailLoginScreen() {
                 className="absolute right-4 top-9 -translate-y-6"
               >
                 <Text className="text-[#F98455] font-semibold">
-                  {isPasswordHidden ? <AntDesign name="eye" size={24} color="#F98455" /> : <Entypo name="eye-with-line" size={24} color="#F98455" />}
+                  {isPasswordHidden ? (
+                    <AntDesign name="eye" size={24} color="#F98455" />
+                  ) : (
+                    <Entypo name="eye-with-line" size={24} color="#F98455" />
+                  )}
                 </Text>
               </TouchableOpacity>
             </View>

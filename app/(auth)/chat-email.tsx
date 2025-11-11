@@ -354,26 +354,26 @@ export default function ChatProfileScreen() {
 
   return (
     <LinearGradient
-      colors={["#FFFFFF", "#FFEFE1", "#D9BEA4"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="flex-1 px-2 pb-5"
-    >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
-      >
+          colors={["#FFFFFF", "#FFEFE1", "#D9BEA4"]}
+          className="flex-1"
+        >
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // helps on iPhones
+          >
+            <ScrollView
+              ref={scrollRef}
+              className="flex-1 px-4"
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
         {/* Header */}
         <View className="py-5 px-4 items-end">
           <Text className="text-[13px] text-neutral-500">App Name/logo</Text>
         </View>
 
-        <ScrollView
-          ref={scrollRef}
-          className="flex-1 px-4"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+       
           {/* Conversation */}
           {messages.map(renderMessage)}
 
@@ -458,7 +458,7 @@ export default function ChatProfileScreen() {
         {/* Input Area for name/email with same visual style as other inputs */}
         {showInput && (
           <View className="px-4 pb-5 pt-2">
-            <View className="flex-row items-center bg-white border border-gray-400 rounded-xl px-3 py-1">
+            <View className="flex-row items-center bg-white border border-gray-400 rounded-xl px-3 py-1 mb-8">
               <TextInput
                 className="flex-1 px-2 py-2 text-[14px] text-zinc-800"
                 placeholder={

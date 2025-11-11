@@ -570,25 +570,37 @@ export default function StudentProfileScreen() {
           <Text className="mt-3 text-neutral-600">Loading profile…</Text>
         </View>
       ) : (
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{ paddingVertical: 24, paddingHorizontal: 16 }}
-          showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // ✅ helps on iOS
         >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          <ScrollView
             className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingBottom: 60,
+            }}
           >
-            {/* Top bar */}
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-[13px] text-neutral-500">
-                App Name/logo
-              </Text>
-              <Text className="text-[11px] text-neutral-400"> </Text>
+            <View className="flex-row items-center justify-between">
+              <View className="ml-6 mt-5">
+                <TouchableOpacity onPress={() => router.back()}>
+                  <BackIcon />
+                </TouchableOpacity>
+              </View>
+              {/* Top bar */}
+              <View className="flex-row items-center justify-between mb-4">
+                <Text className="text-[13px] text-neutral-500 mt-10 mr-10">
+                  App Name/logo
+                </Text>
+                <Text className="text-[11px] text-neutral-400"> </Text>
+              </View>
             </View>
 
             {/* Stacked avatar + card (overlap) */}
-            <View className="w-full items-center mt-2">
+            <View className="w-full items-center flex-1 justify-center">
               {/* Avatar group with outer ring */}
               <View className="items-center z-20">
                 <View className="w-40 h-40 rounded-full bg-white/70 items-center justify-center">
@@ -599,25 +611,47 @@ export default function StudentProfileScreen() {
               </View>
 
               {/* Card pulled up to overlap avatar */}
-              <View className="-mt-16 w-full z-10">
+              <View className="-mt-16 w-full z-10 px-4 rounded-lg">
                 <LinearGradient
                   colors={["#FFEDCF", "#F7C9A6"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
-                  className="rounded-[28px] px-6 pt-10 pb-8 shadow-md"
+                  style={{
+                    borderRadius: 22, // smooth corners (16px ≈ rounded-xl)
+                    paddingHorizontal: 24,
+                    paddingTop: 40,
+                    paddingBottom: 32,
+                    overflow: "hidden",
+                    shadowColor: "#000",
+                    shadowOpacity: 0.15,
+                    shadowRadius: 6,
+                    elevation: 4,
+                  }}
                 >
                   {/* Username */}
-                  <Text className="text-center text-[24px] font-extrabold text-[#8E1E1E] my-8">
-                    {profile.editing
-                      ? profile.form.alias
-                      : profile.userData?.alias ?? "Username"}
-                  </Text>
+                  <View className="my-8">
+                    {profile.editing ? (
+                      <TextInput
+                        className="text-center text-[24px] font-extrabold text-[#8E1E1E] bg-white rounded-2xl py-2"
+                        placeholder="Enter your name"
+                        placeholderTextColor="#9CA3AF"
+                        value={profile.form.alias}
+                        onChangeText={(v) =>
+                          profile.setForm((f) => ({ ...f, alias: v }))
+                        }
+                        editable={!profile.saving}
+                        autoFocus
+                      />
+                    ) : (
+                      <Text className="text-center text-[24px] font-extrabold text-[#8E1E1E]">
+                        {profile.userData?.alias ?? "Username"}
+                      </Text>
+                    )}
+                  </View>
 
                   {/* School */}
-                  <View className="">
-                    <Text className="text-[16px] text-[#5b5147] mb-2">
-                      School
-                    </Text>
+                  <View className="mb-5">
+                    <Text className="text-[16px] text-[#5b5147]">School</Text>
                     {profile.editing ? (
                       <InfoRow
                         label=""
@@ -637,10 +671,8 @@ export default function StudentProfileScreen() {
                   </View>
 
                   {/* Email with verified icon and verify button in edit mode */}
-                  <View className="mb-2">
-                    <Text className="text-[16px] text-[#5b5147] mb-2">
-                      Email
-                    </Text>
+                  <View className="mb-5">
+                    <Text className="text-[16px] text-[#5b5147]">Email</Text>
                     <View className="flex-row items-center">
                       {profile.editing ? (
                         <View className="flex-1">
@@ -694,7 +726,7 @@ export default function StudentProfileScreen() {
                   {/* Phone number with optional verified icon */}
                   {/* Phone number with optional verified icon */}
                   <View className="mb-5">
-                    <Text className="text-[16px] text-[#5b5147] mb-2">
+                    <Text className="text-[16px] text-[#5b5147]">
                       Phone Number
                     </Text>
 
@@ -873,8 +905,8 @@ export default function StudentProfileScreen() {
                 </View>
               </View>
             </RNModal>
-          </KeyboardAvoidingView>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       )}
 
       {/* Global blocking spinner overlay (e.g., during logout or other busy ops) */}

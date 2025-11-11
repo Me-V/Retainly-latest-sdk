@@ -492,14 +492,18 @@ export default function ChatOnboardingProfile() {
       className="flex-1"
     >
       <KeyboardAvoidingView
-        className="flex-1 mb-2"
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // helps on iPhones
       >
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-4"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: 80, // extra space for bottom input
+          }}
         >
           <View className="flex-1 items-end my-4">
             <Text>App Name/Logo</Text>
@@ -616,10 +620,14 @@ export default function ChatOnboardingProfile() {
         </ScrollView>
 
         {(step === "name" || step === "phone" || step === "school") && (
-          <View className="px-4 pb-5 pt-2">
-            <View className="flex-row bg-white border rounded-xl px-3 py-2">
+          <View
+            className="px-4 pt-2"
+            style={{ paddingBottom: Platform.OS === "ios" ? 20 : 10 }}
+          >
+            <View className="flex-row bg-white border border-gray-300 rounded-xl px-3 py-2 mb-10">
               <TextInput
-                className="flex-1 text-[14px] h-[45px] pl-3"
+                className="flex-1 text-[14px] h-[45px] pl-3 text-gray-800 bg-white"
+                placeholderTextColor="#9CA3AF"
                 placeholder={
                   step === "name"
                     ? "Enter your name"
@@ -637,7 +645,7 @@ export default function ChatOnboardingProfile() {
                     ? handlePhoneSubmit
                     : saveSchoolAndFinish
                 }
-                autoFocus={step === "school"}
+                returnKeyType="done"
               />
               <TouchableOpacity
                 onPress={
