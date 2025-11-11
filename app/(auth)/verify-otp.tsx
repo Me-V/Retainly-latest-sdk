@@ -40,6 +40,13 @@ export default function OtpScreen() {
   const [popupPrimaryText, setPopupPrimaryText] = React.useState<string>("OK");
   const [popupDismissible, setPopupDismissible] = React.useState<boolean>(true);
   const dispatch = useDispatch();
+
+  React.useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
   const showPopup = ({
     heading,
     content,
@@ -89,6 +96,7 @@ export default function OtpScreen() {
       setLoading(false);
     }
   };
+
   const mapFirebaseError = (err: any) => {
     const code: string = err?.code || "";
     if (code.includes("auth/invalid-phone-number"))
@@ -106,8 +114,10 @@ export default function OtpScreen() {
       return "OTP quota exceeded. Try again later.";
     return err?.message || "Something went wrong. Please try again.";
   };
+
   const formatE164 = (dial: string, raw: string) =>
     `${dial}${raw.replace(/\D/g, "")}`;
+
   const handleResendOtp = async () => {
     if (countdown > 0) {
       return showPopup({
@@ -135,31 +145,67 @@ export default function OtpScreen() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center px-6">
-      <Text className="text-lg text-black mb-2">Enter 6-digit OTP</Text>
-      <Text className="text-neutral-600 mb-6">{phone}</Text>
-      <TextInput
-        value={code}
-        onChangeText={setCode}
-        keyboardType="number-pad"
-        maxLength={6}
-        className="border border-gray-300 rounded-2xl w-full px-4 py-3 mb-4"
-      />
+    <View className="flex-1 px-6 items-center justify-center bg-white">
+      {/* Heading + number */}
+      <Text className="text-[24px] font-extrabold text-[#7A1B1B] text-center">
+        OTP has been sent to
+      </Text>
+      <Text className="text-[26px] font-extrabold text-[#F98455] text-center mt-1">
+        {String(phone) || "+00 1234567890"}
+      </Text>
+
+      {/* OTP boxes */}
+      <View className="mt-8 w-full items-center">
+        <View className="flex-row justify-between w-[80%]">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <View
+              key={i}
+              className="w-12 h-12 rounded-xl border border-[#F0C7AE] bg-[#FFF7F1] items-center justify-center"
+            >
+              <Text className="text-[20px] font-semibold text-[#8A6B5A]">
+                {code[i] ? code[i] : ""}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Hidden input captures all digits */}
+        <TextInput
+          value={code}
+          onChangeText={(t) => setCode(t.replace(/\D/g, "").slice(0, 6))}
+          keyboardType="number-pad"
+          maxLength={6}
+          autoFocus
+          className="opacity-0 h-0 w-0"
+          accessible={false}
+        />
+      </View>
+
+      {/* Verify button */}
       <TouchableOpacity
         onPress={verify}
         disabled={loading}
-        className={`w-full py-4 rounded-2xl bg-[#F98455] items-center ${
+        activeOpacity={0.9}
+        className={`mt-10 w-72 py-4 rounded-3xl bg-[#F98455] items-center shadow-md ${
           loading ? "opacity-60" : ""
         }`}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text className="text-white font-semibold">Verify</Text>
+          <Text className="text-white text-[18px] font-extrabold">Verify</Text>
         )}
       </TouchableOpacity>
-      <TouchableOpacity onPress={handleResendOtp} className="mt-4">
-        <Text className="text-[#F98455]">Resend OTP</Text>
+
+      {/* Resend with countdown */}
+      <TouchableOpacity
+        onPress={handleResendOtp}
+        className="mt-5"
+        activeOpacity={0.7}
+      >
+        <Text className="text-[#F98455] font-semibold">
+          {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
+        </Text>
       </TouchableOpacity>
     </View>
   );

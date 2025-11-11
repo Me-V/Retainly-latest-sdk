@@ -400,6 +400,7 @@ export default function ChatOnboardingProfile() {
     messages.map((m) => {
       if (m.type === "otp" && step === "otp") {
         return (
+          // Replace ONLY the OTP bubble inside renderMessages() where m.type === "otp"
           <View key={m.id}>
             <View className="flex-row mb-2">
               <BotIcon />
@@ -407,41 +408,57 @@ export default function ChatOnboardingProfile() {
                 <Text className="text-zinc-800">{m.text}</Text>
               </View>
             </View>
-            <View className="flex-row justify-end mb-4">
-              <View className="bg-[#F47E54] p-3 rounded-2xl mr-2">
-                <View className="flex-row mb-3 justify-center">
-                  {otp.map((d, i) => (
-                    <TextInput
-                      key={i}
-                      ref={(r) => {
-                        otpInputRefs.current[i] = r;
-                      }}
-                      className="w-10 h-10 bg-white border border-gray-400 mr-1 text-center rounded-lg"
-                      value={d}
-                      onChangeText={(v) => {
-                        const val = v.replace(/[^0-9]/g, "");
-                        const next = [...otp];
-                        next[i] = val;
-                        setOtp(next);
-                        if (val && i < 5) otpInputRefs.current[i + 1]?.focus();
-                        if (next.join("").length === 6)
-                          verifyOtp(next.join(""));
-                      }}
-                      onKeyPress={(e) => {
-                        if (
-                          e.nativeEvent.key === "Backspace" &&
-                          !otp[i] &&
-                          i > 0
-                        )
-                          otpInputRefs.current[i - 1]?.focus();
-                      }}
-                      keyboardType="number-pad"
-                      maxLength={1}
-                    />
-                  ))}
+
+            <View className="flex-row justify-end mb-4 items-end">
+              <View className="bg-[#F47E54] px-3 pt-3 pb-4 rounded-2xl mr-2">
+                {/* OTP six-box field */}
+                <View className="flex-row justify-between mb-3">
+                  {otp.map((d, i) => {
+                    const isFilled = Boolean(d);
+                    return (
+                      <TextInput
+                        key={i}
+                        ref={(r) => {
+                          otpInputRefs.current[i] = r;
+                        }}
+                        className={`mx-1 w-10 h-12 rounded-lg text-center text-[16px] font-semibold
+          ${
+            isFilled
+              ? "bg-white border border-[#E5B59D] text-[#6A4D3B]"
+              : "bg-[#FFEDE2] border border-[#F8CBB4] text-[#6A4D3B]"
+          }`}
+                        value={d}
+                        onChangeText={(v) => {
+                          const val = v.replace(/[^0-9]/g, "").slice(0, 1);
+                          const next = [...otp];
+                          next[i] = val;
+                          setOtp(next);
+                          if (val && i < 5)
+                            otpInputRefs.current[i + 1]?.focus();
+                          if (next.join("").length === 6)
+                            verifyOtp(next.join(""));
+                        }}
+                        onKeyPress={(e) => {
+                          if (
+                            e.nativeEvent.key === "Backspace" &&
+                            !otp[i] &&
+                            i > 0
+                          ) {
+                            otpInputRefs.current[i - 1]?.focus();
+                          }
+                        }}
+                        keyboardType="number-pad"
+                        maxLength={1}
+                        selectionColor="#F47E54"
+                        cursorColor="#F47E54"
+                      />
+                    );
+                  })}
                 </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-white">
+
+                {/* Timer + Resend */}
+                <View className="flex-row justify-between items-center px-1">
+                  <Text className="text-white font-medium">
                     00:{countdown.toString().padStart(2, "0")}
                   </Text>
                   <TouchableOpacity
@@ -449,7 +466,9 @@ export default function ChatOnboardingProfile() {
                     onPress={handleResendOtp}
                     className={countdown > 0 ? "opacity-50" : ""}
                   >
-                    <Text className="text-white">Resend</Text>
+                    <Text className="text-white font-semibold underline">
+                      Resend
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
