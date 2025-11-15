@@ -11,6 +11,7 @@ import {
   Modal as RNModal,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -268,8 +269,11 @@ export default function StudentProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <View className="items-center mt-16">
-          <MailOpenSVG />
+        <View className="items-center mt-32">
+          <Image
+            source={require("@/assets/Illustration/Email-OTP.png")}
+            className="w-[130px] h-[180px] mb-6"
+          />
         </View>
 
         <View className="bg-[#FEFCF3] rounded-3xl px-6 py-8 mt-10 shadow-md">

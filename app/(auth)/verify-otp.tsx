@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import auth, { signInWithPhoneNumber } from "@react-native-firebase/auth"; // using RN Firebase
@@ -146,6 +147,13 @@ export default function OtpScreen() {
 
   return (
     <View className="flex-1 px-6 items-center justify-center bg-white">
+      
+      {/*show image illustration*/}
+      <Image
+        source={require("@/assets/Illustration/Email-OTP.png")}
+        className="w-[130px] h-[180px] mb-6"
+      />
+      
       {/* Heading + number */}
       <Text className="text-[24px] font-extrabold text-[#7A1B1B] text-center">
         OTP has been sent to
