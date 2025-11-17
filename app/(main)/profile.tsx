@@ -800,7 +800,7 @@ export default function StudentProfileScreen() {
                     ) : (
                       <View className="flex-row items-center">
                         <Text className="text-[20px] text-black font-semibold mr-2">
-                          {profile.userData?.phone_number ?? "+00 1234567890"}
+                          {profile.userData?.phone_number ?? "+XX XXXXXXXXX"}
                         </Text>
                         {profile.userData?.phone_verified ? (
                           <VerifiedIcon />
