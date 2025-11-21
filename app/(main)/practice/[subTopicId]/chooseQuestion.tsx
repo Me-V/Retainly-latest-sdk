@@ -8,6 +8,7 @@ import {
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -45,6 +46,9 @@ const QuestionBtn = ({
 
 export default function SubTopicQuestions() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768;
+  const containerMaxHeight = isTablet ? 520 : 300;
   const token = useSelector((s: RootState) => s.auth.token);
   const { subTopicId } = useLocalSearchParams<{
     subTopicId: string;
@@ -125,7 +129,7 @@ export default function SubTopicQuestions() {
           </Text>
         </View>
 
-        {/* Card with capped inner scroll and indicator */}
+        {/* Card with capped inner scroll */}
         {loading ? (
           <View className="flex-1 items-center justify-center mt-6">
             <ActivityIndicator />
@@ -136,9 +140,11 @@ export default function SubTopicQuestions() {
             <View className="w-full rounded-3xl bg-[#F6DCC8] px-6 py-6 items-center">
               <View
                 onLayout={onContainerLayout}
-                className={`w-full relative ${
-                  shouldCapAndScroll ? "max-h-[300px]" : ""
-                }`}
+                style={{
+                  width: "100%",
+                  position: "relative",
+                  maxHeight: containerMaxHeight, // 📌 tablet-aware height
+                }}
               >
                 <ScrollView
                   contentContainerStyle={{ paddingBottom: 0 }}
@@ -164,7 +170,7 @@ export default function SubTopicQuestions() {
                   )}
                 </ScrollView>
 
-                {/* Direction indicator */}
+                {/* ↓ Down indicator */}
                 {canScroll && !atBottom && (
                   <View
                     pointerEvents="none"
@@ -179,6 +185,8 @@ export default function SubTopicQuestions() {
                     <ChooseSubDownIndicator />
                   </View>
                 )}
+
+                {/* ↑ Up indicator */}
                 {canScroll && atBottom && (
                   <View
                     pointerEvents="none"
@@ -201,4 +209,5 @@ export default function SubTopicQuestions() {
       </ScrollView>
     </LinearGradient>
   );
+
 }

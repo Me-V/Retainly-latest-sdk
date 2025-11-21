@@ -125,22 +125,6 @@ const MobileLoginScreen = () => {
   const formatE164 = (dial: string, raw: string) =>
     `${dial}${raw.replace(/\D/g, "")}`;
 
-  const maskPhone = (e164: string) => {
-    // Keep country code, mask middle digits, show last 2
-    // Example: +911234567890 -> +91 123****890
-    const m = e164.match(/^(\+\d{1,3})(\d+)$/);
-    if (!m) return e164;
-    const cc = m[1];
-    const rest = m[2];
-    if (rest.length <= 4)
-      return `${cc} ${"*".repeat(Math.max(0, rest.length - 2))}${rest.slice(
-        -2
-      )}`;
-    const head = rest.slice(0, 3);
-    const tail = rest.slice(-3);
-    return `${cc} ${head}${"*".repeat(Math.max(0, rest.length - 6))}${tail}`;
-  };
-
   const isPhoneValidForCountry = (countryCode: string, raw: string) => {
     const digits = raw.replace(/\D/g, "");
     const rule = PHONE_RULES[countryCode];
@@ -155,25 +139,22 @@ const MobileLoginScreen = () => {
     if (rule.exact && digits.length !== rule.exact) {
       return {
         valid: false,
-        reason: `Enter a ${rule.exact}-digit number ${
-          rule.example ? `(${rule.example})` : ""
-        }`.trim(),
+        reason: `Enter a ${rule.exact}-digit number ${rule.example ? `(${rule.example})` : ""
+          }`.trim(),
       };
     }
     if (rule.min && digits.length < rule.min) {
       return {
         valid: false,
-        reason: `Number seems too short ${
-          rule.example ? `(${rule.example})` : ""
-        }`.trim(),
+        reason: `Number seems too short ${rule.example ? `(${rule.example})` : ""
+          }`.trim(),
       };
     }
     if (rule.max && digits.length > rule.max) {
       return {
         valid: false,
-        reason: `Number seems too long ${
-          rule.example ? `(${rule.example})` : ""
-        }`.trim(),
+        reason: `Number seems too long ${rule.example ? `(${rule.example})` : ""
+          }`.trim(),
       };
     }
     return { valid: true };
@@ -228,13 +209,6 @@ const MobileLoginScreen = () => {
         fullNumber
       );
       setConfirm(confirmation);
-
-      // Show success popup stating OTP is being/sent successfully
-      const masked = maskPhone(fullNumber);
-      setSuccessContent(
-        `We have sent a 6-digit OTP to ${masked}. Enter it here to continue.`
-      );
-      setSuccessVisible(true);
       setCountdown(60);
     } catch (err: any) {
       showPopup({
