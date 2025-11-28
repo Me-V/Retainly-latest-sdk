@@ -142,7 +142,7 @@ export default function AnimationsScreen() {
   return (
     <View className="flex-1 bg-[#E4C7A6] items-center justify-center">
       <Animated.View style={{ opacity: fadeAnim }}>
-        <Text className="text-2xl font-bold text-black">Welcome Back 👋</Text>
+        <Text className="text-2xl font-bold text-black">Animation Goes Here ...</Text>
       </Animated.View>
     </View>
   );
