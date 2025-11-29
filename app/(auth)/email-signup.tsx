@@ -8,7 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -165,9 +165,7 @@ export default function EmailSignupScreen() {
           </TouchableOpacity>
 
           {/* Resend Code */}
-          <TouchableOpacity
-            onPress={() => console.log("Resend Code Pressed")}
-          >
+          <TouchableOpacity onPress={() => console.log("Resend Code Pressed")}>
             <Text className="text-[#F59E51] text-center font-medium text-[16px] mt-6">
               Resend Code
             </Text>
@@ -217,7 +215,8 @@ export default function EmailSignupScreen() {
               <MyLogo />
               <Text className="text-white text-center text-[15px] font-medium mt-5">
                 tagline
-              </Text></View>
+              </Text>
+            </View>
           </View>
 
           <Text className="text-center text-white text-[24px] font-bold mt-8 mb-6">
@@ -226,37 +225,13 @@ export default function EmailSignupScreen() {
 
           {/* --- GLOW CARD CONTAINER --- */}
           <LinearGradient
-            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+            // Brighter start (0.3), faster fade to transparent center (0.02)
+            colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 0.8 }} // Shortened end point to concentrate glow at top-left edge
+            // Increased border opacity to border-white/30 for sharper edge definition
+            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
           >
-            {/* Glow Borders */}
-            <LinearGradient
-              colors={[GLOW_COLOR, "transparent"]}
-              style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={["transparent", GLOW_COLOR]}
-              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={[GLOW_COLOR, "transparent"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={["transparent", GLOW_COLOR]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-
             {/* --- Form Content --- */}
             <View className="px-8 py-12">
               <TextInput
@@ -288,7 +263,6 @@ export default function EmailSignupScreen() {
                 </TouchableOpacity>
               </View>
 
-
               <View className="relative mb-8">
                 <TextInput
                   value={confirmPassword}
@@ -317,7 +291,7 @@ export default function EmailSignupScreen() {
                 style={{ opacity: loading ? 0.7 : 1 }}
               >
                 <LinearGradient
-                  colors={['#FF8A33', '#F59E51']}
+                  colors={["#FF8A33", "#F59E51"]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                   className="rounded-lg py-4" // Changed from rounded-full to rounded-lg

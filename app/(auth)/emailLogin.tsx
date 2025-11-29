@@ -146,41 +146,15 @@ export default function EmailLoginScreen() {
             </View>
           </View>
 
-
-
           {/* --- GLOW CARD CONTAINER --- */}
           <LinearGradient
-            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+            // Brighter start (0.3), faster fade to transparent center (0.02)
+            colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 0.8 }} // Shortened end point to concentrate glow at top-left edge
+            // Increased border opacity to border-white/30 for sharper edge definition
+            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
           >
-            {/* Glow Borders */}
-            <LinearGradient
-              colors={[GLOW_COLOR, "transparent"]}
-              style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={["transparent", GLOW_COLOR]}
-              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={[GLOW_COLOR, "transparent"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={["transparent", GLOW_COLOR]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
-              pointerEvents="none"
-            />
-
             {/* --- Form Content --- */}
             <View className="px-8 py-12">
               <View className="items-start mb-4 ml-3">
@@ -188,7 +162,6 @@ export default function EmailLoginScreen() {
                   Login with Email
                 </Text>
               </View>
-
 
               <TextInput
                 value={email}
@@ -198,7 +171,6 @@ export default function EmailLoginScreen() {
                 placeholder="Enter Your Email"
                 className="border border-gray-500 rounded-3xl px-5 py-5 mb-6 text-white text-[16px]"
               />
-
 
               <View className="relative mb-8">
                 <TextInput

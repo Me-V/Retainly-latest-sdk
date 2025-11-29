@@ -5,7 +5,9 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Image,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, router } from "expo-router";
 import auth, { signInWithPhoneNumber } from "@react-native-firebase/auth"; // using RN Firebase
@@ -14,6 +16,11 @@ import { useDispatch } from "react-redux";
 import { setUser } from "@/store/slices/authSlice";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 import { authforMobile } from "./mobile-auth";
+import { LinearGradient } from "expo-linear-gradient";
+import { BackIcon, MyLogo } from "@/assets/logo";
+import PopupModal from "@/components/Popup-modal"; // Assuming you have this component
+import { OTPScrenIcon } from "@/assets/logo2";
+
 const countries = [
   { code: "IN", dialCode: "+91", name: "India", flag: "🇮🇳" },
   { code: "US", dialCode: "+1", name: "United States", flag: "🇺🇸" },
@@ -21,6 +28,7 @@ const countries = [
   { code: "CA", dialCode: "+1", name: "Canada", flag: "🇨🇦" },
   { code: "AU", dialCode: "+61", name: "Australia", flag: "🇦🇺" },
 ];
+
 export default function OtpScreen() {
   const token = useAppSelector((s) => s.auth.token);
   const { verificationId, phone } = useLocalSearchParams<{
@@ -41,6 +49,10 @@ export default function OtpScreen() {
   const [popupPrimaryText, setPopupPrimaryText] = React.useState<string>("OK");
   const [popupDismissible, setPopupDismissible] = React.useState<boolean>(true);
   const dispatch = useDispatch();
+
+  // Configuration for the glow
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
+  const GLOW_SIZE = 12;
 
   React.useEffect(() => {
     if (countdown <= 0) return;
@@ -146,75 +158,175 @@ export default function OtpScreen() {
   };
 
   return (
-    <View className="flex-1 px-6 items-center justify-center bg-white">
-      
-      {/*show image illustration*/}
-      <Image
-        source={require("@/assets/Illustration/Email-OTP.png")}
-        className="w-[130px] h-[180px] mb-6"
-      />
-      
-      {/* Heading + number */}
-      <Text className="text-[24px] font-extrabold text-[#7A1B1B] text-center">
-        OTP has been sent to
-      </Text>
-      <Text className="text-[26px] font-extrabold text-[#F98455] text-center mt-1">
-        {String(phone) || "+00 1234567890"}
-      </Text>
-
-      {/* OTP boxes */}
-      <View className="mt-8 w-full items-center">
-        <View className="flex-row justify-between w-[80%]">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <View
-              key={i}
-              className="w-12 h-12 rounded-xl border border-[#F0C7AE] bg-[#FFF7F1] items-center justify-center"
+    <LinearGradient
+      colors={["#3B0A52", "#180323"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className="flex-1"
+    >
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      >
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header Section */}
+          <View className="mt-12 items-center relative z-10">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="absolute left-6"
             >
-              <Text className="text-[20px] font-semibold text-[#8A6B5A]">
-                {code[i] ? code[i] : ""}
+              <BackIcon color="white" />
+            </TouchableOpacity>
+
+            <View className="mt-14 items-center">
+              <MyLogo />
+              <Text className="text-white text-[15px] font-medium mt-5">
+                tagline
               </Text>
             </View>
-          ))}
-        </View>
+          </View>
 
-        {/* Hidden input captures all digits */}
-        <TextInput
-          value={code}
-          onChangeText={(t) => setCode(t.replace(/\D/g, "").slice(0, 6))}
-          keyboardType="number-pad"
-          maxLength={6}
-          autoFocus
-          className="opacity-0 h-0 w-0"
-          accessible={false}
-        />
-      </View>
+          {/* --- GLOW CARD CONTAINER --- */}
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+          >
+            {/* Glow Borders */}
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: GLOW_SIZE,
+                zIndex: 1,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: GLOW_SIZE,
+                zIndex: 1,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: GLOW_SIZE,
+                zIndex: 1,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: GLOW_SIZE,
+                zIndex: 1,
+              }}
+              pointerEvents="none"
+            />
 
-      {/* Verify button */}
-      <TouchableOpacity
-        onPress={verify}
-        disabled={loading}
-        activeOpacity={0.9}
-        className={`mt-10 w-72 py-4 rounded-3xl bg-[#F98455] items-center shadow-md ${
-          loading ? "opacity-60" : ""
-        }`}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text className="text-white text-[18px] font-extrabold">Verify</Text>
-        )}
-      </TouchableOpacity>
+            {/* --- Card Content --- */}
+            <View className="px-8 py-14 items-center">
+              {/* Phone Icon */}
+              <View className="mb-8">
+                <OTPScrenIcon />
+              </View>
 
-      {/* Resend with countdown */}
-      <TouchableOpacity
-        onPress={handleResendOtp}
-        className="mt-5"
-        activeOpacity={0.7}
-      >
-        <Text className="text-[#F98455] font-semibold">
-          {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+              <Text className="text-[24px] font-bold text-white text-center mb-4">
+                Verify Your Number
+              </Text>
+
+              <Text className="text-[16px] text-gray-300 text-center mb-8">
+                OTP sent to{" "}
+                <Text className="text-[#F59E51] font-bold">
+                  {String(phone) || "+00 1234567890"}
+                </Text>
+              </Text>
+
+              {/* OTP Input Field */}
+              <TextInput
+                value={code}
+                onChangeText={(t) => setCode(t.replace(/\D/g, "").slice(0, 6))}
+                keyboardType="number-pad"
+                placeholder="Enter OTP"
+                placeholderTextColor="#9CA3AF"
+                className="w-full bg-[#2A1C3E]/60 border border-gray-500/30 rounded-3xl px-5 py-5 mb-8 text-white text-[16px] text-center tracking-widest"
+                maxLength={6}
+              />
+
+              {/* Verify Button */}
+              <TouchableOpacity
+                onPress={verify}
+                disabled={loading}
+                className="w-full mb-6 shadow-lg"
+                style={{ opacity: loading ? 0.7 : 1 }}
+              >
+                <LinearGradient
+                  colors={["#FF8A33", "#F59E51"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  className="rounded-3xl py-4"
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text className="text-white text-center font-bold text-[18px]">
+                      Verify
+                    </Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Resend with countdown */}
+              <TouchableOpacity onPress={handleResendOtp} activeOpacity={0.7}>
+                <Text className="text-gray-400 font-medium text-[14px]">
+                  Didn't receive OTP?{" "}
+                  <Text className="text-[#F59E51] font-bold">
+                    {countdown > 0 ? `Resend in ${countdown}s` : "Resend"}
+                  </Text>
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+
+          {/* Popup Modal */}
+          <PopupModal
+            isVisible={popupVisible}
+            onClose={() => setPopupVisible(false)}
+            heading={popupHeading}
+            content={popupContent}
+            primaryText={popupPrimaryText}
+            dismissible={popupDismissible}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }

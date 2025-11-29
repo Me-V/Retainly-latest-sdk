@@ -82,43 +82,14 @@ export default function SignInScreen() {
           </View>
         </View>
 
-        {/* --- CARD CONTAINER (Glow Effect) --- */}
         <LinearGradient
-          colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          // CHANGED: mx-10 -> mx-6 for uniformity
-          className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+          // Brighter start (0.3), faster fade to transparent center (0.02)
+          colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.8, y: 0.8 }} // Shortened end point to concentrate glow at top-left edge
+          // Increased border opacity to border-white/30 for sharper edge definition
+          className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
         >
-          {/* 1. Top Glow */}
-          <LinearGradient
-            colors={[GLOW_COLOR, "transparent"]}
-            style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
-            pointerEvents="none"
-          />
-          {/* 2. Bottom Glow */}
-          <LinearGradient
-            colors={["transparent", GLOW_COLOR]}
-            style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
-            pointerEvents="none"
-          />
-          {/* 3. Left Glow */}
-          <LinearGradient
-            colors={[GLOW_COLOR, "transparent"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: GLOW_SIZE, zIndex: 1 }}
-            pointerEvents="none"
-          />
-          {/* 4. Right Glow */}
-          <LinearGradient
-            colors={["transparent", GLOW_COLOR]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
-            pointerEvents="none"
-          />
-
           {/* --- Card Content --- */}
           {/* CHANGED: px-10 pt-10 -> px-8 py-12 for consistent internal spacing */}
           <View className="px-8 py-12">
@@ -134,7 +105,7 @@ export default function SignInScreen() {
 
             {/* Google Button */}
             <TouchableOpacity
-              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-4 relative"
+              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-8 relative"
               onPress={() => signIn()}
             >
               <View className="absolute left-5">
@@ -148,7 +119,7 @@ export default function SignInScreen() {
             {/* Email Button */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/email-signup")}
-              className="flex-row justify-center items-center border border-gray-500 rounded-3xl py-4 mb-4 relative"
+              className="flex-row justify-center items-center border border-gray-500 rounded-3xl py-4 mb-8 relative"
             >
               <Feather
                 name="mail"
@@ -156,9 +127,7 @@ export default function SignInScreen() {
                 color="white"
                 className="absolute left-5"
               />
-              <Text className="text-white font-medium text-[16px]">
-                Email
-              </Text>
+              <Text className="text-white font-medium text-[16px]">Email</Text>
             </TouchableOpacity>
 
             {/* Mobile Button */}
@@ -172,9 +141,7 @@ export default function SignInScreen() {
                 color="white"
                 className="absolute left-5"
               />
-              <Text className="text-white font-medium text-[16px]">
-                Mobile
-              </Text>
+              <Text className="text-white font-medium text-[16px]">Mobile</Text>
             </TouchableOpacity>
           </View>
         </LinearGradient>

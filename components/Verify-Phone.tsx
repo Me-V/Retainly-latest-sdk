@@ -1,6 +1,14 @@
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import React from "react";
 import { MobileSmsSVG } from "@/assets/logo";
+import { LinearGradient } from "expo-linear-gradient";
+import { OTPScrenIcon } from "@/assets/logo2";
 
 const VerifyPhone = ({
   selectedCountry,
@@ -11,6 +19,7 @@ const VerifyPhone = ({
   verifyCode,
   handleResendOtp,
   countdown,
+  updatingProfile,
 }: {
   selectedCountry: any;
   phone: string;
@@ -23,58 +32,84 @@ const VerifyPhone = ({
   updatingProfile: boolean;
 }) => {
   return (
-    <>
-      <View className="items-center justify-center">
-        <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mt-40 mb-4">
-          <MobileSmsSVG />
-        </View>
-        <Text className="text-2xl font-bold text-gray-900 mt-8 mb-12">
-          Verify Your Number
-        </Text>
-        <Text className="text-lg text-gray-600 text-center px-8 mt-5">
-          OTP sent to{"  "}
-          <Text className="text-orange-500 font-normal">
-            {selectedCountry.dialCode} {phone}
-          </Text>
-        </Text>
+    <View className="w-full items-center">
+      {/* Icon - Centered & Cleaned up for Dark Mode */}
+      <View className="items-center mb-8">
+        <OTPScrenIcon />
       </View>
+
+      {/* Heading */}
+      <Text className="text-[24px] font-bold text-white mb-4 text-center">
+        Verify Your Number
+      </Text>
+
+      {/* Subtitle */}
+      <Text className="text-[16px] text-gray-300 text-center mb-8 px-4">
+        OTP sent to{" "}
+        <Text className="text-[#F59E51] font-bold">
+          {selectedCountry.dialCode} {phone}
+        </Text>
+      </Text>
+
+      {/* OTP Input - Dark Theme Style */}
       <TextInput
         value={code}
         onChangeText={setCode}
         placeholder="Enter OTP"
+        placeholderTextColor="#9CA3AF"
         keyboardType="number-pad"
-        className="border border-gray-300 rounded-xl bg-white py-3 px-5 text-lg mb-4 mt-5"
-        placeholderTextColor="#cab09c"
+        className="w-full bg-[#2A1C3E]/60 border border-gray-500/30 rounded-3xl px-5 py-5 mb-8 text-white text-[16px] text-center tracking-widest"
         autoFocus={true}
         maxLength={6}
       />
+
+      {/* Confirm Button - Orange Gradient */}
       <TouchableOpacity
-        className={`rounded-xl py-4 mt-2 items-center ${
-          loading ? "bg-[#f7a98a]" : "bg-[#F98455]"
-        }`}
         onPress={verifyCode}
         disabled={loading}
+        className="w-full mb-6 shadow-lg"
+        style={{ opacity: loading ? 0.7 : 1 }}
       >
-        <Text className="text-white font-bold text-base">
-          {loading ? "Verifying..." : "Confirm OTP"}
-        </Text>
+        <LinearGradient
+          colors={["#FF8A33", "#F59E51"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          className="rounded-3xl py-4"
+          style={{ borderRadius: 24 }}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-white text-center font-bold text-[18px]">
+              Verify
+            </Text>
+          )}
+        </LinearGradient>
       </TouchableOpacity>
+
+      {/* Resend OTP - Text Link Style */}
       <TouchableOpacity
         onPress={handleResendOtp}
         disabled={countdown > 0 || loading}
-        className={`rounded-xl py-4 mt-2 items-center ${
-          countdown > 0 ? "opacity-50" : "bg-[#F98455]"
-        }`}
+        className="mt-2"
       >
-        <Text className="text-white font-bold text-base">
-          {countdown > 0
-            ? `Resend OTP in 00:${countdown.toString().padStart(2, "0")}`
-            : loading
-            ? "Resending..."
-            : "Resend OTP"}
+        <Text className="text-gray-400 font-medium text-[14px] text-center">
+          {countdown > 0 ? (
+            <>
+              Resend OTP in{" "}
+              <Text className="text-[#F59E51] font-bold">
+                00:{countdown.toString().padStart(2, "0")}
+              </Text>
+            </>
+          ) : (
+            <>
+              Didn't receive code?{" "}
+              <Text className="text-[#F59E51] font-bold">Resend</Text>
+            </>
+          )}
         </Text>
       </TouchableOpacity>
-    </>
+    </View>
   );
 };
 
