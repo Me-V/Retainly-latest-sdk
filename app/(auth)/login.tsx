@@ -10,7 +10,9 @@ import {
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { loginWithGoogle } from "@/services/api.auth";
-import { LoginIcon } from "@/assets/logo2";
+import { GoogleIcon, LoginIcon } from "@/assets/logo2";
+import Feather from "@expo/vector-icons/Feather";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 GoogleSignin.configure({
   webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
@@ -69,7 +71,7 @@ export default function SignInScreen() {
         {/* Header */}
         <View className="items-center mt-16 mb-12">
           <MyLogo />
-          <Text className="text-gray-600 text-[15px] font-medium mt-[70px]">
+          <Text className="text-white text-[15px] font-medium mt-5">
             tagline
           </Text>
         </View>
@@ -82,7 +84,7 @@ export default function SignInScreen() {
           colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
           start={{ x: 0.5, y: 0 }} // Top-left
           end={{ x: 1, y: 1 }}   // Bottom-right
-          className="mx-10 mb-10 rounded-3xl overflow-hidden border border-gray-400"
+          className="mx-10 mb-10 rounded-[40px] overflow-hidden border border-gray-400"
         >{/* 1. Top Glow */}
           <LinearGradient
             colors={[GLOW_COLOR, "transparent"]}
@@ -113,51 +115,67 @@ export default function SignInScreen() {
           />
           {/* --- Card Content --- */}
           {/* Cleaned up: removed z-10 as it's no longer needed */}
-          <View className="px-8 py-10">
-            <View className="items-center my-5">
+          <View className="px-10 pt-10">
+            <View className="items-center my-10">
               <LoginIcon />
             </View>
 
             <TouchableOpacity
-              className="bg-[#FFF3C4] flex-row items-center justify-center border border-gray-300 rounded-3xl py-4 mb-4"
+              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-4 relative"
               onPress={signIn}
             >
+              <View className="absolute left-5">
+                <GoogleIcon />
+              </View>
               <Text className="text-gray-700 font-medium text-[16px]">
-                Google
+                Sign in with Google
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.push("/(auth)/emailLogin")}
-              className="bg-[#FFF3C4] flex-row items-center justify-center border border-gray-300 rounded-3xl py-4 mb-4"
+              className="flex-row justify-center items-center border border-gray-600 rounded-3xl py-4 mb-4 relative"
             >
-              <Text className="text-gray-700 font-medium text-[16px]">
-                Email
+              <Feather
+                name="mail"
+                size={24}
+                color="white"
+                className="absolute left-5"
+              />
+              <Text className="text-white font-medium text-[16px]">
+                Sign in with Email
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.push("/(auth)/mobile-auth")}
-              className="bg-[#FFF3C4] flex-row items-center justify-center border border-gray-300 rounded-3xl py-4 mb-8"
+              className="bg-[#F59E51] flex-row justify-center items-center rounded-[30px] py-4 mb-8 relative"
             >
-              <Text className="text-gray-700 font-medium text-[16px]">
-                Mobile
+              <FontAwesome
+                name="phone"
+                size={30}
+                color="white"
+                className="absolute left-5"
+              />
+              <Text className="text-white font-medium text-[16px]">
+                Sign in with Mobile
               </Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            className="rounded-xl pt-1 pb-3 my-5"
+            onPress={() => router.push("/(auth)/signup-options")}
+          >
+            <Text className="text-white font-medium text-[16px] text-center">
+              Don't have an account?
+            </Text>
+            <Text className="text-[#F59E51] font-medium text-[16px] text-center">
+              Create One
+            </Text>
+          </TouchableOpacity>
         </LinearGradient>
 
-        <TouchableOpacity
-          className="rounded-xl pt-1 pb-3 mt-10"
-          onPress={() => router.push("/(auth)/signup-options")}
-        >
-          <Text className="text-black font-medium text-[16px] text-center">
-            Don't have an account?
-          </Text>
-          <Text className="text-[#E03636] font-medium text-[16px] text-center">
-            Create One
-          </Text>
-        </TouchableOpacity>
+
       </ScrollView>
     </LinearGradient>
   );
