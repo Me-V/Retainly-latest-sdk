@@ -12,7 +12,7 @@ import { useDispatch } from "react-redux";
 import { loginWithGoogle } from "@/services/api.auth";
 
 // Added these imports for the UI design
-import { GoogleIcon, LoginIcon, SignUpIcon } from "@/assets/logo2";
+import { GoogleIcon, SignUpIcon } from "@/assets/logo2";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
@@ -71,13 +71,15 @@ export default function SignInScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      <ScrollView className="flex-1">
-        {/* Header */}
-        <View className="items-center mt-16 mb-12">
-          <MyLogo />
-          <Text className="text-white text-[15px] font-medium mt-5">
-            tagline
-          </Text>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header - Aligned to mt-12 to match other screens */}
+        <View className="mt-12 items-center">
+          <View className="mt-14 mb-10 items-center">
+            <MyLogo />
+            <Text className="text-white text-[15px] font-medium mt-5">
+              tagline
+            </Text>
+          </View>
         </View>
 
         {/* --- CARD CONTAINER (Glow Effect) --- */}
@@ -85,7 +87,8 @@ export default function SignInScreen() {
           colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="mx-10 mb-10 rounded-[40px] overflow-hidden border border-gray-400"
+          // CHANGED: mx-10 -> mx-6 for uniformity
+          className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
         >
           {/* 1. Top Glow */}
           <LinearGradient
@@ -117,8 +120,9 @@ export default function SignInScreen() {
           />
 
           {/* --- Card Content --- */}
-          <View className="px-10 pt-10">
-            <View className="items-center my-10">
+          {/* CHANGED: px-10 pt-10 -> px-8 py-12 for consistent internal spacing */}
+          <View className="px-8 py-12">
+            <View className="items-center mb-10">
               <SignUpIcon />
             </View>
 
@@ -130,7 +134,7 @@ export default function SignInScreen() {
 
             {/* Google Button */}
             <TouchableOpacity
-              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-7 relative"
+              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-4 relative"
               onPress={() => signIn()}
             >
               <View className="absolute left-5">
@@ -141,10 +145,10 @@ export default function SignInScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Email Button - Route updated to your specific signup route */}
+            {/* Email Button */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/email-signup")}
-              className="flex-row justify-center items-center border border-gray-600 rounded-3xl py-4 mb-7 relative"
+              className="flex-row justify-center items-center border border-gray-500 rounded-3xl py-4 mb-4 relative"
             >
               <Feather
                 name="mail"
@@ -160,7 +164,7 @@ export default function SignInScreen() {
             {/* Mobile Button */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/mobile-auth")}
-              className="bg-[#F59E51] flex-row justify-center items-center rounded-[30px] py-4 mb-12 relative"
+              className="bg-[#F59E51] flex-row justify-center items-center rounded-3xl py-4 mb-8 relative"
             >
               <FontAwesome
                 name="phone"

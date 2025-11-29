@@ -57,8 +57,8 @@ export default function SignInScreen() {
   };
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)"; // Adjust opacity for "neon" strength
-  const GLOW_SIZE = 12; // How deep the glow goes inside
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
+  const GLOW_SIZE = 12;
 
   return (
     <LinearGradient
@@ -67,25 +67,26 @@ export default function SignInScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      <ScrollView className="flex-1">
-        {/* Header */}
-        <View className="items-center mt-16 mb-12">
-          <MyLogo />
-          <Text className="text-white text-[15px] font-medium mt-5">
-            tagline
-          </Text>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Header - Aligned to mt-12 to match Signup Screen */}
+        <View className="mt-12 items-center">
+          <View className="mt-14 mb-10 items-center">
+            <MyLogo />
+            <Text className="text-white text-[15px] font-medium mt-5">
+              tagline
+            </Text>
+          </View>
         </View>
 
         {/* --- CARD CONTAINER --- */}
-        {/* We now use LinearGradient as the container itself for the background glow */}
         <LinearGradient
-          // A nice diagonal fade from semi-transparent white to clearer transparent
-          // Feel free to adjust these opacities (e.g., 0.3 to 0.1) for stronger/weaker glow
           colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
-          start={{ x: 0.5, y: 0 }} // Top-left
-          end={{ x: 1, y: 1 }}   // Bottom-right
-          className="mx-10 mb-10 rounded-[40px] overflow-hidden border border-gray-400"
-        >{/* 1. Top Glow */}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          // CHANGED: mx-10 -> mx-6 to match the uniformity of other screens
+          className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+        >
+          {/* 1. Top Glow */}
           <LinearGradient
             colors={[GLOW_COLOR, "transparent"]}
             style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
@@ -113,15 +114,17 @@ export default function SignInScreen() {
             style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
             pointerEvents="none"
           />
+
           {/* --- Card Content --- */}
-          {/* Cleaned up: removed z-10 as it's no longer needed */}
-          <View className="px-10 pt-10">
-            <View className="items-center my-10">
+          {/* CHANGED: px-10 -> px-8 and pt-10 -> py-12 for consistent internal spacing */}
+          <View className="px-8 pt-10 pb-8">
+            <View className="items-center mb-10">
               <LoginIcon />
             </View>
 
+            {/* Google Button */}
             <TouchableOpacity
-              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-4 relative"
+              className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-8 relative"
               onPress={signIn}
             >
               <View className="absolute left-5">
@@ -132,9 +135,10 @@ export default function SignInScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Email Button */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/emailLogin")}
-              className="flex-row justify-center items-center border border-gray-600 rounded-3xl py-4 mb-4 relative"
+              className="flex-row justify-center items-center border border-gray-500 rounded-3xl py-4 mb-8 relative"
             >
               <Feather
                 name="mail"
@@ -147,9 +151,10 @@ export default function SignInScreen() {
               </Text>
             </TouchableOpacity>
 
+            {/* Mobile Button */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/mobile-auth")}
-              className="bg-[#F59E51] flex-row justify-center items-center rounded-[30px] py-4 mb-8 relative"
+              className="bg-[#F59E51] flex-row justify-center items-center rounded-3xl py-4 mb-8 relative"
             >
               <FontAwesome
                 name="phone"
@@ -161,21 +166,21 @@ export default function SignInScreen() {
                 Sign in with Mobile
               </Text>
             </TouchableOpacity>
+
+            {/* Footer Text */}
+            <TouchableOpacity
+              className="rounded-xl py-2"
+              onPress={() => router.push("/(auth)/signup-options")}
+            >
+              <Text className="text-white font-medium text-[16px] text-center">
+                Don't have an account?
+              </Text>
+              <Text className="text-[#F59E51] font-medium text-[16px] text-center mt-1">
+                Create One
+              </Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            className="rounded-xl pt-1 pb-3 my-5"
-            onPress={() => router.push("/(auth)/signup-options")}
-          >
-            <Text className="text-white font-medium text-[16px] text-center">
-              Don't have an account?
-            </Text>
-            <Text className="text-[#F59E51] font-medium text-[16px] text-center">
-              Create One
-            </Text>
-          </TouchableOpacity>
         </LinearGradient>
-
-
       </ScrollView>
     </LinearGradient>
   );

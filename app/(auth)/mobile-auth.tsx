@@ -13,7 +13,6 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
 import { getAuth, signInWithPhoneNumber } from "@react-native-firebase/auth";
-// import RNOtpVerify from "react-native-otp-verify";
 import { signupWithPhoneOTP } from "@/services/api.auth";
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
@@ -21,6 +20,7 @@ import { router } from "expo-router";
 import PopupModal from "@/components/Popup-modal";
 import { BackIcon, MobileLogo2, MyLogo } from "@/assets/logo";
 import VerifyPhone from "@/components/Verify-Phone";
+import Ionicons from "@expo/vector-icons/Ionicons"; // Ensure you have this or use your BackIcon
 
 // ---- Firebase config ----
 if (!getApps().length) {
@@ -44,7 +44,6 @@ const countries = [
   { code: "AU", dialCode: "+61", name: "Australia", flag: "🇦🇺" },
 ];
 
-// Simple per-country number length guidance
 const PHONE_RULES: Record<
   string,
   { exact?: number; min?: number; max?: number; example?: string }
@@ -78,6 +77,10 @@ const MobileLoginScreen = () => {
   const [successVisible, setSuccessVisible] = useState(false);
   const [successContent, setSuccessContent] = useState<string>("");
 
+  // Configuration for the glow
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
+  const GLOW_SIZE = 12;
+
   const showPopup = (opts: {
     heading?: string;
     content: string;
@@ -92,29 +95,6 @@ const MobileLoginScreen = () => {
   };
   const hidePopup = () => setPopupVisible(false);
 
-  // useEffect(() => {
-  //   RNOtpVerify.getHash().catch(() => {});
-  // }, []);
-
-  // OTP auto-retrieval (Android)
-  // useEffect(() => {
-  //   let listener: any;
-  //   if (!confirm) return;
-
-  //   RNOtpVerify.getOtp()
-  //     .then(() => {
-  //       listener = RNOtpVerify.addListener((message) => {
-  //         const otp = message.match(/\d{6}/);
-  //         if (otp) setCode(otp[0]);
-  //       });
-  //     })
-  //     .catch(() => {});
-
-  //   return () => {
-  //     if (listener) RNOtpVerify.removeListener();
-  //   };
-  // }, [confirm]);
-  // Inside your component
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
@@ -276,7 +256,7 @@ const MobileLoginScreen = () => {
         formatE164(selectedCountry.dialCode, phone)
       );
       setConfirm(confirmation);
-      setCountdown(60); // Set countdown only after successful send
+      setCountdown(60);
       showPopup({
         heading: "OTP resent successfully",
         content: "OTP resent successfully",
@@ -309,7 +289,7 @@ const MobileLoginScreen = () => {
 
   return (
     <LinearGradient
-      colors={["#FFFFFF", "#E4C7A6"]}
+      colors={["#3B0A52", "#180323"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -317,7 +297,7 @@ const MobileLoginScreen = () => {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // ✅ helps on iOS
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <ScrollView
           className="flex-1"
@@ -328,117 +308,179 @@ const MobileLoginScreen = () => {
             paddingBottom: 60,
           }}
         >
-          <View className="ml-6 mt-5">
-            <TouchableOpacity onPress={() => router.back()}>
-              <BackIcon />
+          {/* Header Section */}
+          <View className="mt-12 items-center relative z-10">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="absolute left-6"
+            >
+              <Ionicons name="chevron-back" size={24} color="white" />
+              {/* Ensure your BackIcon accepts a color prop or is white by default */}
             </TouchableOpacity>
+
+            <View className="mt-14 items-center">
+              <MyLogo />
+              <Text className="text-white text-[15px] font-medium mt-5">
+                tagline
+              </Text>
+            </View>
           </View>
 
-          <View className="px-8">
-            {!confirm ? (
-              <>
-                <View className="items-center mt-10 mb-12">
-                  <MyLogo />
-                  <Text className="text-[24px] text-black font-bold mt-6">
-                    Create Your Account
-                  </Text>
-                </View>
-                <View className="items-center">
-                  <MobileLogo2 />
-                </View>
-                <View className="px- pt-8">
-                  <View className="mb-6">
-                    <Text className="text-[20px] text-center font-semibold text-gray-700 mt-8 mb-6">
-                      Enter Mobile Number
-                    </Text>
+          <Text className="text-center text-white text-[24px] font-bold mt-8 mb-6">
+            Create Your Account
+          </Text>
 
-                    <View className="flex-row items-center mb-3">
-                      <TouchableOpacity
-                        className="flex-row items-center bg-gray-50 border border-gray-300 rounded-l-3xl px-4 py-4"
-                        onPress={() => setShowCountryPicker(true)}
-                      >
-                        <Text className="text-sm mr-2">
-                          {selectedCountry.flag}
-                        </Text>
-                        <Text className="text-gray-900 font-medium">
-                          {selectedCountry.dialCode}
-                        </Text>
-                        <Text className="ml-2 text-gray-500">▼</Text>
-                      </TouchableOpacity>
+          {/* --- GLOW CARD CONTAINER --- */}
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+          >
+            {/* Glow Borders */}
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
 
-                      <TextInput
-                        className="flex-1 bg-gray-50 border border-gray-300 border-l-0 rounded-r-3xl pl-4 py-4 text-gray-900"
-                        placeholder="Phone number"
-                        placeholderTextColor="#9CA3AF"
-                        value={phone}
-                        onChangeText={setPhone}
-                        autoComplete="tel"
-                        keyboardType="phone-pad"
-                      />
-                    </View>
+            {/* --- Card Content --- */}
+            <View className="px-8 py-12">
+              {!confirm ? (
+                <>
+                  <View className="items-center mb-8">
+                    <MobileLogo2 />
                   </View>
 
-                  <TouchableOpacity
-                    className="bg-[#F98455] py-4 rounded-3xl mb-6"
-                    onPress={sendSMS}
-                  >
-                    <Text className="text-white text-center text-base font-medium">
-                      Continue
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <VerifyPhone
-                selectedCountry={selectedCountry}
-                phone={phone}
-                code={code}
-                setCode={setCode}
-                loading={loading}
-                verifyCode={verifyCode}
-                handleResendOtp={handleResendOtp}
-                countdown={countdown}
-                updatingProfile={false}
-              />
-            )}
-            {status ? (
-              <Text className="text-[#E03636] text-center text-sm mt-2">
-                {status}
-              </Text>
-            ) : null}
-          </View>
+                  <Text className="text-[18px] text-center font-medium text-gray-300 mb-6">
+                    Enter Mobile Number
+                  </Text>
 
+                  {/* Input Row */}
+                  <View className="flex-row items-center mb-8">
+                    {/* Country Code Trigger */}
+                    <TouchableOpacity
+                      className="flex-row items-center bg-[#2A1C3E]/60 border border-gray-500/30 rounded-l-3xl px-4 py-5"
+                      onPress={() => setShowCountryPicker(true)}
+                    >
+                      <Text className="text-sm mr-2 text-white">
+                        {selectedCountry.flag}
+                      </Text>
+                      <Text className="text-white font-medium text-[16px]">
+                        {selectedCountry.dialCode}
+                      </Text>
+                      <Text className="ml-2 text-gray-400">▼</Text>
+                    </TouchableOpacity>
+
+                    {/* Phone Input */}
+                    <TextInput
+                      className="flex-1 bg-[#2A1C3E]/60 border border-gray-500/30 border-l-0 rounded-r-3xl pl-4 py-5 text-white text-[16px]"
+                      placeholder="Phone number"
+                      placeholderTextColor="#9CA3AF"
+                      value={phone}
+                      onChangeText={setPhone}
+                      autoComplete="tel"
+                      keyboardType="phone-pad"
+                    />
+                  </View>
+
+                  {/* Continue Button with Gradient */}
+                  <TouchableOpacity
+                    onPress={sendSMS}
+                    disabled={loading}
+                    className="mb-2 shadow-lg"
+                    style={{ opacity: loading ? 0.7 : 1 }}
+                  >
+                    <LinearGradient
+                      colors={["#FF8A33", "#F59E51"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      className="rounded-lg py-4"
+                      style={{ borderRadius: 24 }}
+                    >
+                      <Text className="text-white text-center text-[18px] font-bold">
+                        {loading ? "Sending..." : "Continue"}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                // Verify Phone Component
+                // Ensure VerifyPhone is wrapped properly. If it has its own styling, it might conflict.
+                // Assuming VerifyPhone takes props and renders inputs.
+                <VerifyPhone
+                  selectedCountry={selectedCountry}
+                  phone={phone}
+                  code={code}
+                  setCode={setCode}
+                  loading={loading}
+                  verifyCode={verifyCode}
+                  handleResendOtp={handleResendOtp}
+                  countdown={countdown}
+                  updatingProfile={false}
+                />
+              )}
+              {status ? (
+                <Text className="text-[#E03636] text-center text-sm mt-4">
+                  {status}
+                </Text>
+              ) : null}
+            </View>
+          </LinearGradient>
+
+          {/* Country Picker Modal */}
           <RNModal
             visible={showCountryPicker}
             animationType="slide"
             transparent
           >
-            <View className="flex-1 bg-black/50 justify-center">
-              <View className="bg-white mx-4 rounded-2xl max-h-[80vh] overflow-hidden">
-                <Text className="text-lg font-bold text-gray-800 py-5 px-6 border-b border-gray-100">
-                  Select Country
-                </Text>
+            <View className="flex-1 bg-black/60 justify-end">
+              <View className="bg-white rounded-t-[30px] max-h-[70vh] overflow-hidden pb-10">
+                <View className="flex-row justify-between items-center py-5 px-6 border-b border-gray-100">
+                  <Text className="text-lg font-bold text-gray-800">
+                    Select Country
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowCountryPicker(false)}
+                  >
+                    <Text className="text-base font-semibold text-[#F98455]">
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
                 <FlatList
                   data={countries}
                   keyExtractor={(item) => item.code}
                   renderItem={renderCountryItem}
-                  className="max-h-96"
+                  className="mb-4"
                 />
-                <TouchableOpacity
-                  className="py-5 items-center"
-                  onPress={() => setShowCountryPicker(false)}
-                >
-                  <Text className="text-base font-semibold text-brown-400">
-                    Close
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
           </RNModal>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Error/info popup */}
+      {/* Popups */}
       <PopupModal
         isVisible={popupVisible}
         onClose={hidePopup}
@@ -448,7 +490,6 @@ const MobileLoginScreen = () => {
         dismissible={popupDismissible}
       />
 
-      {/* Success popup: OTP sent */}
       <PopupModal
         isVisible={successVisible}
         onClose={() => setSuccessVisible(false)}

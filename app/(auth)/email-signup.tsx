@@ -7,9 +7,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
 } from "react-native";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
@@ -45,6 +44,10 @@ export default function EmailSignupScreen() {
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true);
 
+  // Configuration for the glow
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
+  const GLOW_SIZE = 12;
+
   const handleSignup = async () => {
     if (!email || !password || !confirmPassword) {
       setPopupHeading("Error");
@@ -74,7 +77,6 @@ export default function EmailSignupScreen() {
       setPopupContent("Please check your email for the verification code.");
       setPopupVisible(true);
     } catch (err: any) {
-      // <-- This is where you replace Alert.alert with the popup
       console.log(err);
       let message = "Something went wrong. Please try again.";
 
@@ -121,65 +123,68 @@ export default function EmailSignupScreen() {
       setLoading(false);
     }
   };
+
   if (emailSent) {
     return (
-      <>
+      <LinearGradient
+        colors={["#3B0A52", "#180323"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        className="flex-1 px-6"
+      >
+        <View className="ml-1 mt-10">
+          <TouchableOpacity onPress={() => router.back()}>
+            <BackIcon color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Email Icon */}
+        <View className="items-center mt-16">
+          <MailOpenSVG />
+        </View>
+
+        {/* Message Box */}
         <LinearGradient
-          colors={["#FFFFFF", "#E4C7A6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          className="flex-1 px-6"
+          colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
+          className="rounded-[40px] px-6 py-10 mt-10 border border-white/20"
         >
-          <View className="ml-1 mt-3">
-            <TouchableOpacity onPress={() => router.back()}>
-              <BackIcon />
-            </TouchableOpacity>
-          </View>
-
-          {/* Email Icon */}
-          <View className="items-center mt-16">
-            <MailOpenSVG />
-          </View>
-
-          {/* Message Box */}
-          <View className="bg-[#FEFCF3] rounded-3xl px-6 py-8 mt-10 shadow-md">
-            <Text className="text-center text-black font-medium leading-6 text-[20px]">
-              we have sent you a verification link on{" "}
-              <Text className="text-orange-500 font-semibold">{email}</Text>{" "}
-              <Text>please verify to continue</Text>
-            </Text>
-
-            {/* Verify Button */}
-            <TouchableOpacity
-              onPress={() => handleCheckVerification()}
-              className="bg-orange-500 rounded-full py-4 mt-8 shadow-md"
-            >
-              <Text className="text-white text-center font-semibold text-base">
-                Once verified click continue
-              </Text>
-            </TouchableOpacity>
-
-            {/* Resend Code */}
-            <TouchableOpacity
-              onPress={() => console.log("Resend Code Pressed")}
-            >
-              <Text className="text-orange-500 text-center font-medium text-[16px] mt-4">
-                Resend Code
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Footer */}
-          <Text className="text-black font-medium text-xs text-center mt-20">
-            Terms & Conditions
+          <Text className="text-center text-white font-medium leading-7 text-[20px]">
+            We have sent you a verification link on{"\n"}
+            <Text className="text-[#F59E51] font-bold">{email}</Text>
+            {"\n"}please verify to continue
           </Text>
+
+          {/* Verify Button */}
+          <TouchableOpacity
+            onPress={() => handleCheckVerification()}
+            className="bg-[#F59E51] rounded-full py-4 mt-8 shadow-md"
+          >
+            <Text className="text-white text-center font-semibold text-base">
+              Once verified click continue
+            </Text>
+          </TouchableOpacity>
+
+          {/* Resend Code */}
+          <TouchableOpacity
+            onPress={() => console.log("Resend Code Pressed")}
+          >
+            <Text className="text-[#F59E51] text-center font-medium text-[16px] mt-6">
+              Resend Code
+            </Text>
+          </TouchableOpacity>
         </LinearGradient>
-      </>
+
+        {/* Footer */}
+        <Text className="text-gray-400 font-medium text-xs text-center mt-auto mb-10">
+          Terms & Conditions
+        </Text>
+      </LinearGradient>
     );
   }
+
   return (
     <LinearGradient
-      colors={["#FFFFFF", "#E4C7A6"]}
+      colors={["#3B0A52", "#180323"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -187,7 +192,7 @@ export default function EmailSignupScreen() {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // ✅ helps on iOS
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <ScrollView
           className="flex-1"
@@ -195,106 +200,148 @@ export default function EmailSignupScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "center",
           }}
         >
-          <View className="ml-6 mt-6">
-            <TouchableOpacity onPress={() => router.back()}>
-              <BackIcon />
+          {/* Header Section */}
+          <View className="mt-12 items-center relative z-10">
+            {/* Back Button positioned absolutely within header area */}
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="absolute left-6"
+            >
+              <Ionicons name="chevron-back" size={24} color="white" />
+              {/* Ensure your BackIcon accepts a color prop or is white by default */}
             </TouchableOpacity>
+
+            <View className="mt-14">
+              <MyLogo />
+              <Text className="text-white text-center text-[15px] font-medium mt-5">
+                tagline
+              </Text></View>
           </View>
 
-          {/* Header */}
-          <View className="items-center mt-10 mb-12">
-            <MyLogo />
-          </View>
+          <Text className="text-center text-white text-[24px] font-bold mt-8 mb-6">
+            Sign Up with Email
+          </Text>
 
-          {/* Form */}
-          <View className="px-8 mt-8">
-            <Text className="text-center text-black text-[24px] mb-8 font-bold">
-              Sign Up with Email
-            </Text>
-            <Text className="text-center text-black text-[20px] mb-2 mt-4">
-              Email Address
-            </Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              className="border border-gray-300 rounded-3xl px-4 py-3 mb-4 bg-white text-gray-700"
+          {/* --- GLOW CARD CONTAINER --- */}
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+          >
+            {/* Glow Borders */}
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
             />
-            <Text className="text-center text-black text-[20px] mb-2 mt-4">
-              Password
-            </Text>
-            <View className="relative">
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+
+            {/* --- Form Content --- */}
+            <View className="px-8 py-12">
               <TextInput
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={isPasswordHidden}
-                className="border border-gray-300 rounded-3xl px-4 py-3 mb-6 bg-white text-gray-700 pr-16" // right padding for toggle
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="Enter Your Email"
+                className="border border-gray-500 rounded-3xl px-5 py-5 mb-8 text-white text-[14px]"
               />
-              <TouchableOpacity
-                onPress={() => setIsPasswordHidden((prev) => !prev)}
-                className="absolute right-4 top-1/2 -translate-y-6"
-              >
-                <Text className="text-[#F98455] font-semibold">
+
+              <View className="relative mb-8">
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={isPasswordHidden}
+                  placeholder="Create Password"
+                  className="border border-gray-500 rounded-3xl px-5 py-5 text-white text-[14px] pr-14"
+                />
+                <TouchableOpacity
+                  onPress={() => setIsPasswordHidden((prev) => !prev)}
+                  className="absolute right-4 top-[30px] -translate-y-[12px]" // Adjusted centering
+                >
                   {isPasswordHidden ? (
                     <AntDesign name="eye" size={24} color="#F98455" />
                   ) : (
                     <Entypo name="eye-with-line" size={24} color="#F98455" />
                   )}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <Text className="text-center text-black text-[20px] mb-2 mt-4">
-              Confirm Password
-            </Text>
-            <View className="relative">
-              <TextInput
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                secureTextEntry={isConfirmPasswordHidden}
-                className="border border-gray-300 rounded-3xl px-4 py-3 mb-6 bg-white text-gray-700 pr-16"
-              />
-              <TouchableOpacity
-                onPress={() => setIsConfirmPasswordHidden((prev) => !prev)}
-                className="absolute right-4 top-1/2 -translate-y-6"
-              >
-                <Text className="text-[#F98455] font-semibold">
+                </TouchableOpacity>
+              </View>
+
+
+              <View className="relative mb-8">
+                <TextInput
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={isConfirmPasswordHidden}
+                  placeholder="Confirm Password"
+                  className="border border-gray-500 rounded-3xl px-5 py-5 text-white text-[14px] pr-14"
+                />
+                <TouchableOpacity
+                  onPress={() => setIsConfirmPasswordHidden((prev) => !prev)}
+                  className="absolute right-4 top-[30px] -translate-y-[12px]"
+                >
                   {isConfirmPasswordHidden ? (
                     <AntDesign name="eye" size={24} color="#F98455" />
                   ) : (
                     <Entypo name="eye-with-line" size={24} color="#F98455" />
                   )}
-                </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Sign Up Button */}
+              <TouchableOpacity
+                onPress={handleSignup}
+                disabled={loading}
+                className="mb-2 shadow-lg"
+                style={{ opacity: loading ? 0.7 : 1 }}
+              >
+                <LinearGradient
+                  colors={['#FF8A33', '#F59E51']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  className="rounded-lg py-4" // Changed from rounded-full to rounded-lg
+                  style={{ borderRadius: 24 }}
+                >
+                  <Text className="font-bold text-white text-[18px] text-center">
+                    {loading ? "Signing Up..." : "Sign Up"}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleSignup}
-              disabled={loading}
-              className="bg-[#F98455] border border-gray-300 rounded-3xl py-4 my-4"
-              style={{ opacity: loading ? 0.6 : 1 }}
-            >
-              <Text className="font-medium text-white text-base text-center">
-                {loading ? "Signing Up..." : "Sign Up"}
-              </Text>
-            </TouchableOpacity>
-            {/* Footer */}
-            <Text className="text-black font-medium text-base text-center mt-20">
-              Terms & Conditions
-            </Text>
-            <PopupModal
-              isVisible={popupVisible}
-              onClose={() => {
-                setPopupVisible(false);
-                if (popupHeading === "Email Sent!") setEmailSent(true);
-              }}
-              heading={popupHeading}
-              content={popupContent}
-              cancelShow={false}
-            />
-          </View>
+          </LinearGradient>
+
+          {/* Popup Modal */}
+          <PopupModal
+            isVisible={popupVisible}
+            onClose={() => {
+              setPopupVisible(false);
+              if (popupHeading === "Email Sent!") setEmailSent(true);
+            }}
+            heading={popupHeading}
+            content={popupContent}
+            cancelShow={false}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>

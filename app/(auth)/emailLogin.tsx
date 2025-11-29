@@ -12,11 +12,12 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { BackIcon, MailSVG } from "@/assets/logo";
+import { BackIcon, MailSVG, MyLogo } from "@/assets/logo";
 import { loginWithEmailPassword, getme } from "@/services/api.auth";
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
-import PopupModal from "@/components/Popup-modal"; // ✅ Import the modal
+import PopupModal from "@/components/Popup-modal";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function EmailLoginScreen() {
   const [email, setEmail] = useState("");
@@ -24,12 +25,16 @@ export default function EmailLoginScreen() {
   const [loading, setLoading] = useState(false);
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
 
-  // ✅ Modal state
+  // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [modalHeading, setModalHeading] = useState("Alert");
   const [modalContent, setModalContent] = useState("");
 
   const dispatch = useDispatch();
+
+  // Configuration for the glow
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
+  const GLOW_SIZE = 12;
 
   const showModal = (heading: string, content: string) => {
     setModalHeading(heading);
@@ -105,15 +110,15 @@ export default function EmailLoginScreen() {
 
   return (
     <LinearGradient
-      colors={["#FFFFFF", "#E4C7A6"]}
+      colors={["#3B0A52", "#180323"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      className="flex-1 px-6"
+      className="flex-1"
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // ✅ helps on iOS
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <ScrollView
           className="flex-1"
@@ -121,89 +126,130 @@ export default function EmailLoginScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             flexGrow: 1,
-            paddingBottom: 0,
+            paddingBottom: 40,
           }}
         >
-          <View className="ml-1 mt-4">
-            <TouchableOpacity onPress={() => router.back()}>
-              <BackIcon />
+          {/* Header Section */}
+          <View className="my-12 items-center relative z-10">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="absolute left-6"
+            >
+              <Ionicons name="chevron-back" size={24} color="white" />
             </TouchableOpacity>
-          </View>
 
-          {/* Header */}
-          <View className="flex-row justify-between items-center mt-32 mb-12 mx-3">
-            <View>
-              <Text className="text-black text-[24px] font-bold">
-                Login With{" "}
+            <View className="mt-14 items-center">
+              <MyLogo />
+              <Text className="text-white text-[15px] font-medium mt-5">
+                tagline
               </Text>
-              <Text className="text-black text-[24px] font-bold">Email</Text>
-            </View>
-            <View>
-              <MailSVG />
             </View>
           </View>
 
-          {/* Form */}
-          <View className="bg-[#FEFCF34D] rounded-2xl px-6 py-8 mt-10">
-            <Text className="text-black text-[20px] font-semibold mb-2 text-center">
-              Enter Your Email Address
-            </Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="border border-gray-300 rounded-full px-4 py-3 mb-6 bg-white text-gray-700"
+
+
+          {/* --- GLOW CARD CONTAINER --- */}
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="mx-6 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+          >
+            {/* Glow Borders */}
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: GLOW_SIZE, zIndex: 1 }}
+              pointerEvents="none"
             />
 
-            <Text className="text-black text-[20px] font-semibold mb-2 text-center">
-              Enter Your Password
-            </Text>
-            <View className="relative">
+            {/* --- Form Content --- */}
+            <View className="px-8 py-12">
+              <View className="items-start mb-4 ml-3">
+                <Text className="text-center text-white text-[24px] font-bold mt-8 mb-6">
+                  Login with Email
+                </Text>
+              </View>
+
+
               <TextInput
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={isPasswordHidden}
-                className="border border-gray-300 rounded-full px-4 py-3 mb-6 bg-white text-gray-700 pr-16" // Add right padding to avoid overlap
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="Enter Your Email"
+                className="border border-gray-500 rounded-3xl px-5 py-5 mb-6 text-white text-[16px]"
               />
-              <TouchableOpacity
-                onPress={() => setIsPasswordHidden((prev) => !prev)}
-                className="absolute right-4 top-9 -translate-y-6"
-              >
-                <Text className="text-[#F98455] font-semibold">
+
+
+              <View className="relative mb-8">
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={isPasswordHidden}
+                  placeholder="Enter Your Password"
+                  className="border border-gray-500 rounded-3xl px-5 py-5 text-white text-[16px] pr-14"
+                />
+                <TouchableOpacity
+                  onPress={() => setIsPasswordHidden((prev) => !prev)}
+                  className="absolute right-4 top-1/2 -translate-y-[12px]"
+                >
                   {isPasswordHidden ? (
                     <AntDesign name="eye" size={24} color="#F98455" />
                   ) : (
                     <Entypo name="eye-with-line" size={24} color="#F98455" />
                   )}
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleLogin}
+                disabled={loading}
+                className="mb-2 shadow-lg"
+                style={{ opacity: loading ? 0.7 : 1 }}
+              >
+                <LinearGradient
+                  colors={["#FF8A33", "#F59E51"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  className="rounded-lg py-4"
+                  style={{ borderRadius: 24 }}
+                >
+                  <Text className="text-white text-center font-bold text-[18px]">
+                    {loading ? "Logging in..." : "Login"}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => router.push("/(auth)/forgot-password")}
+              >
+                <Text className="text-white font-semibold text-[16px] mt-6 ml-3">
+                  Forgot Password?
                 </Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleLogin}
-              disabled={loading}
-              className={`rounded-full py-4 mt-2 shadow-md ${
-                loading ? "bg-[#f66830]" : "bg-[#F98455]"
-              }`}
-            >
-              <Text className="text-white text-center font-semibold text-lg">
-                {loading ? "Logging in..." : "Login"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </LinearGradient>
 
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/forgot-password")}
-          >
-            <Text className="text-[#F15D22] text-center font-semibold text-[16px] mt-8">
-              Forgot Password?
-            </Text>
-          </TouchableOpacity>
-          <View className="items-center">
-            <Text className="text-black mt-32">Terms & Conditions</Text>
-          </View>
-
-          {/* ✅ Modal */}
+          {/* Modal */}
           <PopupModal
             isVisible={modalVisible}
             onClose={() => setModalVisible(false)}
