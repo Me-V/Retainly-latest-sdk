@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   InteractionManager,
+  Keyboard,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -16,7 +17,7 @@ import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
 import { getAuth, signInWithPhoneNumber } from "@react-native-firebase/auth";
 import { patchMe, patchPhone } from "@/services/api.auth";
 import { useSelector } from "react-redux";
-import { BotIcon, SendIcon, UserIcon } from "@/assets/logo2";
+import { BotIcon, UserIcon } from "@/assets/logo2";
 import PopupModal from "@/components/Popup-modal";
 import type { RootState, store } from "@/store";
 import { getClasses, getBoards, getStreams } from "@/services/api.edu";
@@ -24,6 +25,7 @@ import { useDispatch } from "react-redux";
 import { setSelectedClass as setSelectedClassAction } from "@/store/slices/academicsSlice";
 import { setSelectedBoard as setSelectedBoardAction } from "@/store/slices/academicsSlice";
 import { setSelectedStream as setSelectedStreamAction } from "@/store/slices/academicsSlice";
+import Feather from "@expo/vector-icons/Feather";
 
 // ---- Firebase config ----
 if (!getApps().length) {
@@ -80,6 +82,7 @@ export default function ChatOnboardingProfile() {
   const [countdown, setCountdown] = useState(0);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [confirm, setConfirm] = useState<any>(null);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupHeading, setPopupHeading] = useState("Alert");
@@ -115,7 +118,6 @@ export default function ChatOnboardingProfile() {
   ) => {
     setMessages((prev) => {
       if (type === "otp") {
-        // Remove older OTP messages to ensure only one OTP bubble
         const filtered = prev.filter((m) => m.type !== "otp");
         return [...filtered, { id: uid(), text, isUser, type }];
       }
@@ -123,21 +125,38 @@ export default function ChatOnboardingProfile() {
     });
   };
 
-  // Scroll to bottom when a new message appears
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+      keyboardDidShowListener.remove();
+    };
+  }, []);
+
   useEffect(() => {
     InteractionManager.runAfterInteractions(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     });
   }, [messages]);
 
-  // Cleanup navigation timer
   useEffect(() => {
     return () => {
       if (autoNavTimer.current) clearTimeout(autoNavTimer.current);
     };
   }, []);
 
-  // Countdown timer
   useEffect(() => {
     if (countdown > 0 && step === "otp") {
       const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
@@ -145,7 +164,6 @@ export default function ChatOnboardingProfile() {
     }
   }, [countdown, step]);
 
-  // Load class options
   useEffect(() => {
     (async () => {
       try {
@@ -173,13 +191,9 @@ export default function ChatOnboardingProfile() {
     setCountdown(0);
     setPhoneNumber("");
     setCurrentInput("");
-
-    // Remove existing OTP messages too (clean chat)
     setMessages((prev) => prev.filter((m) => m.type !== "otp"));
-
     setStep("phone");
     addMessage("Please enter your new mobile number.", false, "input");
-
     InteractionManager.runAfterInteractions(() => {
       requestAnimationFrame(() => phoneInputRef.current?.focus());
     });
@@ -218,7 +232,6 @@ export default function ChatOnboardingProfile() {
       setCountdown(60);
       setStep("otp");
       setTimeout(() => {
-        // Old OTP messages will be replaced automatically here
         addMessage(
           `OTP sent to +91 ${raw}. \nPlease enter it below.`,
           false,
@@ -233,9 +246,7 @@ export default function ChatOnboardingProfile() {
   const verifyOtp = async (code: string) => {
     try {
       if (!confirm) return;
-
       await confirm.confirm(code);
-
       const user = auth.currentUser;
       const idToken = await user?.getIdToken(true);
       if (!idToken) throw new Error("Failed to get ID token from Firebase.");
@@ -276,7 +287,6 @@ export default function ChatOnboardingProfile() {
       setCountdown(60);
       setStep("otp");
       setTimeout(() => {
-        // Old OTP messages will be replaced automatically here
         addMessage(
           `OTP sent to +91 ${phoneNumber}. \nPlease enter it below.`,
           false,
@@ -367,7 +377,7 @@ export default function ChatOnboardingProfile() {
     if (!name) return showPopup("Please enter school name");
     setSchoolName(name);
     addMessage(name, true);
-    setCurrentInput(""); // clear after sending
+    setCurrentInput("");
     try {
       await patchMe(token!, {
         student_class: selectedClass?.id,
@@ -380,18 +390,6 @@ export default function ChatOnboardingProfile() {
     setStep("done");
 
     autoNavTimer.current = setTimeout(() => {
-      //   dispatch(
-      //     setUser({
-      //       token: token!,
-      //       userInfo: {
-      //         alias: userName,
-      //         class: selectedClass?.id,
-      //         board: selectedBoard?.id,
-      //         stream: selectedStream?.id,
-      //         school: name,
-      //       } as any,
-      //     })
-      //   );
       router.replace("/(main)/animation");
     }, 3000);
   };
@@ -400,19 +398,20 @@ export default function ChatOnboardingProfile() {
     messages.map((m) => {
       if (m.type === "otp" && step === "otp") {
         return (
-          // Replace ONLY the OTP bubble inside renderMessages() where m.type === "otp"
           <View key={m.id}>
             <View className="flex-row mb-2">
               <BotIcon />
-              <View className="ml-2 bg-[#FFF8D9] p-3 rounded-2xl">
-                <Text className="text-zinc-800">{m.text}</Text>
+              {/* Bot Bubble: Dark Glass */}
+              <View className="ml-2 bg-[#2A1C3E]/80 border border-gray-500/30 p-3 rounded-2xl rounded-bl-none">
+                <Text className="text-white/90">{m.text}</Text>
               </View>
             </View>
 
+            {/* OTP User Input Bubble - Right Aligned */}
             <View className="flex-row justify-end mb-4 items-end">
-              <View className="bg-[#F47E54] px-3 pt-3 pb-4 rounded-2xl mr-2">
-                {/* OTP six-box field */}
-                <View className="flex-row justify-between mb-3">
+              {/* Note: OTP container background is transparent in layout, but inputs are styled */}
+              <View className="mr-2 items-end">
+                <View className="flex-row justify-between my-3.5 w-[260px]">
                   {otp.map((d, i) => {
                     const isFilled = Boolean(d);
                     return (
@@ -421,12 +420,11 @@ export default function ChatOnboardingProfile() {
                         ref={(r) => {
                           otpInputRefs.current[i] = r;
                         }}
-                        className={`mx-1 w-10 h-12 rounded-lg text-center text-[16px] font-semibold
-          ${
-            isFilled
-              ? "bg-white border border-[#E5B59D] text-[#6A4D3B]"
-              : "bg-[#FFEDE2] border border-[#F8CBB4] text-[#6A4D3B]"
-          }`}
+                        className={`w-10 h-12 rounded-lg text-center text-[18px] font-bold border ${
+                          isFilled
+                            ? "bg-transparent border-[#F59E51] text-[#F59E51]"
+                            : "bg-[#2A1C3E]/60 border-gray-600 text-white"
+                        }`}
                         value={d}
                         onChangeText={(v) => {
                           const val = v.replace(/[^0-9]/g, "").slice(0, 1);
@@ -449,24 +447,25 @@ export default function ChatOnboardingProfile() {
                         }}
                         keyboardType="number-pad"
                         maxLength={1}
-                        selectionColor="#F47E54"
-                        cursorColor="#F47E54"
+                        selectionColor="#F59E51"
                       />
                     );
                   })}
                 </View>
 
                 {/* Timer + Resend */}
-                <View className="flex-row justify-between items-center px-1">
-                  <Text className="text-white font-medium">
+                <View className="flex-row justify-end items-center px-1 w-full">
+                  <Text className="text-white font-medium mr-4">
                     00:{countdown.toString().padStart(2, "0")}
                   </Text>
                   <TouchableOpacity
                     disabled={countdown > 0}
                     onPress={handleResendOtp}
-                    className={countdown > 0 ? "opacity-50" : ""}
+                    className={`bg-[#F59E51] px-4 py-2 rounded-xl ${
+                      countdown > 0 ? "opacity-50" : ""
+                    }`}
                   >
-                    <Text className="text-white font-semibold underline">
+                    <Text className="text-white font-semibold text-[12px]">
                       Resend
                     </Text>
                   </TouchableOpacity>
@@ -480,22 +479,22 @@ export default function ChatOnboardingProfile() {
       return (
         <View
           key={m.id}
-          className={`flex-row mb-3 ${
+          className={`flex-row mb-4 ${
             m.isUser ? "justify-end" : "justify-start"
           }`}
         >
           {!m.isUser && <BotIcon />}
           <View
-            className={`${
-              m.isUser ? "bg-[#F47E54]" : "bg-[#FFF8D9]"
-            } px-4 py-3 rounded-2xl mx-2 max-w-[85%]`}
+            className={`max-w-[85%] px-4 py-3 rounded-2xl mx-2 ${
+              m.isUser
+                ? "bg-transparent border border-[#F59E51] rounded-br-none" // User: Transparent + Orange Border
+                : "bg-[#2A1C3E]/80 border border-gray-500/30 rounded-bl-none" // Bot: Dark Glass + Gray Border
+            }`}
           >
             <Text
-              className={
-                m.isUser
-                  ? "text-white text-[14px]"
-                  : "text-zinc-800 text-[14px]"
-              }
+              className={`text-[15px] leading-6 font-medium ${
+                m.isUser ? "text-[#F59E51]" : "text-white/90"
+              }`}
             >
               {m.text}
             </Text>
@@ -507,13 +506,15 @@ export default function ChatOnboardingProfile() {
 
   return (
     <LinearGradient
-      colors={["#FFFFFF", "#FFEFE1", "#D9BEA4"]}
+      colors={["#3B0A52", "#180323"]} // Golden Layout Background
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
       className="flex-1"
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0} // helps on iPhones
+        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -521,23 +522,27 @@ export default function ChatOnboardingProfile() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            paddingBottom: 80, // extra space for bottom input
+            paddingBottom: 100, // Space for bottom input
           }}
         >
-          <View className="flex-1 items-end my-4">
-            <Text>App Name/Logo</Text>
-          </View>
+          {/* Header Spacer */}
+          <View className="h-16" />
 
           {renderMessages()}
 
-          {step === "class" && !!classOptions.length && (
+          {/* Options Grid (Class/Board/Stream) */}
+          {(step === "class" || step === "board" || step === "stream") && (
             <View className="flex-row mt-2">
               <BotIcon />
-              <View className="ml-2 bg-transparent rounded-2xl py-3 flex-1">
-                {/* Wrap all buttons in a container */}
+              <View className="ml-2 flex-1">
+                {/* Wrap options in a transparent container */}
                 <View>
-                  {/* Render in pairs - 2 per row */}
-                  {classOptions
+                  {(step === "class"
+                    ? classOptions
+                    : step === "board"
+                    ? boardOptions
+                    : streamOptions
+                  )
                     .reduce((rows, option, idx) => {
                       if (idx % 2 === 0) rows.push([option]);
                       else rows[rows.length - 1].push(option);
@@ -546,90 +551,36 @@ export default function ChatOnboardingProfile() {
                     .map((row, rowIndex) => (
                       <View
                         key={rowIndex}
-                        className="flex-row justify-between mb-5"
+                        className="flex-row justify-between mb-3"
                       >
-                        {row.map((c) => (
+                        {row.map((opt) => (
                           <TouchableOpacity
-                            key={c.id}
-                            onPress={() => pickClass(c)}
-                            className="bg-[#F98455] rounded-3xl py-4 shadow-lg mx-2 flex-1"
+                            key={opt.id}
+                            onPress={() => {
+                              if (step === "class") pickClass(opt);
+                              else if (step === "board") pickBoard(opt);
+                              else pickStream(opt);
+                            }}
+                            className="flex-1 mx-2 shadow-lg"
                           >
-                            <Text className="text-white text-[15px] font-semibold text-center">
-                              {`Class ${c.name}`}
-                            </Text>
+                            <LinearGradient
+                              colors={["#FF8A33", "#F59E51"]}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 0, y: 1 }}
+                              className="rounded-2xl py-4"
+                              style={{
+                                borderRadius: 24,
+                              }}
+                            >
+                              <Text className="text-white text-[14px] font-semibold text-center">
+                                {step === "class"
+                                  ? `Class ${opt.name}`
+                                  : opt.name}
+                              </Text>
+                            </LinearGradient>
                           </TouchableOpacity>
                         ))}
-                        {row.length === 1 && <View className="flex-1" />}
-                      </View>
-                    ))}
-                </View>
-              </View>
-            </View>
-          )}
-
-          {step === "board" && !!boardOptions.length && (
-            <View className="flex-row mt-2">
-              <BotIcon />
-              <View className="ml-2 bg-transparent rounded-2xl py-3 flex-1">
-                <View>
-                  {boardOptions
-                    .reduce((rows, option, idx) => {
-                      if (idx % 2 === 0) rows.push([option]);
-                      else rows[rows.length - 1].push(option);
-                      return rows;
-                    }, [] as OptionItem[][])
-                    .map((row, rowIndex) => (
-                      <View
-                        key={rowIndex}
-                        className="flex-row justify-between mb-5"
-                      >
-                        {row.map((b) => (
-                          <TouchableOpacity
-                            key={b.id}
-                            onPress={() => pickBoard(b)}
-                            disabled={loadingBoards}
-                            className="bg-[#F98455] rounded-3xl py-4 shadow-lg mx-2 flex-1"
-                          >
-                            <Text className="text-white text-[15px] font-semibold text-center">
-                              {b.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                        {row.length === 1 && <View className="flex-1" />}
-                      </View>
-                    ))}
-                </View>
-              </View>
-            </View>
-          )}
-          {step === "stream" && !!streamOptions.length && (
-            <View className="flex-row mt-2">
-              <BotIcon />
-              <View className="ml-2 bg-transparent rounded-2xl py-3 flex-1">
-                <View>
-                  {streamOptions
-                    .reduce((rows, option, idx) => {
-                      if (idx % 2 === 0) rows.push([option]);
-                      else rows[rows.length - 1].push(option);
-                      return rows;
-                    }, [] as OptionItem[][])
-                    .map((row, rowIndex) => (
-                      <View
-                        key={rowIndex}
-                        className="flex-row justify-between mb-5"
-                      >
-                        {row.map((s) => (
-                          <TouchableOpacity
-                            key={s.id}
-                            onPress={() => pickStream(s)}
-                            className="bg-[#F98455] rounded-3xl py-4 shadow-lg mx-2 flex-1"
-                          >
-                            <Text className="text-white text-[15px] font-semibold text-center">
-                              {s.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                        {row.length === 1 && <View className="flex-1" />}
+                        {row.length === 1 && <View className="flex-1 mx-2" />}
                       </View>
                     ))}
                 </View>
@@ -638,14 +589,19 @@ export default function ChatOnboardingProfile() {
           )}
         </ScrollView>
 
+        {/* Input Area (Name/Phone/School) */}
         {(step === "name" || step === "phone" || step === "school") && (
           <View
-            className="px-4 pt-2"
-            style={{ paddingBottom: Platform.OS === "ios" ? 20 : 10 }}
+            className="px-4 pt-4 bg-transparent" // transparent so gradient shows through
+            style={{ paddingBottom: Platform.OS === "ios" ? 40 : 20 }}
           >
-            <View className="flex-row bg-white border border-gray-300 rounded-xl px-3 py-2 mb-10">
+            <View
+              className={`flex-row items-center bg-white border border-gray-500/50 rounded-3xl mx-3 px-4 py-2 ${
+                isKeyboardVisible ? "mb-10" : "mb-2"
+              }`}
+            >
               <TextInput
-                className="flex-1 text-[14px] h-[45px] pl-3 text-gray-800 bg-white"
+                className="flex-1 text-[16px] h-[45px] text-black"
                 placeholderTextColor="#9CA3AF"
                 placeholder={
                   step === "name"
@@ -665,6 +621,7 @@ export default function ChatOnboardingProfile() {
                     : saveSchoolAndFinish
                 }
                 returnKeyType="done"
+                ref={step === "phone" ? phoneInputRef : undefined}
               />
               <TouchableOpacity
                 onPress={
@@ -674,20 +631,14 @@ export default function ChatOnboardingProfile() {
                     ? handlePhoneSubmit
                     : saveSchoolAndFinish
                 }
-                className="mt-4 mr-2"
+                className="ml-2 w-10 h-10  items-center justify-center"
               >
-                <SendIcon />
+                <Feather name="send" size={26} color="#FF9B42" />
+                {/* Note: Ensure SendIcon color is handled or wrap in Text if needed */}
               </TouchableOpacity>
             </View>
           </View>
         )}
-
-        {/* {Platform.OS !== "web" && (
-          <FirebaseRecaptchaVerifierModal
-            ref={recaptchaVerifier}
-            firebaseConfig={firebaseConfig}
-          />
-        )} */}
 
         <PopupModal
           isVisible={popupVisible}
