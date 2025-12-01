@@ -130,52 +130,89 @@ export default function EmailSignupScreen() {
         colors={["#3B0A52", "#180323"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        className="flex-1 px-6"
+        className="flex-1"
       >
-        <View className="ml-1 mt-10">
-          <TouchableOpacity onPress={() => router.back()}>
-            <BackIcon color="white" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Email Icon */}
-        <View className="items-center mt-16">
-          <MailOpenSVG />
-        </View>
-
-        {/* Message Box */}
-        <LinearGradient
-          colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
-          className="rounded-[40px] px-6 py-10 mt-10 border border-white/20"
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
         >
-          <Text className="text-center text-white font-medium leading-7 text-[20px]">
-            We have sent you a verification link on{"\n"}
-            <Text className="text-[#F59E51] font-bold">{email}</Text>
-            {"\n"}please verify to continue
-          </Text>
+          {/* Header - Uniform mt-12 */}
+          <View className="mt-12 items-center relative z-10">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="absolute left-6"
+            >
+              <BackIcon color="white" />
+            </TouchableOpacity>
 
-          {/* Verify Button */}
-          <TouchableOpacity
-            onPress={() => handleCheckVerification()}
-            className="bg-[#F59E51] rounded-full py-4 mt-8 shadow-md"
+            <View className="mt-14 items-center">
+              <MyLogo />
+              <Text className="text-white text-[15px] font-medium mt-5">
+                tagline
+              </Text>
+            </View>
+          </View>
+
+          {/* --- GLOW CARD CONTAINER --- */}
+          {/* Using the "Edge Glow" settings: brighter start, sharper fade, stronger border */}
+          <LinearGradient
+            colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 0.8 }}
+            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
           >
-            <Text className="text-white text-center font-semibold text-base">
-              Once verified click continue
-            </Text>
-          </TouchableOpacity>
+            <View className="px-8 py-14 items-center">
+              {/* Email Icon */}
+              <View className="mb-8">
+                <MailOpenSVG />
+              </View>
 
-          {/* Resend Code */}
-          <TouchableOpacity onPress={() => console.log("Resend Code Pressed")}>
-            <Text className="text-[#F59E51] text-center font-medium text-[16px] mt-6">
-              Resend Code
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
+              {/* Message Text */}
+              <Text className="text-center text-white font-bold leading-8 text-[21px] mb-4">
+                A verification link was sent to {"\n"}
+                <Text className="text-[#F59E51] font-bold">{email}</Text>
+                {"\n"}
+                <Text className="font-normal text-[16px] text-[#FFFFFFB2]">
+                  Check your inbox and verify your email, then tap "Continue".
+                </Text>
+              </Text>
 
-        {/* Footer */}
-        <Text className="text-gray-400 font-medium text-xs text-center mt-auto mb-10">
-          Terms & Conditions
-        </Text>
+              {/* Verify Button - Orange Gradient */}
+              <TouchableOpacity
+                onPress={() => handleCheckVerification()}
+                className="w-full mb-6 shadow-lg"
+              >
+                <LinearGradient
+                  colors={["#FF8A33", "#F59E51"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  className="rounded-3xl py-4"
+                  style={{borderRadius: 24}}
+                >
+                  <Text className="text-white text-center font-bold text-[16px] py-0.5">
+                    Once verified click continue
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Resend Code Link */}
+              <TouchableOpacity
+                onPress={() => console.log("Resend Code Pressed")}
+              >
+                <Text className="text-[#F59E51] text-center font-medium text-[16px]">
+                  Resend Code
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+
+          {/* Footer */}
+          <View className="mb-10 mt-auto">
+            <Text className="text-gray-400 font-medium text-xs text-center">
+              Terms & Conditions
+            </Text>
+          </View>
+        </ScrollView>
       </LinearGradient>
     );
   }
