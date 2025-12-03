@@ -4,34 +4,31 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
+  LayoutChangeEvent,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { MyLogo2 } from "@/assets/logo2";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getSubjects } from "@/services/api.edu";
-import { LevelCard } from "@/components/dashboard/LevelCard";
-import { QuickActions } from "@/components/dashboard/QuickActions";
-import { LayoutChangeEvent } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 // Utility progress bar
 const ProgressBar = ({
   value,
-  track = "#BFB6B0",
-  fill = "#EA6A35",
+  track = "rgba(255,255,255,0.2)",
+  fill = "#F59E51",
 }: {
   value: number;
   track?: string;
   fill?: string;
 }) => (
   <View
-    className="w-full h-[5px] rounded-full overflow-hidden"
+    className="w-full h-[6px] rounded-full overflow-hidden"
     style={{ backgroundColor: track }}
   >
     <View
-      className="h-[10px]"
+      className="h-full rounded-full"
       style={{
         width: `${Math.max(0, Math.min(100, value ?? 0))}%`,
         backgroundColor: fill,
@@ -40,27 +37,27 @@ const ProgressBar = ({
   </View>
 );
 
-const SubjectRow = ({
-  name,
-  value,
-  fill,
-  onLayout,
-}: {
-  name: string;
-  value: number;
-  fill: string;
-  onLayout?: (e: LayoutChangeEvent) => void;
-}) => (
-  <View onLayout={onLayout} className="w-full flex-row items-center mb-3">
-    <Text className="text-[16px] text-neutral-800 w-[96px]">{name}</Text>
-    <View className="flex-1 mx-3">
-      <ProgressBar value={value} fill={fill} />
-    </View>
-    <Text className="text-[14px] text-neutral-700 w-[36px] text-right">
-      {value}%
-    </Text>
-  </View>
-);
+// const SubjectRow = ({
+//   name,
+//   value,
+//   fill,
+//   onLayout,
+// }: {
+//   name: string;
+//   value: number;
+//   fill: string;
+//   onLayout?: (e: LayoutChangeEvent) => void;
+// }) => (
+//   <View onLayout={onLayout} className="w-full flex-row items-center mb-4">
+//     <View className="flex-1">
+//       <View className="flex-row justify-between mb-1">
+//         <Text className="text-[14px] text-white/90 font-medium">{name}</Text>
+//         <Text className="text-[12px] text-white/70">{value}%</Text>
+//       </View>
+//       <ProgressBar value={value} fill={fill} />
+//     </View>
+//   </View>
+// );
 
 type Subject = {
   id?: string;
@@ -72,9 +69,8 @@ type Subject = {
   completion?: number;
 };
 
-const palette = ["#E96A34", "#FFA144", "#F2C335", "#F2C335"];
-
-// Mock subjects to force scrolling during testing
+// Mock subjects
+const palette = ["#FF8A33", "#F59E51", "#FFB74D", "#FFA726"];
 const mockSubjects = Array.from({ length: 10 }, (_, i) => ({
   name: `Subject ${i + 1}`,
   value: Math.floor(Math.random() * 100),
@@ -82,17 +78,12 @@ const mockSubjects = Array.from({ length: 10 }, (_, i) => ({
 }));
 
 const HomeDashboard: React.FC = () => {
-  // Read from Redux persistent store
   const token = useSelector((s: RootState) => s.auth.token);
   const userInfo = useSelector((s: RootState) => s.auth.userInfo as any);
   const [rowH, setRowH] = useState<number | null>(null);
-  const rowGap = 12; // matches mb-3 on each row (≈12px)
-  const capHeight = useMemo(
-    () => (rowH ? rowH * 4 + rowGap * 3 : 240), // fallback 240 until measured
-    [rowH]
-  );
+  const rowGap = 12;
+  const capHeight = useMemo(() => (rowH ? rowH * 4 + rowGap * 3 : 240), [rowH]);
 
-  // Greeting name -> first word only
   const getFirstWord = (s?: string) => {
     if (!s) return "";
     const clean = s.trim().replace(/\s+/g, " ");
@@ -100,15 +91,27 @@ const HomeDashboard: React.FC = () => {
   };
   const displayName = getFirstWord(userInfo?.alias || userInfo?.name);
 
-  // IDs normalized from persisted userInfo
   const boardId: string | undefined = userInfo?.board;
   const classId: string | undefined = userInfo?.class;
   const streamId: string | undefined = userInfo?.stream;
   const includeStream = Boolean(streamId);
 
-  // Subjects state
   const [list, setList] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Configuration for the glow design
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
+  const GLOW_SIZE = 12;
+
+  // --- Logic restored from QuickActions component ---
+  const handleQuickAction = (key: string) => {
+    if (key === "practice") {
+      // Functional navigation restored
+      router.push("/practice/chooseSubject");
+    }
+    // Placeholder for other actions
+    console.log("Quick Action Pressed:", key);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -131,166 +134,273 @@ const HomeDashboard: React.FC = () => {
     load();
   }, [token, boardId, classId, streamId, includeStream]);
 
-  // Map ALL API subjects with palette cycling (not just top 4)
   const allFromApi = useMemo(() => {
-    const colors = ["#E96A34", "#FFA144", "#F2C335", "#F2C335"];
     return (list as Subject[]).map((s, i) => ({
       name: s.name || s.title || `Subject ${i + 1}`,
       value: Math.max(
         0,
         Math.min(100, Number(s.progress ?? s.percentage ?? s.completion ?? 0))
       ),
-      fill: colors[i % colors.length],
+      fill: palette[i % palette.length],
     }));
   }, [list]);
 
-  // Use API subjects when available, else mock list to force scrolling
   const displaySubjects = allFromApi.length > 0 ? allFromApi : mockSubjects;
   const sortedSubjects = useMemo(
     () => [...displaySubjects].sort((a, b) => b.value - a.value),
     [displaySubjects]
   );
 
-  // Enable inner scrolling when there are more than 4 subjects
   const moreThanFour = sortedSubjects.length > 4;
 
-  return (
+  const GlowCard = ({
+    children,
+    className = "",
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
     <LinearGradient
-      colors={["#FFFFFF", "#F3E8DD", "#E4C7A6"]}
+      colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
       start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="flex-1"
+      end={{ x: 1, y: 1 }}
+      className={`rounded-[24px] border border-white/10 overflow-hidden ${className}`}
     >
-      <ScrollView className="flex-1">
-        {/* Header */}
-        <View className="px-4 pt-6 flex-row items-center justify-between">
-          <MyLogo2 />
-          <View className="flex-row items-center">
-            <View className="w-9 h-9 rounded-full bg-neutral-200 items-center justify-center mr-3">
-              <Text className="text-[16px]">🔔</Text>
-            </View>
-            <TouchableOpacity
-              onPress={() => router.push("/(main)/profile")}
-              className="w-9 h-9 rounded-full bg-neutral-300 items-center justify-center"
-            >
-              <Text className="text-[16px]">👤</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Welcome heading */}
-        <View className="px-4 mt-5">
-          <Text className="text-[24px] font-extrabold text-neutral-900 ml-3">
-            Welcome Back, Champion
-          </Text>
-          <Text className="text-[24px] font-extrabold text-neutral-900 ml-3">
-            {displayName || "Username"}
-          </Text>
-        </View>
-
-        <View className="bg-[#FFD3B3] m-5 rounded-xl">
-          <LevelCard />
-        </View>
-
-        {/* Ask Your AI Tutor */}
-        <View className="px-4 mt-4">
-          <View className="bg-[#F15D22] rounded-2xl px-4 py-4">
-            <Text className="text-white text-[20px] font-bold mb-1">
-              Ask Your AI Tutor
-            </Text>
-            <Text className="text-white/90 text-[12px] mb-3">
-              Doubts, Explainations, personalized study tips.
-            </Text>
-            <TouchableOpacity activeOpacity={0.8} className="self-start">
-              <View className="bg-[#C74D22] px-4 py-2 rounded-xl">
-                <Text className="text-white font-semibold text-[16px]">
-                  Chat Now
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Study progress (scrolls if > 4, only 4 visible initially) */}
-        <View className="px-6 mt-8">
-          <Text className="text-[20px] font-extrabold text-neutral-900 mb-3">
-            Study progress
-          </Text>
-
-          {loading ? (
-            <ActivityIndicator />
-          ) : displaySubjects.length === 0 ? (
-            <Text className="text-neutral-600 text-[12px] mb-2">
-              No subjects available.
-            </Text>
-          ) : (
-            <View
-              style={{
-                width: "100%",
-                maxHeight: moreThanFour ? capHeight : undefined,
-              }}
-            >
-              <ScrollView
-                style={{ width: "100%" }}
-                contentContainerStyle={{ paddingBottom: 0 }}
-                showsVerticalScrollIndicator={false}
-                scrollEnabled={moreThanFour}
-                nestedScrollEnabled
-              >
-                {sortedSubjects.map((s, i) => (
-                  <SubjectRow
-                    key={`${s.name}-${i}`}
-                    name={s.name}
-                    value={s.value}
-                    fill={s.fill}
-                    onLayout={
-                      i === 0 && !rowH
-                        ? (e) => setRowH(Math.ceil(e.nativeEvent.layout.height))
-                        : undefined
-                    }
-                  />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-
-        {/* Quick Actions */}
-        <View className="pb-20">
-          <QuickActions />
-        </View>
-      </ScrollView>
-      <View
-        className="bg-white border-t border-neutral-200 flex-row items-center justify-around h-[64px]"
+      <LinearGradient
+        colors={[GLOW_COLOR, "transparent"]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", GLOW_COLOR]}
         style={{
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          zIndex: 100,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.15,
-          shadowRadius: 3,
-          elevation: 10,
+          height: GLOW_SIZE,
         }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={[GLOW_COLOR, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", GLOW_COLOR]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      {children}
+    </LinearGradient>
+  );
+
+  return (
+    <LinearGradient
+      // Warm tint at top-left (#5A1C44) fading to dark purple
+      colors={["#5A1C44", "#3B0A52", "#180323"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className="flex-1"
+    >
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
-        <View className="items-center">
-          <Text className="text-[18px]">🏠</Text>
-          <Text className="text-[12px] text-neutral-900">Home</Text>
+        {/* Header */}
+        <View className="px-6 pt-12 flex-row items-center justify-between mb-6">
+          <View className="w-12 h-12 rounded-full bg-[#F59E51] items-center justify-center">
+            <Text className="text-white font-bold text-xs">LOGO</Text>
+          </View>
+          <View className="flex-row items-center space-x-4 gap-4">
+            <TouchableOpacity>
+              <Ionicons name="notifications" size={24} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
+              <View className="w-10 h-10 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
+                <Ionicons name="person" size={20} color="white" />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-        <View className="items-center">
-          <Text className="text-[18px]">📚</Text>
-          <Text className="text-[12px] text-neutral-600">Subjects</Text>
+
+        {/* Welcome Text */}
+        <View className="px-6 mb-8">
+          <Text className="text-[28px] font-bold text-white leading-tight">
+            Welcome Back, Champion
+          </Text>
+          <Text className="text-[28px] font-bold text-white leading-tight">
+            {displayName || "Username"}
+          </Text>
         </View>
-        <View className="items-center">
-          <Text className="text-[18px]">📈</Text>
-          <Text className="text-[12px] text-neutral-600">Progress</Text>
+
+        {/* --- CARDS SECTION --- */}
+        <View className="px-6 space-y-5 gap-5">
+          {/* Ask AI Tutor Card */}
+          <GlowCard className="flex-row items-center p-5 py-6">
+            <View className="mr-4">
+              <Ionicons name="bulb" size={96} color="#FBC02D" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white text-[24px] font-bold mb-1">
+                Ask Your AI Tutor
+              </Text>
+              <Text className="text-white/70 text-[16px] leading-5">
+                Solve doubts. Get instant explanations.
+              </Text>
+            </View>
+          </GlowCard>
+
+          {/* Daily Practice Goal Card */}
+          <GlowCard className="flex-row items-center px-5 py-10 h-32">
+            <View className="w-24 h-24 rounded-full border-4 border-[#F59E51] items-center justify-center mr-5">
+              <Text className="text-white font-bold text-[20px]">80%</Text>
+            </View>
+            <View className="flex-1">
+              <Text className="text-white text-[20px] font-bold mb-1">
+                Daily Practice Goal
+              </Text>
+              <Text className="text-white/70 text-[16px] leading-5 mt-1">
+                You've completed 20/50 questions today.
+              </Text>
+            </View>
+          </GlowCard>
+
+          {/* <View className="px-6 mt-8">
+            <Text className="text-[20px] font-extrabold text-neutral-900 mb-3">
+              Study progress
+            </Text>
+
+            {loading ? (
+              <ActivityIndicator />
+            ) : displaySubjects.length === 0 ? (
+              <Text className="text-neutral-600 text-[12px] mb-2">
+                No subjects available.
+              </Text>
+            ) : (
+              <View
+                style={{
+                  width: "100%",
+                  maxHeight: moreThanFour ? capHeight : undefined,
+                }}
+              >
+                <ScrollView
+                  style={{ width: "100%" }}
+                  contentContainerStyle={{ paddingBottom: 0 }}
+                  showsVerticalScrollIndicator={false}
+                  scrollEnabled={moreThanFour}
+                  nestedScrollEnabled
+                >
+                  {sortedSubjects.map((s, i) => (
+                    <SubjectRow
+                      key={`${s.name}-${i}`}
+                      name={s.name}
+                      value={s.value}
+                      fill={s.fill}
+                      onLayout={
+                        i === 0 && !rowH
+                          ? (e) =>
+                              setRowH(Math.ceil(e.nativeEvent.layout.height))
+                          : undefined
+                      }
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View> */}
+
+          {/* Quick Actions List (FUNCTIONAL) */}
+          <GlowCard className="p-0">
+            {/* Start Practice - Wired to Router */}
+            <TouchableOpacity
+              onPress={() => handleQuickAction("practice")}
+              className="flex-row items-center p-5 active:bg-white/5"
+            >
+              <View className="w-10 h-10 rounded-full bg-[#C65D3B]/40 items-center justify-center mr-4">
+                <Ionicons name="play" size={20} color="#F59E51" />
+              </View>
+              <Text className="flex-1 text-white text-[20px] font-semibold">
+                Start Practice
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="white" />
+            </TouchableOpacity>
+
+            {/* Mock Test */}
+            <TouchableOpacity
+              onPress={() => handleQuickAction("mock")}
+              className="flex-row items-center p-5 active:bg-white/5"
+            >
+              <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
+                <Ionicons name="document-text" size={20} color="#FBC02D" />
+              </View>
+              <Text className="flex-1 text-white text-[20px] font-semibold">
+                Mock Test
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="white" />
+            </TouchableOpacity>
+
+            {/* Review Mistakes */}
+            <TouchableOpacity
+              onPress={() => handleQuickAction("review")}
+              className="flex-row items-center p-5 active:bg-white/5"
+            >
+              <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
+                <Ionicons name="search" size={20} color="#FBC02D" />
+              </View>
+              <Text className="flex-1 text-white text-[20px] font-semibold">
+                Review Mistakes
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="white" />
+            </TouchableOpacity>
+          </GlowCard>
         </View>
-        <View className="items-center">
-          <Text className="text-[18px]">📒</Text>
-          <Text className="text-[12px] text-neutral-600">Planner</Text>
-        </View>
+      </ScrollView>
+
+      {/* Floating Bottom Navigation Bar */}
+      <View className="absolute bottom-6 left-6 right-6 h-[70px] bg-[#2A1C3E]/90 border border-white/10 rounded-[35px] flex-row items-center justify-around shadow-lg px-2 backdrop-blur-md">
+        <TouchableOpacity className="items-center justify-center">
+          <Ionicons name="home" size={24} color="#F59E51" />
+          <Text className="text-[10px] text-white mt-1">Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity className="items-center justify-center opacity-60">
+          <Ionicons name="book" size={24} color="white" />
+          <Text className="text-[10px] text-white mt-1">Subjects</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity className="items-center justify-center opacity-60">
+          <Ionicons name="stats-chart" size={24} color="white" />
+          <Text className="text-[10px] text-white mt-1">Progress</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity className="items-center justify-center opacity-60">
+          <Ionicons name="calendar" size={24} color="white" />
+          <Text className="text-[10px] text-white mt-1">Planner</Text>
+        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
