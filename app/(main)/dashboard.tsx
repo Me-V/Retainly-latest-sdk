@@ -221,7 +221,7 @@ const HomeDashboard: React.FC = () => {
   return (
     <LinearGradient
       // Warm tint at top-left (#5A1C44) fading to dark purple
-      colors={["#5A1C44", "#3B0A52", "#180323"]}
+      colors={["#5A1C44", "#3B0A52", "#3A0353"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -239,7 +239,7 @@ const HomeDashboard: React.FC = () => {
             <TouchableOpacity>
               <Ionicons name="notifications" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
+            <TouchableOpacity onPress={() => router.push("/(main)/profile2")}>
               <View className="w-10 h-10 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
                 <Ionicons name="person" size={20} color="white" />
               </View>
