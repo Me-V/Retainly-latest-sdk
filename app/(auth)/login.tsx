@@ -57,7 +57,7 @@ export default function SignInScreen() {
   };
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
   const GLOW_SIZE = 12;
 
   return (
@@ -78,17 +78,67 @@ export default function SignInScreen() {
           </View>
         </View>
 
-        {/* --- CARD CONTAINER --- */}
+        {/* --- CARD CONTAINER (With Fixed 4-Sided Glow) --- */}
         <LinearGradient
-          // Brighter start (0.3), faster fade to transparent center (0.02)
-          colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+          colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0.8, y: 0.8 }} // Shortened end point to concentrate glow at top-left edge
-          // Increased border opacity to border-white/30 for sharper edge definition
-          className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
+          end={{ x: 1, y: 1 }}
+          className="mx-6 mb-10 rounded-[40px] border border-white/10 overflow-hidden"
         >
+          {/* 1. Top Glow */}
+          <LinearGradient
+            colors={[GLOW_COLOR, "transparent"]}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+          {/* 2. Bottom Glow */}
+          <LinearGradient
+            colors={["transparent", GLOW_COLOR]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+          {/* 3. Left Glow */}
+          <LinearGradient
+            colors={[GLOW_COLOR, "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+          {/* 4. Right Glow */}
+          <LinearGradient
+            colors={["transparent", GLOW_COLOR]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+
           {/* --- Card Content --- */}
-          {/* CHANGED: px-10 -> px-8 and pt-10 -> py-12 for consistent internal spacing */}
           <View className="px-8 pt-10 pb-8">
             <View className="items-center mb-10">
               <LoginIcon />
