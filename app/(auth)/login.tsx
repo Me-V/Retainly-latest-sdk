@@ -62,7 +62,8 @@ export default function SignInScreen() {
 
   return (
     <LinearGradient
-      colors={["#3B0A52", "#180323"]}
+      // Warm tint at top-left (#5A1C44) fading to dark purple
+      colors={["#5A1C44", "#3B0A52", "#3A0353"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -173,10 +174,19 @@ export default function SignInScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Mobile Button */}
             <TouchableOpacity
               onPress={() => router.push("/(auth)/mobile-auth")}
               className="bg-[#F59E51] flex-row justify-center items-center rounded-3xl py-4 mb-8 relative"
+              style={{
+                // iOS Colored Glow
+                shadowColor: "#F59E51", // Same color as the button
+                shadowOffset: { width: 0, height: 0 }, // Centered bloom
+                shadowOpacity: 10, // High opacity for "Neon" effect
+                shadowRadius: 20, // Wide spread
+
+                // Android Colored Shadow (API 28+)
+                elevation: 20,
+              }}
             >
               <FontAwesome
                 name="phone"
@@ -184,7 +194,15 @@ export default function SignInScreen() {
                 color="white"
                 className="absolute left-5"
               />
-              <Text className="text-white font-medium text-[16px]">
+              <Text
+                className="text-white font-medium text-[16px]"
+                // Optional: Keep the text glow subtle so it doesn't clash
+                style={{
+                  textShadowColor: "rgba(255, 255, 255, 0.3)",
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 5,
+                }}
+              >
                 Sign in with Mobile
               </Text>
             </TouchableOpacity>
