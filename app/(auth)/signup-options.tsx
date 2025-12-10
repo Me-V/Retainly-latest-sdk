@@ -87,7 +87,7 @@ export default function SignInScreen() {
           colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className="mx-6 mb-10 rounded-[40px] border border-white/10 overflow-hidden"
+          className="mx-6 mb-10 rounded-[24px] border border-white/10 overflow-hidden"
         >
           {/* 1. Top Glow */}
           <LinearGradient

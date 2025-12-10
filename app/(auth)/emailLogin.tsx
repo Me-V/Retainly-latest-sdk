@@ -110,7 +110,8 @@ export default function EmailLoginScreen() {
 
   return (
     <LinearGradient
-      colors={["#3B0A52", "#180323"]}
+      // Warm tint at top-left (#5A1C44) fading to dark purple
+      colors={["#5A1C44", "#3B0A52", "#3A0353"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -151,9 +152,8 @@ export default function EmailLoginScreen() {
             colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="mx-6 mb-10 rounded-[40px] border border-white/10 overflow-hidden"
+            className={`rounded-[24px] border border-white/10 overflow-hidden mx-6`}
           >
-            {/* 1. Top Glow */}
             <LinearGradient
               colors={[GLOW_COLOR, "transparent"]}
               style={{
@@ -165,7 +165,6 @@ export default function EmailLoginScreen() {
               }}
               pointerEvents="none"
             />
-            {/* 2. Bottom Glow */}
             <LinearGradient
               colors={["transparent", GLOW_COLOR]}
               style={{
@@ -177,7 +176,6 @@ export default function EmailLoginScreen() {
               }}
               pointerEvents="none"
             />
-            {/* 3. Left Glow */}
             <LinearGradient
               colors={[GLOW_COLOR, "transparent"]}
               start={{ x: 0, y: 0 }}
@@ -191,7 +189,6 @@ export default function EmailLoginScreen() {
               }}
               pointerEvents="none"
             />
-            {/* 4. Right Glow */}
             <LinearGradient
               colors={["transparent", GLOW_COLOR]}
               start={{ x: 0, y: 0 }}

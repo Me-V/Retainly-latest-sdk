@@ -9,19 +9,36 @@ import {
   LayoutChangeEvent,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  useWindowDimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getSubTopics } from "@/services/api.edu";
-import { ChooseSubDownIndicator } from "@/assets/logo2";
 import { BackIcon } from "@/assets/logo";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
+// --- TYPES ---
 type SubTopic = { id?: string; uuid?: string; name?: string; title?: string };
 const getId = (s: SubTopic) => s.id || s.uuid || "";
 const getName = (s: SubTopic) => s.name || s.title || "Unnamed";
 
+// --- DUMMY DATA ---
+const dummyData: SubTopic[] = [
+  { id: "1", name: "Projectile Motion" },
+  { id: "2", name: "Uniform Circular Motion" },
+  { id: "3", name: "Relative Velocity" },
+  { id: "4", name: "Newton's First Law" },
+  { id: "5", name: "Newton's Second Law" },
+  { id: "6", name: "Friction" },
+  { id: "7", name: "Circular Motion Dynamics" },
+  { id: "8", name: "Work-Energy Theorem" },
+  { id: "9", name: "Conservation of Energy" },
+  { id: "10", name: "Collisions in 1D" },
+];
+
+// --- GLASSY BUTTON COMPONENT ---
 const SubTopicBtn = ({
   label,
   onPress,
@@ -30,17 +47,33 @@ const SubTopicBtn = ({
   onPress: () => void;
 }) => (
   <TouchableOpacity
-    activeOpacity={0.9}
+    activeOpacity={0.8}
     onPress={onPress}
-    className="w-full rounded-2xl bg-[#F07D53] px-4 py-3 mb-3"
+    className="w-full mb-4"
+    style={{
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.5,
+      shadowRadius: 6,
+      elevation: 12,
+    }}
   >
-    <Text
-      numberOfLines={3}
-      ellipsizeMode="tail"
-      className="text-white text-[16px] font-semibold leading-snug text-center"
+    <LinearGradient
+      colors={["rgba(255, 255, 255, 0.2)", "rgba(255, 255, 255, 0.1)"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      className="rounded-2xl py-5 border border-white/20 items-center justify-center px-4"
+      style={{ borderRadius: 16 }}
     >
-      {label}
-    </Text>
+      <Text
+        className="text-white font-bold tracking-wide shadow-black/40 text-center"
+        style={{ fontSize: 16, textShadowRadius: 2 }}
+        numberOfLines={2}
+        ellipsizeMode="tail"
+      >
+        {label}
+      </Text>
+    </LinearGradient>
   </TouchableOpacity>
 );
 
@@ -50,58 +83,44 @@ export default function ChooseSubTopics() {
   const { topicId } = useLocalSearchParams<{
     topicId: string;
   }>();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
 
   const [subTopics, setSubTopics] = useState<SubTopic[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Measurements for inner scroll + arrow indicators (same pattern as chapters screen)
+  // Measurements for scroll state
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
   const [scrollY, setScrollY] = useState(0);
 
-  // Heuristics: enable cap/scroll when many or long items
-  const hasLongItems = useMemo(
-    () =>
-      subTopics.some((t) => getName(t).length > 28 || /\n/.test(getName(t))),
-    [subTopics]
-  );
-  const manyItems = useMemo(() => subTopics.length > 5, [subTopics.length]);
-  const shouldCapAndScroll = manyItems || hasLongItems;
+  // --- DESIGN CONSTANTS ---
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.2)";
+  const GLOW_SIZE = 12;
 
-  // Scrollability + bottom detection
-  const canScroll = useMemo(
-    () => shouldCapAndScroll && contentH > containerH + 1,
-    [shouldCapAndScroll, contentH, containerH]
-  );
-  const maxScroll = Math.max(0, contentH - containerH);
-  const atBottom = canScroll && scrollY >= maxScroll - 2;
+  // Responsive Dimensions
+  const containerMaxHeight = screenHeight * 0.6;
+  const isTablet = screenWidth > 768;
+  const containerWidth = isTablet ? 600 : "100%";
 
-  const dummyData = [
-    { id: "1", name: "subtopic1" },
-    { id: "2", name: "subtopic2" },
-    { id: "3", name: "subtopic3" },
-    { id: "4", name: "subtopic4" },
-    { id: "5", name: "subtopic5" },
-    { id: "6", name: "subtopic6" },
-    { id: "7", name: "subtopic7" },
-    { id: "8", name: "subtopic8" },
-    { id: "9", name: "subtopic9" },
-    { id: "10", name: "subtopic10" },
-  ];
-
+  // --- API LOGIC ---
   useEffect(() => {
     const load = async () => {
       if (!token || !topicId) return;
       setLoading(true);
       try {
         const res = await getSubTopics(token, { topicId });
-        setSubTopics(Array.isArray(res) ? res : dummyData);
+        setSubTopics(Array.isArray(res) && res.length > 0 ? res : []);
+      } catch (e) {
+        console.log("Error loading subtopics", e);
       } finally {
         setLoading(false);
       }
     };
     load();
   }, [token, topicId]);
+
+  // Fallback to dummy data if API returns empty
+  const renderList = subTopics.length > 0 ? subTopics : dummyData;
 
   const handleSelect = (sub: SubTopic) => {
     const subId = getId(sub);
@@ -112,7 +131,15 @@ export default function ChooseSubTopics() {
     } as const);
   };
 
-  // Handlers for dynamic height/scroll state
+  // --- SCROLL LOGIC ---
+  const canScroll = useMemo(
+    () => contentH > containerH + 1,
+    [contentH, containerH]
+  );
+
+  const maxScroll = Math.max(0, contentH - containerH);
+  const atBottom = canScroll && scrollY >= maxScroll - 20;
+
   const onContainerLayout = (e: LayoutChangeEvent) =>
     setContainerH(e.nativeEvent.layout.height);
   const onContentSizeChange = (_w: number, h: number) => setContentH(h);
@@ -121,101 +148,156 @@ export default function ChooseSubTopics() {
 
   return (
     <LinearGradient
-      colors={["#FFFFFF", "#F3E8DD", "#E4C7A6"]}
+      colors={["#C96E25", "#B73403"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      <ScrollView className="flex-1" contentContainerClassName="pb-6">
-        {/* Top bar with back (mirrors chapters screen) */}
-        <View className="px-5 pt-6">
+      <ScrollView className="flex-1" contentContainerClassName="pb-6 flex-grow">
+        {/* Header */}
+        <View className="px-6 pt-12 flex-row justify-between items-center z-10">
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-            <BackIcon />
+            <BackIcon color="white" />
           </TouchableOpacity>
+          <View className="w-10 h-10 rounded-full bg-[#E3642A] border border-white/20 items-center justify-center">
+            <Text className="text-white font-bold text-[8px]">LOGO</Text>
+          </View>
         </View>
 
-        {/* Heading (same size/color/placement as chapters) */}
-        <View className="px-5 mt-8 items-center">
-          <Text className="text-[20px] font-extrabold text-[#E3642A]">
+        {/* Title */}
+        <View className="px-6 mt-6 items-center z-10">
+          <Text className="text-[28px] font-bold text-white mb-2 text-center">
             Select Subtopics
+          </Text>
+          <Text className="text-[16px] text-white/80 font-medium text-center">
+            Narrow down your practice area
           </Text>
         </View>
 
-        {/* Card container with capped inner scroll and directional indicator */}
-        {loading ? (
-          <View className="flex-1 items-center justify-center mt-12">
-            <ActivityIndicator />
-            <Text className="mt-2 text-neutral-600">Loading subtopics…</Text>
-          </View>
-        ) : (
-          <View className="px-8 mt-20">
-            <View className="w-full rounded-3xl bg-[#F6DCC8] px-6 py-6 items-center">
-              <View
-                onLayout={onContainerLayout}
-                className={`w-full relative ${
-                  shouldCapAndScroll ? "max-h-[300px]" : ""
-                }`}
-              >
-                <ScrollView
-                  contentContainerStyle={{ paddingBottom: 0 }}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={shouldCapAndScroll}
-                  nestedScrollEnabled
-                  onContentSizeChange={onContentSizeChange}
-                  onScroll={onScroll}
-                  scrollEventThrottle={16}
+        {/* Main Content Area */}
+        <View className="flex-1 items-center px-6 mt-8 mb-10 w-full relative">
+          {loading ? (
+            <ActivityIndicator size="large" color="white" className="mt-10" />
+          ) : (
+            <>
+              {/* --- Up Arrow --- */}
+              {canScroll && scrollY > 20 && (
+                <View
+                  pointerEvents="none"
+                  className="absolute top-[-25px] z-20"
                 >
-                  {subTopics.length === 0 ? (
-                    <Text className="text-neutral-600 text-[14px]">
-                      No subtopics found.
-                    </Text>
-                  ) : (
-                    subTopics.map((sub) => (
-                      <SubTopicBtn
-                        key={getId(sub)}
-                        label={getName(sub)}
-                        onPress={() => handleSelect(sub)}
-                      />
-                    ))
-                  )}
-                </ScrollView>
+                  <Ionicons name="chevron-up" size={32} color="white" />
+                </View>
+              )}
 
-                {/* Directional indicator — bottom when not at end */}
-                {canScroll && !atBottom && (
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      bottom: -70,
-                      alignItems: "center",
-                    }}
-                  >
-                    <ChooseSubDownIndicator />
-                  </View>
-                )}
+              {/* --- GLASS CONTAINER --- */}
+              <LinearGradient
+                colors={[
+                  "rgba(255, 255, 255, 0.15)",
+                  "rgba(255, 255, 255, 0.05)",
+                ]}
+                className="rounded-[30px] border border-white/10 p-1 overflow-hidden mt-6"
+                style={{
+                  maxHeight: containerMaxHeight,
+                  width: containerWidth,
+                  borderRadius: 30,
+                }}
+              >
+                {/* Inner Glows */}
+                <LinearGradient
+                  colors={[GLOW_COLOR, "transparent"]}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: GLOW_SIZE,
+                    zIndex: -1,
+                  }}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={["transparent", GLOW_COLOR]}
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: GLOW_SIZE,
+                    zIndex: -1,
+                  }}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={[GLOW_COLOR, "transparent"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    left: 0,
+                    width: GLOW_SIZE,
+                    zIndex: -1,
+                  }}
+                  pointerEvents="none"
+                />
+                <LinearGradient
+                  colors={["transparent", GLOW_COLOR]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    bottom: 0,
+                    right: 0,
+                    width: GLOW_SIZE,
+                    zIndex: -1,
+                  }}
+                  pointerEvents="none"
+                />
 
-                {/* Flip to top when at end */}
-                {canScroll && atBottom && (
-                  <View
-                    pointerEvents="none"
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      top: -70,
-                      alignItems: "center",
-                      transform: [{ rotate: "180deg" }],
-                    }}
+                <View
+                  className="w-full px-5 py-6 relative"
+                  onLayout={onContainerLayout}
+                >
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    nestedScrollEnabled={true}
+                    onContentSizeChange={onContentSizeChange}
+                    onScroll={onScroll}
+                    scrollEventThrottle={16}
+                    scrollEnabled={true}
                   >
-                    <ChooseSubDownIndicator />
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
+                    {renderList.length === 0 ? (
+                      <Text className="text-white/60 text-[14px] text-center mt-4">
+                        No subtopics found.
+                      </Text>
+                    ) : (
+                      renderList.map((item) => (
+                        <SubTopicBtn
+                          key={getId(item)}
+                          label={getName(item)}
+                          onPress={() => handleSelect(item)}
+                        />
+                      ))
+                    )}
+                  </ScrollView>
+                </View>
+              </LinearGradient>
+
+              {/* --- Down Arrow --- */}
+              {canScroll && !atBottom && (
+                <View
+                  pointerEvents="none"
+                  className="absolute bottom-[-25px] z-20"
+                >
+                  <Ionicons name="chevron-down" size={32} color="white" />
+                </View>
+              )}
+            </>
+          )}
+        </View>
       </ScrollView>
     </LinearGradient>
   );
