@@ -156,11 +156,59 @@ export default function EmailSignupScreen() {
           {/* --- GLOW CARD CONTAINER --- */}
           {/* Using the "Edge Glow" settings: brighter start, sharper fade, stronger border */}
           <LinearGradient
-            colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+            colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0.8, y: 0.8 }}
-            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
+            end={{ x: 1, y: 1 }}
+            className={`rounded-[24px] border border-white/10 overflow-hidden mx-6`}
           >
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
             <View className="px-8 py-14 items-center">
               {/* Email Icon */}
               <View className="mb-8">
@@ -187,7 +235,7 @@ export default function EmailSignupScreen() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                   className="rounded-3xl py-4"
-                  style={{borderRadius: 24}}
+                  style={{ borderRadius: 24 }}
                 >
                   <Text className="text-white text-center font-bold text-[16px] py-0.5">
                     Once verified click continue
@@ -219,7 +267,8 @@ export default function EmailSignupScreen() {
 
   return (
     <LinearGradient
-      colors={["#3B0A52", "#180323"]}
+      // Warm tint at top-left (#5A1C44) fading to dark purple
+      colors={["#5A1C44", "#3B0A52", "#3A0353"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -262,13 +311,59 @@ export default function EmailSignupScreen() {
 
           {/* --- GLOW CARD CONTAINER --- */}
           <LinearGradient
-            // Brighter start (0.3), faster fade to transparent center (0.02)
-            colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+            colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
             start={{ x: 0, y: 0 }}
-            end={{ x: 0.8, y: 0.8 }} // Shortened end point to concentrate glow at top-left edge
-            // Increased border opacity to border-white/30 for sharper edge definition
-            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
+            end={{ x: 1, y: 1 }}
+            className={`rounded-[24px] border border-white/10 overflow-hidden mx-6`}
           >
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={[GLOW_COLOR, "transparent"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={["transparent", GLOW_COLOR]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: GLOW_SIZE,
+              }}
+              pointerEvents="none"
+            />
             {/* --- Form Content --- */}
             <View className="px-8 py-12">
               <TextInput

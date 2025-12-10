@@ -454,6 +454,7 @@ export default function ChatProfileScreen() {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     className="rounded-xl px-5 py-3"
+                    style={{ borderRadius: 24 }}
                   >
                     <Text className="text-white font-bold">Continue</Text>
                   </LinearGradient>

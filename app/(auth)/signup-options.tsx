@@ -66,7 +66,8 @@ export default function SignInScreen() {
 
   return (
     <LinearGradient
-      colors={["#3B0A52", "#180323"]}
+      // Warm tint at top-left (#5A1C44) fading to dark purple
+      colors={["#5A1C44", "#3B0A52", "#3A0353"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -83,13 +84,63 @@ export default function SignInScreen() {
         </View>
 
         <LinearGradient
-          // Brighter start (0.3), faster fade to transparent center (0.02)
-          colors={["rgba(255, 255, 255, 0.3)", "rgba(255, 255, 255, 0.02)"]}
+          colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
           start={{ x: 0, y: 0 }}
-          end={{ x: 0.8, y: 0.8 }} // Shortened end point to concentrate glow at top-left edge
-          // Increased border opacity to border-white/30 for sharper edge definition
-          className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-white/30"
+          end={{ x: 1, y: 1 }}
+          className="mx-6 mb-10 rounded-[24px] border border-white/10 overflow-hidden"
         >
+          {/* 1. Top Glow */}
+          <LinearGradient
+            colors={[GLOW_COLOR, "transparent"]}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+          {/* 2. Bottom Glow */}
+          <LinearGradient
+            colors={["transparent", GLOW_COLOR]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+          {/* 3. Left Glow */}
+          <LinearGradient
+            colors={[GLOW_COLOR, "transparent"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
+          {/* 4. Right Glow */}
+          <LinearGradient
+            colors={["transparent", GLOW_COLOR]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              right: 0,
+              width: GLOW_SIZE,
+            }}
+            pointerEvents="none"
+          />
           {/* --- Card Content --- */}
           {/* CHANGED: px-10 pt-10 -> px-8 py-12 for consistent internal spacing */}
           <View className="px-8 py-12">
@@ -134,6 +185,16 @@ export default function SignInScreen() {
             <TouchableOpacity
               onPress={() => router.push("/(auth)/mobile-auth")}
               className="bg-[#F59E51] flex-row justify-center items-center rounded-3xl py-4 mb-8 relative"
+              style={{
+                // iOS Colored Glow
+                shadowColor: "#F59E51", // Same color as the button
+                shadowOffset: { width: 0, height: 0 }, // Centered bloom
+                shadowOpacity: 10, // High opacity for "Neon" effect
+                shadowRadius: 20, // Wide spread
+
+                // Android Colored Shadow (API 28+)
+                elevation: 20,
+              }}
             >
               <FontAwesome
                 name="phone"
