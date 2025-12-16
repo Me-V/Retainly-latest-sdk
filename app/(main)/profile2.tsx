@@ -36,7 +36,7 @@ import {
 } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { firebaseConfig } from "@/services/config";
-import { BackIcon, MailOpenSVG, MyLogo } from "@/assets/logo";
+import { BackIcon, MailOpenSVG } from "@/assets/logo";
 import PopupModal from "@/components/Popup-modal";
 import { signInWithPhoneNumber } from "@react-native-firebase/auth";
 import { authforMobile } from "@/app/(auth)/mobile-auth";

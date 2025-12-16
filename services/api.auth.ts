@@ -5,7 +5,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_BASE; // change to your server IP
 
 export async function loginWithGoogle(idToken: string) {
   try {
-    const res = await axios.post(`${API_BASE}/service/api/login/google/`, {
+    const res = await axios.post(`${API_BASE}/backend/api/login/google/`, {
       id_token: idToken,
     });
     return res.data; // this will contain { token, detail }
@@ -18,7 +18,7 @@ export async function loginWithGoogle(idToken: string) {
 // ✅ New function: signup with phone OTP
 export async function signupWithPhoneOTP(phoneNumber: string, idToken: string) {
   try {
-    const res = await axios.post(`${API_BASE}/service/api/signup/`, {
+    const res = await axios.post(`${API_BASE}/backend/api/signup/`, {
       signup_method: "phone-otp",
       phone_number: phoneNumber,
       token: idToken,
@@ -37,7 +37,7 @@ export async function signupWithEmailPassword(
   idToken: string
 ) {
   try {
-    const res = await axios.post(`${API_BASE}/service/api/signup/`, {
+    const res = await axios.post(`${API_BASE}/backend/api/signup/`, {
       signup_method: "email-pwd",
       email,
       password,
@@ -52,7 +52,7 @@ export async function signupWithEmailPassword(
 
 export async function loginWithEmailPassword(email: string, password: string) {
   try {
-    const res = await axios.post(`${API_BASE}/service/api/login/email/`, {
+    const res = await axios.post(`${API_BASE}/backend/api/login/email/`, {
       email,
       password,
     });
@@ -77,7 +77,7 @@ export async function patchMe(
   }
 ) {
   try {
-    const res = await axios.patch(`${API_BASE}/service/api/account/me/`, data, {
+    const res = await axios.patch(`${API_BASE}/backend/api/account/me/`, data, {
       headers: {
         Authorization: `Token ${token}`,
         "Content-Type": "application/json",
@@ -98,7 +98,7 @@ export async function patchEmail(
   }
 ) {
   try {
-    const res = await axios.patch(`${API_BASE}/service/api/account/email/`, data, {
+    const res = await axios.patch(`${API_BASE}/backend/api/account/email/`, data, {
       headers: {
         Authorization: `Token ${token}`,
         "Content-Type": "application/json",
@@ -119,7 +119,7 @@ export async function patchPhone(
   }
 ) {
   try {
-    const res = await axios.patch(`${API_BASE}/service/api/account/phone/`, data, {
+    const res = await axios.patch(`${API_BASE}/backend/api/account/phone/`, data, {
       headers: {
         Authorization: `Token ${token}`,
         "Content-Type": "application/json",
@@ -135,7 +135,7 @@ export async function patchPhone(
 // ✅ NEW: Get user profile
 export async function getme(token: string) {
   try {
-    const res = await axios.get(`${API_BASE}/service/api/account/me/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/account/me/`, {
       headers: {
         Authorization: `Token ${token}`,
         "Content-Type": "application/json",
@@ -152,7 +152,7 @@ export async function getme(token: string) {
 export async function logout(token: string) {
   try {
     await axios.post(
-      `${API_BASE}/service/api/login/logout/`,
+      `${API_BASE}/backend/api/login/logout/`,
       {},
       {
         headers: {

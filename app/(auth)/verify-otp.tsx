@@ -193,12 +193,11 @@ export default function OtpScreen() {
 
           {/* --- GLOW CARD CONTAINER --- */}
           <LinearGradient
-            colors={["rgba(255, 255, 255, 0.25)", "rgba(255, 255, 255, 0.05)"]}
-            start={{ x: 0.5, y: 0 }}
+            colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
+            start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            className="mx-6 mt-10 mb-10 rounded-[40px] overflow-hidden border border-gray-500/50"
+            className={`rounded-[24px] border border-white/10 overflow-hidden mx-6 mt-4`}
           >
-            {/* Glow Borders */}
             <LinearGradient
               colors={[GLOW_COLOR, "transparent"]}
               style={{
@@ -207,7 +206,6 @@ export default function OtpScreen() {
                 left: 0,
                 right: 0,
                 height: GLOW_SIZE,
-                zIndex: 1,
               }}
               pointerEvents="none"
             />
@@ -219,7 +217,6 @@ export default function OtpScreen() {
                 left: 0,
                 right: 0,
                 height: GLOW_SIZE,
-                zIndex: 1,
               }}
               pointerEvents="none"
             />
@@ -233,7 +230,6 @@ export default function OtpScreen() {
                 bottom: 0,
                 left: 0,
                 width: GLOW_SIZE,
-                zIndex: 1,
               }}
               pointerEvents="none"
             />
@@ -247,7 +243,6 @@ export default function OtpScreen() {
                 bottom: 0,
                 right: 0,
                 width: GLOW_SIZE,
-                zIndex: 1,
               }}
               pointerEvents="none"
             />
@@ -293,6 +288,7 @@ export default function OtpScreen() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 0, y: 1 }}
                   className="rounded-3xl py-4"
+                  style={{ borderRadius: 24 }}
                 >
                   {loading ? (
                     <ActivityIndicator color="#fff" />

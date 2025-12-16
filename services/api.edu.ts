@@ -13,7 +13,7 @@ export type QuestionItem = { id: string; name?: string; title?: string };
 
 export async function getClasses(token: string): Promise<ClassItem[]> {
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/classes/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/classes/`, {
       headers: {
         Authorization: `Token ${token}`, // DRF TokenAuthentication format [web:139][web:140]
       },
@@ -29,7 +29,7 @@ export async function getBoards(
   classId: string
 ): Promise<BoardItem[]> {
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/boards/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/boards/`, {
       headers: { Authorization: `Token ${token}` },
       params: { class: classId }, // per API: query key is "class"
     });
@@ -44,7 +44,7 @@ export async function getStreams(
   classId: string
 ): Promise<StreamItem[]> {
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/streams/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/streams/`, {
       headers: { Authorization: `Token ${token}` }, // DRF TokenAuth
       params: { class: classId }, // per API docs/screenshot
     });
@@ -62,7 +62,7 @@ export async function getSubjects(
   const { boardId, classId, streamId } = opts;
 
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/subjects/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/subjects/`, {
       headers: { Authorization: `Token ${token}` }, // DRF TokenAuth [web:79]
       // Send only keys that exist; omit stream unless provided [web:71][web:69]
       params: {
@@ -85,7 +85,7 @@ export async function getTopics(
   const { subjectId } = opts;
 
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/topics/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/topics/`, {
       headers: { Authorization: `Token ${token}` }, // DRF TokenAuth [web:79]
       // Send only keys that exist; omit stream unless provided [web:71][web:69]
       params: {
@@ -106,7 +106,7 @@ export async function getSubTopics(
   const { topicId } = opts;
 
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/subtopics/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/subtopics/`, {
       headers: { Authorization: `Token ${token}` }, // DRF TokenAuth [web:79]
       // Send only keys that exist; omit stream unless provided [web:71][web:69]
       params: {
@@ -128,7 +128,7 @@ export async function getQuestions(
   const { subTopicId } = opts;
 
   try {
-    const res = await axios.get(`${API_BASE}/service/api/content/questions/`, {
+    const res = await axios.get(`${API_BASE}/backend/api/content/questions/`, {
       headers: { Authorization: `Token ${token}` }, // DRF TokenAuth [web:79]
       // Send only keys that exist; omit stream unless provided [web:71][web:69]
       params: {
