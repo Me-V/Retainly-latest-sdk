@@ -10,6 +10,16 @@ export interface OlympicQuiz {
   max_attempts: number;
 }
 
+export interface QuizStartResponse {
+  attempt_id: string;
+  expires_at: string; // "2025-12-19T08:50:52..." -> We rely on THIS for the timer
+  questions: {
+    id: string;
+    text: string;
+    options: { id: string; text: string }[];
+  }[];
+}
+
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE;
 
 /**
@@ -31,6 +41,26 @@ export const getLiveQuizzes = async (token: string): Promise<OlympicQuiz[]> => {
     return response.data;
   } catch (error) {
     console.error("Error fetching live quizzes:", error);
+    throw error;
+  }
+};
+export const startQuiz = async (
+  quizId: string,
+  token: string
+): Promise<QuizStartResponse> => {
+  try {
+    // Note: If your backend expects a POST, change axios.get to axios.post
+    // Based on standard REST design, '/start' is usually a POST.
+    const response = await axios.post<QuizStartResponse>(
+      `${API_BASE}/backend/api/olympics/quizzes/${quizId}/start/`,
+      {},
+      {
+        headers: { Authorization: `Token ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error starting quiz:", error);
     throw error;
   }
 };
