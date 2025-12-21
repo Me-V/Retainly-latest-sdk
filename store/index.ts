@@ -21,7 +21,7 @@ const persistConfig = {
   storage: AsyncStorage,
   // 2. ADD "quiz" TO THIS LIST
   // This ensures the questions are saved to the phone's storage
-  whitelist: ["auth", "academics", "quiz"],
+  whitelist: ["auth", "academics"],
 };
 
 const rootReducer = combineReducers({

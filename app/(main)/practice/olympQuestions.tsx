@@ -10,11 +10,12 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router"; // <--- 1. Import Hooks
 
-import { startQuiz } from "@/services/api.olympics";
+import { startQuiz, submitAnswer, submitQuiz } from "@/services/api.olympics";
 import {
   setQuizData,
   selectOption,
   setQuestionIndex,
+  clearQuiz,
 } from "@/store/slices/quizSlice";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 
@@ -50,23 +51,47 @@ const QuizScreen = () => {
   }, [quizId]);
 
   const loadQuiz = async (id: string) => {
+    if (!token) {
+      Alert.alert("Error", "You are not logged in.");
+      router.back();
+      return;
+    }
+
     setLoading(true);
     try {
-      // TODO: Get this from your actual Auth store like you did in the previous screen
+      // 1. CALL API
+      const response = await startQuiz(id, token);
 
-      const response = await startQuiz(id, token!);
-      dispatch(setQuizData(response));
-      // inside loadQuiz function in QuizScreen.tsx
-    } catch (error: any) {
-      // 1. Log the EXACT error from the backend
-      if (error.response) {
-        console.log("🔴 Server Error Data:", error.response.data);
-        console.log("🔴 Server Status:", error.response.status);
+      // 2. CHECK IF EXPIRED (Handle "Resume" vs "New" logic)
+      const now = new Date().getTime();
+      const expiry = new Date(response.expires_at).getTime();
 
-        // Show the specific error to yourself in the alert
-        Alert.alert("Failed", JSON.stringify(error.response.data));
+      if (expiry - now <= 0) {
+        Alert.alert("Quiz Expired", "This attempt has already expired.", [
+          { text: "Go Back", onPress: () => router.back() },
+        ]);
       } else {
-        console.error("🔴 Network/Code Error:", error.message);
+        // 3. SUCCESS - Save to Redux
+        dispatch(setQuizData(response));
+      }
+    } catch (error: any) {
+      // 🟢 THIS IS THE MISSING PART
+      if (error.response) {
+        // 400 Bad Request usually means "Max attempts reached" or "Already finished"
+        if (error.response.status === 400) {
+          Alert.alert(
+            "Access Denied",
+            "You have used all your attempts for this quiz.",
+            [{ text: "OK", onPress: () => router.back() }]
+          );
+        } else if (error.response.status === 401) {
+          Alert.alert("Session Expired", "Please login again.");
+        } else {
+          // Show the actual message from server for debugging
+          Alert.alert("Error", JSON.stringify(error.response.data));
+        }
+      } else {
+        Alert.alert("Network Error", "Check your internet connection.");
       }
     } finally {
       setLoading(false);
@@ -98,19 +123,71 @@ const QuizScreen = () => {
     return () => clearInterval(interval);
   }, [data]);
 
+  useEffect(() => {
+    // Cleanup function: Runs when you LEAVE the screen
+    return () => {
+      dispatch(clearQuiz());
+    };
+  }, []);
+
   // 3. UI HANDLERS
   const handleOptionPress = (qId: string, optId: string) => {
     dispatch(selectOption({ questionId: qId, optionId: optId }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // A. Save the current answer first (Standard logic)
+    const currentQ = data.questions[currentQuestionIndex];
+    const selectedOptionId = userAnswers[currentQ.id];
+
+    if (selectedOptionId) {
+      try {
+        await submitAnswer(
+          data.attempt_id,
+          currentQ.id,
+          selectedOptionId,
+          token!
+        );
+      } catch (e) {
+        // Silently fail or show toast - we want to proceed to submit anyway if user wants
+        console.log("Could not save last answer");
+      }
+    }
+
+    // B. Check if we are at the end
     if (currentQuestionIndex < data.questions.length - 1) {
+      // Not the end? Just go next.
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
-      // Handle Submit Logic Here
-      Alert.alert("Submit Quiz?", "Are you sure?", [
+      // C. WE ARE AT THE END -> SUBMIT LOGIC
+      Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
         { text: "Cancel", style: "cancel" },
-        { text: "Submit", onPress: () => router.back() }, // Or call a submit API
+        {
+          text: "Submit",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              // 1. CALL THE SUBMIT API
+              const result = await submitQuiz(data.attempt_id, token!);
+
+              // 2. Check success
+              if (result.status === "SUBMITTED") {
+                // 3. Clear Redux so the next attempt is fresh
+                dispatch(clearQuiz());
+
+                // 4. Success Message
+                Alert.alert("Success", "Quiz Submitted Successfully!", [
+                  { text: "OK", onPress: () => router.back() },
+                ]);
+              }
+            } catch (error) {
+              Alert.alert("Error", "Could not submit quiz. Please try again.");
+              console.error(error);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
       ]);
     }
   };

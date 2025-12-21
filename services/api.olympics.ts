@@ -10,6 +10,18 @@ export interface OlympicQuiz {
   max_attempts: number;
 }
 
+interface SubmitAnswerResponse {
+  saved: boolean;
+  remaining_seconds: number;
+  attempted_count: number;
+}
+
+export interface SubmitQuizResponse {
+  detail: string;
+  attempt_id: string;
+  status: string; // e.g. "SUBMITTED"
+}
+
 export interface QuizStartResponse {
   attempt_id: string;
   expires_at: string; // "2025-12-19T08:50:52..." -> We rely on THIS for the timer
@@ -44,6 +56,7 @@ export const getLiveQuizzes = async (token: string): Promise<OlympicQuiz[]> => {
     throw error;
   }
 };
+
 export const startQuiz = async (
   quizId: string,
   token: string
@@ -61,6 +74,56 @@ export const startQuiz = async (
     return response.data;
   } catch (error) {
     console.error("Error starting quiz:", error);
+    throw error;
+  }
+};
+
+export const submitAnswer = async (
+  attemptId: string,
+  questionId: string,
+  selectedOptionId: string,
+  token: string
+): Promise<SubmitAnswerResponse> => {
+  try {
+    const url = `${process.env.EXPO_PUBLIC_API_BASE}/backend/api/olympics/attempts/${attemptId}/answer/`;
+
+    const response = await axios.patch<SubmitAnswerResponse>(
+      url,
+      {
+        question_id: questionId,
+        selected_option_id: selectedOptionId,
+      },
+      {
+        headers: {
+          Authorization: `Token ${token}`, // Or 'Bearer' depending on your backend
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting answer:", error);
+    throw error;
+  }
+};
+
+export const submitQuiz = async (attemptId: string, token: string): Promise<SubmitQuizResponse> => {
+  try {
+    const url = `${process.env.EXPO_PUBLIC_API_BASE}/backend/api/olympics/attempts/${attemptId}/submit/`;
+    
+    // It's a POST request (usually) or PATCH. 
+    // Based on standard flows, 'submit' actions are often POST.
+    // If you get a 405 Method Not Allowed, change this to axios.patch or axios.put
+    const response = await axios.post<SubmitQuizResponse>(
+      url, 
+      {}, // Empty body
+      {
+        headers: { Authorization: `Token ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error submitting quiz:", error);
     throw error;
   }
 };
