@@ -109,6 +109,10 @@ const HomeDashboard: React.FC = () => {
       // Functional navigation restored
       router.push("/practice/chooseSubject");
     }
+    if (key === "olympics") {
+      // Functional navigation restored
+      router.push("/practice/olympics");
+    }
     // Placeholder for other actions
     console.log("Quick Action Pressed:", key);
   };
@@ -363,16 +367,15 @@ const HomeDashboard: React.FC = () => {
               <Ionicons name="chevron-forward" size={20} color="white" />
             </TouchableOpacity>
 
-            {/* Review Mistakes */}
             <TouchableOpacity
-              onPress={() => handleQuickAction("review")}
+              onPress={() => handleQuickAction("olympics")}
               className="flex-row items-center p-5 active:bg-white/5"
             >
               <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
                 <Ionicons name="search" size={20} color="#FBC02D" />
               </View>
               <Text className="flex-1 text-white text-[20px] font-semibold">
-                Review Mistakes
+                Olympics
               </Text>
               <Ionicons name="chevron-forward" size={20} color="white" />
             </TouchableOpacity>
