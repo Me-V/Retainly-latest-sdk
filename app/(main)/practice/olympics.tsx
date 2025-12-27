@@ -96,6 +96,10 @@ const Olympics = () => {
             </Text>
           }
         />
+
+        <TouchableOpacity onPress={() => router.replace("/(main)/practice/QuizResultScreen")}>
+          <Text className="text-blue-600">Result</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

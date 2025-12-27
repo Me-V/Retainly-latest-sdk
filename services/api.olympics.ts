@@ -10,6 +10,20 @@ export interface OlympicQuiz {
   max_attempts: number;
 }
 
+export interface QuizResultResponse {
+  attempt_id: string;
+  quiz_id: string;
+  status: string;
+  score: number;
+  max_score: number;
+  attempted_count: number;
+  total_questions: number;
+  percentage: number;
+  passing_percentage: number;
+  result: "PASS" | "FAIL";
+  result_out_at: string;
+}
+
 interface SubmitAnswerResponse {
   saved: boolean;
   remaining_seconds: number;
@@ -124,6 +138,23 @@ export const submitQuiz = async (attemptId: string, token: string): Promise<Subm
     return response.data;
   } catch (error) {
     console.error("Error submitting quiz:", error);
+    throw error;
+  }
+};
+
+export const getQuizResult = async (attemptId: string, token: string): Promise<QuizResultResponse> => {
+  try {
+    const url = `${process.env.EXPO_PUBLIC_API_BASE}/backend/api/olympics/attempts/${attemptId}/result/`;
+    
+    const response = await axios.get<QuizResultResponse>(
+      url, 
+      {
+        headers: { Authorization: `Token ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching result:", error);
     throw error;
   }
 };
