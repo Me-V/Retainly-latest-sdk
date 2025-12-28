@@ -8,7 +8,7 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { useLocalSearchParams, useRouter } from "expo-router"; // <--- 1. Import Hooks
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { startQuiz, submitAnswer, submitQuiz } from "@/services/api.olympics";
 import {
@@ -20,49 +20,90 @@ import {
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 
 const QuizScreen = () => {
-  const router = useRouter(); // To handle navigation like "Back"
+  const router = useRouter();
   const dispatch = useDispatch();
   const token = useAppSelector((s) => s.auth.token);
-
-  // 2. GET PARAMS CORRECTLY
-  // useLocalSearchParams returns an object where values can be strings or arrays.
   const params = useLocalSearchParams();
   const quizId = Array.isArray(params.quizId)
     ? params.quizId[0]
     : params.quizId;
 
-  // Select data from Redux
-  const { data, currentQuestionIndex, userAnswers } = useSelector(
+  // 🟢 1. GET 'activeQuizId' from Redux
+  const { data, currentQuestionIndex, userAnswers, activeQuizId } = useSelector(
     (state: any) => state.quiz
   );
 
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
+  const [hasReachedEnd, setHasReachedEnd] = useState(false);
 
-  // 1. INITIALIZE QUIZ
+  // --- LOGIC: Check if user visited the last question ---
   useEffect(() => {
-    // If we have no quizId, we can't do anything.
+    if (!data) return;
+    if (currentQuestionIndex === data.questions.length - 1) {
+      setHasReachedEnd(true);
+    }
+  }, [currentQuestionIndex, data]);
+
+  // --- SUBMIT LOGIC ---
+  const handleFinalSubmit = () => {
+    Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Submit",
+        onPress: async () => {
+          setLoading(true);
+          try {
+            const result = await submitQuiz(data.attempt_id, token!);
+            if (result.status === "SUBMITTED") {
+              dispatch(clearQuiz());
+              Alert.alert("Success", "Quiz Submitted Successfully!", [
+                {
+                  text: "View Result",
+                  onPress: () =>
+                    router.replace({
+                      pathname: "/(main)/olympics/results",
+                      params: { attemptId: data.attempt_id },
+                    }),
+                },
+              ]);
+            }
+          } catch (error) {
+            Alert.alert("Error", "Could not submit quiz. Please try again.");
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  // 🟢 2. THE CORRECT RESUME LOGIC
+  // Move the check INSIDE useEffect. Do NOT use 'return' in the main body.
+  useEffect(() => {
     if (!quizId) return;
 
-    // Only fetch if we don't have data
-    if (!data) {
-      loadQuiz(quizId);
-    }
-  }, [quizId]);
-
-  const loadQuiz = async (id: string) => {
-    if (!token) {
-      Alert.alert("Error", "You are not logged in.");
-      router.back();
+    // CHECK: Is there data? AND Does the saved ID match the ID we clicked?
+    if (data && activeQuizId === quizId) {
+      console.log("Create: Resuming previous session...");
+      // We stop here. We do NOT call loadQuiz.
+      // The quiz will simply render from Redux state.
       return;
     }
 
+    // If mismatch, we clear the old data and fetch new
+    if (activeQuizId !== quizId) {
+      dispatch(clearQuiz());
+    }
+
+    loadQuiz(quizId);
+  }, [quizId]);
+
+  const loadQuiz = async (id: string) => {
+    if (!token) return;
     setLoading(true);
     try {
-      // 1. CALL API
       const response = await startQuiz(id, token);
-
-      // 2. CHECK IF EXPIRED (Handle "Resume" vs "New" logic)
       const now = new Date().getTime();
       const expiry = new Date(response.expires_at).getTime();
 
@@ -71,37 +112,19 @@ const QuizScreen = () => {
           { text: "Go Back", onPress: () => router.back() },
         ]);
       } else {
-        // 3. SUCCESS - Save to Redux
-        dispatch(setQuizData(response));
+        // 🟢 3. SAVE THE ID ALONG WITH DATA
+        dispatch(setQuizData({ response, quizId: id }));
       }
     } catch (error: any) {
-      // 🟢 THIS IS THE MISSING PART
-      if (error.response) {
-        // 400 Bad Request usually means "Max attempts reached" or "Already finished"
-        if (error.response.status === 400) {
-          Alert.alert(
-            "Access Denied",
-            "You have used all your attempts for this quiz.",
-            [{ text: "OK", onPress: () => router.back() }]
-          );
-        } else if (error.response.status === 401) {
-          Alert.alert("Session Expired", "Please login again.");
-        } else {
-          // Show the actual message from server for debugging
-          Alert.alert("Error", JSON.stringify(error.response.data));
-        }
-      } else {
-        Alert.alert("Network Error", "Check your internet connection.");
-      }
+      Alert.alert("Error", "Failed to load quiz");
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. THE LAG-PROOF TIMER LOGIC (Same as before)
+  // --- TIMER LOGIC ---
   useEffect(() => {
     if (!data?.expires_at) return;
-
     const interval = setInterval(() => {
       const now = new Date().getTime();
       const expiry = new Date(data.expires_at).getTime();
@@ -110,33 +133,26 @@ const QuizScreen = () => {
       if (diff <= 0) {
         setTimeLeft("00:00");
         clearInterval(interval);
-        Alert.alert("Time's Up!", "The quiz has ended.", [
-          { text: "OK", onPress: () => router.back() }, // Go back when time is up
-        ]);
+        handleFinalSubmit();
       } else {
         const minutes = Math.floor((diff / 1000 / 60) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
         setTimeLeft(`${minutes}:${seconds < 10 ? "0" : ""}${seconds}`);
       }
     }, 1000);
-
     return () => clearInterval(interval);
   }, [data]);
 
-  useEffect(() => {
-    // Cleanup function: Runs when you LEAVE the screen
-    return () => {
-      dispatch(clearQuiz());
-    };
-  }, []);
+  // 🟢 4. REMOVED THE CLEANUP
+  // We do NOT want to clearQuiz() when leaving the screen anymore.
+  // Because we want the data to persist if the app closes!
+  // useEffect(() => { return () => { dispatch(clearQuiz()); }; }, []); <--- DELETED THIS
 
-  // 3. UI HANDLERS
   const handleOptionPress = (qId: string, optId: string) => {
     dispatch(selectOption({ questionId: qId, optionId: optId }));
   };
 
   const handleNext = async () => {
-    // A. Save the current answer first (Standard logic)
     const currentQ = data.questions[currentQuestionIndex];
     const selectedOptionId = userAnswers[currentQ.id];
 
@@ -149,46 +165,14 @@ const QuizScreen = () => {
           token!
         );
       } catch (e) {
-        // Silently fail or show toast - we want to proceed to submit anyway if user wants
-        console.log("Could not save last answer");
+        console.log("Silent save failed");
       }
     }
 
-    // B. Check if we are at the end
     if (currentQuestionIndex < data.questions.length - 1) {
-      // Not the end? Just go next.
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
-      // C. WE ARE AT THE END -> SUBMIT LOGIC
-      Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Submit",
-          onPress: async () => {
-            setLoading(true);
-            try {
-              // 1. CALL THE SUBMIT API
-              const result = await submitQuiz(data.attempt_id, token!);
-
-              // 2. Check success
-              if (result.status === "SUBMITTED") {
-                // 3. Clear Redux so the next attempt is fresh
-                dispatch(clearQuiz());
-
-                // 4. Success Message
-                Alert.alert("Success", "Quiz Submitted Successfully!", [
-                  { text: "OK", onPress: () => router.back() },
-                ]);
-              }
-            } catch (error) {
-              Alert.alert("Error", "Could not submit quiz. Please try again.");
-              console.error(error);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]);
+      handleFinalSubmit();
     }
   };
 
@@ -198,13 +182,13 @@ const QuizScreen = () => {
     }
   };
 
-  if (loading || !data)
+  if (loading || !data) {
     return (
       <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" className="text-blue-600" />
-        <Text className="mt-4 text-gray-500">Starting Quiz...</Text>
+        <ActivityIndicator size="large" color="#0000ff" />
       </View>
     );
+  }
 
   const currentQ = data.questions[currentQuestionIndex];
   const totalQ = data.questions.length;
@@ -216,7 +200,20 @@ const QuizScreen = () => {
         <Text className="text-gray-500 font-bold">
           Q {currentQuestionIndex + 1}/{totalQ}
         </Text>
-        <Text className="text-red-600 font-bold text-lg">⏰ {timeLeft}</Text>
+
+        <View className="flex-row items-center gap-3">
+          <Text className="text-red-600 font-bold text-lg mr-2">
+            ⏰ {timeLeft}
+          </Text>
+          {hasReachedEnd && (
+            <TouchableOpacity
+              onPress={handleFinalSubmit}
+              className="bg-red-100 px-3 py-1 rounded border border-red-200"
+            >
+              <Text className="text-red-600 font-bold text-xs">End Test</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView className="flex-1">
@@ -237,9 +234,9 @@ const QuizScreen = () => {
               }`}
             >
               <Text
-                className={`${
+                className={
                   isSelected ? "text-blue-700 font-bold" : "text-gray-700"
-                }`}
+                }
               >
                 {option.text}
               </Text>
@@ -262,10 +259,12 @@ const QuizScreen = () => {
 
         <TouchableOpacity
           onPress={handleNext}
-          className="px-6 py-3 rounded-lg bg-blue-600"
+          className={`px-6 py-3 rounded-lg ${
+            currentQuestionIndex === totalQ - 1 ? "bg-green-600" : "bg-blue-600"
+          }`}
         >
           <Text className="text-white font-bold">
-            {currentQuestionIndex === totalQ - 1 ? "Submit" : "Next"}
+            {currentQuestionIndex === totalQ - 1 ? "Save & Submit" : "Next"}
           </Text>
         </TouchableOpacity>
       </View>

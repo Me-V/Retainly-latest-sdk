@@ -45,7 +45,7 @@ const Olympics = () => {
     // We push to the quiz screen and pass the ID as a parameter
     // Make sure you have a file at: app/(main)/practice/quiz.tsx (or similar)
     router.push({
-      pathname: "/(main)/practice/olympQuestions",
+      pathname: "/(main)/olympics/questions",
       params: { quizId: quizId },
     });
   };
@@ -97,9 +97,9 @@ const Olympics = () => {
           }
         />
 
-        <TouchableOpacity onPress={() => router.replace("/(main)/practice/QuizResultScreen")}>
+        {/* <TouchableOpacity onPress={() => router.replace("/(main)/practice/QuizResultScreen")}>
           <Text className="text-blue-600">Result</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );

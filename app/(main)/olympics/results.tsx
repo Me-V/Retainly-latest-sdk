@@ -69,7 +69,7 @@ const QuizResultScreen = () => {
         </Text>
 
         <TouchableOpacity
-          onPress={() => router.replace("/(main)/practice/olympics")} // Go back to List
+          onPress={() => router.replace("/(main)/olympics/quizes")} // Go back to List
           className="bg-blue-600 px-8 py-3 rounded-full"
         >
           <Text className="text-white font-bold text-lg">Back to Home</Text>
@@ -139,7 +139,7 @@ const QuizResultScreen = () => {
       {/* Footer Button */}
       <View className="p-6">
         <TouchableOpacity
-          onPress={() => router.replace("/(main)/practice/olympics")}
+          onPress={() => router.replace("/(main)/olympics/quizes")}
           className="bg-gray-900 py-4 rounded-xl items-center"
         >
           <Text className="text-white font-bold text-lg">Back to Quizzes</Text>

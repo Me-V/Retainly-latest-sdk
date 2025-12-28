@@ -111,7 +111,7 @@ const HomeDashboard: React.FC = () => {
     }
     if (key === "olympics") {
       // Functional navigation restored
-      router.push("/practice/olympics");
+      router.push("/olympics/quizes");
     }
     // Placeholder for other actions
     console.log("Quick Action Pressed:", key);

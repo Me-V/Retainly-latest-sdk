@@ -5,21 +5,28 @@ interface QuizState {
   data: QuizStartResponse | null;
   userAnswers: Record<string, string>; // Maps QuestionID -> OptionID
   currentQuestionIndex: number;
+  activeQuizId: string | null;
 }
 
 const initialState: QuizState = {
   data: null,
   userAnswers: {},
   currentQuestionIndex: 0,
+  activeQuizId: null,
 };
 
 const quizSlice = createSlice({
   name: "quiz",
   initialState,
   reducers: {
-    // 1. Save the API response
-    setQuizData: (state, action: PayloadAction<QuizStartResponse>) => {
-      state.data = action.payload;
+    // 🟢 UPDATED: Accepts an object with both the API response and the Quiz ID
+    setQuizData: (
+      state,
+      action: PayloadAction<{ response: QuizStartResponse; quizId: string }>
+    ) => {
+      state.data = action.payload.response;
+      state.activeQuizId = action.payload.quizId;
+
       // Reset progress when starting a new quiz
       state.currentQuestionIndex = 0;
       state.userAnswers = {};
@@ -39,6 +46,7 @@ const quizSlice = createSlice({
       state.data = null;
       state.userAnswers = {};
       state.currentQuestionIndex = 0;
+      state.activeQuizId = null;
     },
   },
 });
