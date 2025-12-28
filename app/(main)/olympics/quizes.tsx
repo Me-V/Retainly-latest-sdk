@@ -40,13 +40,16 @@ const Olympics = () => {
     fetchQuizzes();
   }, [token]);
 
-  // Handle the navigation when a card is clicked
-  const handleQuizPress = (quizId: string) => {
-    // We push to the quiz screen and pass the ID as a parameter
-    // Make sure you have a file at: app/(main)/practice/quiz.tsx (or similar)
+  const handleQuizPress = (item: OlympicQuiz) => {
     router.push({
-      pathname: "/(main)/olympics/questions",
-      params: { quizId: quizId },
+      pathname: "/(main)/olympics/instructions", // 🟢 Point to New Screen
+      params: {
+        quizId: item.id,
+        title: item.title,
+        description: item.description,
+        duration: formatDuration(item.duration_seconds), // Pass formatted string "30 min"
+        attempts: item.max_attempts,
+      },
     });
   };
 
@@ -69,8 +72,8 @@ const Olympics = () => {
           renderItem={({ item }) => (
             // <--- MADE CLICKABLE HERE
             <TouchableOpacity
-              onPress={() => handleQuizPress(item.id)}
-              className="bg-gray-100 p-4 mb-3 rounded-lg border border-gray-200 active:bg-gray-200"
+              onPress={() => handleQuizPress(item)} // 🟢 Pass the whole 'item'
+              className="bg-gray-100 p-4 mb-3 rounded-lg..."
             >
               <Text className="text-lg font-semibold text-black mb-1">
                 {item.title}

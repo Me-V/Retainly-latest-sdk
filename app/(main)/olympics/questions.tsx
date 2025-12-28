@@ -24,11 +24,8 @@ const QuizScreen = () => {
   const dispatch = useDispatch();
   const token = useAppSelector((s) => s.auth.token);
   const params = useLocalSearchParams();
-  const quizId = Array.isArray(params.quizId)
-    ? params.quizId[0]
-    : params.quizId;
+  const quizId = Array.isArray(params.quizId) ? params.quizId[0] : params.quizId;
 
-  // 🟢 1. GET 'activeQuizId' from Redux
   const { data, currentQuestionIndex, userAnswers, activeQuizId } = useSelector(
     (state: any) => state.quiz
   );
@@ -36,6 +33,50 @@ const QuizScreen = () => {
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
+
+  // --- 1. CORE SUBMIT FUNCTION (No "Are you sure?" Alert) ---
+  const submitQuizNow = async (autoSubmit = false) => {
+    if (loading || !data) return; // Prevent double submission
+    
+    setLoading(true);
+    try {
+      const result = await submitQuiz(data.attempt_id, token!);
+      if (result.status === "SUBMITTED") {
+        dispatch(clearQuiz());
+        
+        // Custom message depending on if it was auto-submit or manual
+        const title = autoSubmit ? "Time's Up!" : "Success";
+        const message = autoSubmit 
+          ? "Your quiz was automatically submitted." 
+          : "Quiz Submitted Successfully!";
+
+        Alert.alert(title, message, [
+          {
+            text: "View Result",
+            onPress: () =>
+              router.replace({
+                pathname: "/(main)/olympics/results",
+                params: { attemptId: data.attempt_id },
+              }),
+          },
+        ]);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Could not submit quiz. Please check internet.");
+      setLoading(false); // Only stop loading on error, otherwise we navigate away
+    }
+  };
+
+  // --- 2. MANUAL SUBMIT (User Clicked Button -> Show Alert) ---
+  const handleUserSubmit = () => {
+    Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Submit",
+        onPress: () => submitQuizNow(false), // Pass 'false' for manual
+      },
+    ]);
+  };
 
   // --- LOGIC: Check if user visited the last question ---
   useEffect(() => {
@@ -45,57 +86,16 @@ const QuizScreen = () => {
     }
   }, [currentQuestionIndex, data]);
 
-  // --- SUBMIT LOGIC ---
-  const handleFinalSubmit = () => {
-    Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Submit",
-        onPress: async () => {
-          setLoading(true);
-          try {
-            const result = await submitQuiz(data.attempt_id, token!);
-            if (result.status === "SUBMITTED") {
-              dispatch(clearQuiz());
-              Alert.alert("Success", "Quiz Submitted Successfully!", [
-                {
-                  text: "View Result",
-                  onPress: () =>
-                    router.replace({
-                      pathname: "/(main)/olympics/results",
-                      params: { attemptId: data.attempt_id },
-                    }),
-                },
-              ]);
-            }
-          } catch (error) {
-            Alert.alert("Error", "Could not submit quiz. Please try again.");
-          } finally {
-            setLoading(false);
-          }
-        },
-      },
-    ]);
-  };
-
-  // 🟢 2. THE CORRECT RESUME LOGIC
-  // Move the check INSIDE useEffect. Do NOT use 'return' in the main body.
+  // --- RESUME LOGIC ---
   useEffect(() => {
     if (!quizId) return;
-
-    // CHECK: Is there data? AND Does the saved ID match the ID we clicked?
     if (data && activeQuizId === quizId) {
       console.log("Create: Resuming previous session...");
-      // We stop here. We do NOT call loadQuiz.
-      // The quiz will simply render from Redux state.
       return;
     }
-
-    // If mismatch, we clear the old data and fetch new
     if (activeQuizId !== quizId) {
       dispatch(clearQuiz());
     }
-
     loadQuiz(quizId);
   }, [quizId]);
 
@@ -112,7 +112,6 @@ const QuizScreen = () => {
           { text: "Go Back", onPress: () => router.back() },
         ]);
       } else {
-        // 🟢 3. SAVE THE ID ALONG WITH DATA
         dispatch(setQuizData({ response, quizId: id }));
       }
     } catch (error: any) {
@@ -122,7 +121,7 @@ const QuizScreen = () => {
     }
   };
 
-  // --- TIMER LOGIC ---
+  // --- 3. TIMER LOGIC (AUTO SUBMIT) ---
   useEffect(() => {
     if (!data?.expires_at) return;
     const interval = setInterval(() => {
@@ -133,7 +132,9 @@ const QuizScreen = () => {
       if (diff <= 0) {
         setTimeLeft("00:00");
         clearInterval(interval);
-        handleFinalSubmit();
+        
+        // 🟢 FIX: Call submit directly, skipping the confirmation alert
+        submitQuizNow(true); 
       } else {
         const minutes = Math.floor((diff / 1000 / 60) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
@@ -141,12 +142,7 @@ const QuizScreen = () => {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [data]);
-
-  // 🟢 4. REMOVED THE CLEANUP
-  // We do NOT want to clearQuiz() when leaving the screen anymore.
-  // Because we want the data to persist if the app closes!
-  // useEffect(() => { return () => { dispatch(clearQuiz()); }; }, []); <--- DELETED THIS
+  }, [data]); // Removed submitQuizNow from dependency to avoid loop issues
 
   const handleOptionPress = (qId: string, optId: string) => {
     dispatch(selectOption({ questionId: qId, optionId: optId }));
@@ -172,7 +168,8 @@ const QuizScreen = () => {
     if (currentQuestionIndex < data.questions.length - 1) {
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
-      handleFinalSubmit();
+      // User is on last question, so we ask for confirmation
+      handleUserSubmit();
     }
   };
 
@@ -207,7 +204,7 @@ const QuizScreen = () => {
           </Text>
           {hasReachedEnd && (
             <TouchableOpacity
-              onPress={handleFinalSubmit}
+              onPress={handleUserSubmit}
               className="bg-red-100 px-3 py-1 rounded border border-red-200"
             >
               <Text className="text-red-600 font-bold text-xs">End Test</Text>
@@ -233,11 +230,7 @@ const QuizScreen = () => {
                   : "bg-gray-50 border-gray-200"
               }`}
             >
-              <Text
-                className={
-                  isSelected ? "text-blue-700 font-bold" : "text-gray-700"
-                }
-              >
+              <Text className={isSelected ? "text-blue-700 font-bold" : "text-gray-700"}>
                 {option.text}
               </Text>
             </TouchableOpacity>
