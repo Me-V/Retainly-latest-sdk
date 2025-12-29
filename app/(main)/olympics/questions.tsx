@@ -6,9 +6,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
+  StyleSheet,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import NetInfo from "@react-native-community/netinfo"; // 🟢 1. Import NetInfo
+import { Ionicons } from "@expo/vector-icons"; // For the warning icon
 
 import { startQuiz, submitAnswer, submitQuiz } from "@/services/api.olympics";
 import {
@@ -24,7 +28,9 @@ const QuizScreen = () => {
   const dispatch = useDispatch();
   const token = useAppSelector((s) => s.auth.token);
   const params = useLocalSearchParams();
-  const quizId = Array.isArray(params.quizId) ? params.quizId[0] : params.quizId;
+  const quizId = Array.isArray(params.quizId)
+    ? params.quizId[0]
+    : params.quizId;
 
   const { data, currentQuestionIndex, userAnswers, activeQuizId } = useSelector(
     (state: any) => state.quiz
@@ -34,20 +40,40 @@ const QuizScreen = () => {
   const [timeLeft, setTimeLeft] = useState("");
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
 
-  // --- 1. CORE SUBMIT FUNCTION (No "Are you sure?" Alert) ---
+  // 🟢 2. State for Internet Connection
+  const [isConnected, setIsConnected] = useState(true);
+
+  // 🟢 3. Network Listener Effect
+  useEffect(() => {
+    // Subscribe to network state updates
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      // state.isConnected can be null initially, treat it as true to avoid flash
+      setIsConnected(state.isConnected ?? true);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   const submitQuizNow = async (autoSubmit = false) => {
-    if (loading || !data) return; // Prevent double submission
-    
+    // Prevent submission if offline
+    if (!isConnected) {
+      Alert.alert("No Internet", "Please reconnect to submit.");
+      return;
+    }
+
+    if (loading || !data) return;
+
     setLoading(true);
     try {
       const result = await submitQuiz(data.attempt_id, token!);
       if (result.status === "SUBMITTED") {
         dispatch(clearQuiz());
-        
-        // Custom message depending on if it was auto-submit or manual
+
         const title = autoSubmit ? "Time's Up!" : "Success";
-        const message = autoSubmit 
-          ? "Your quiz was automatically submitted." 
+        const message = autoSubmit
+          ? "Your quiz was automatically submitted."
           : "Quiz Submitted Successfully!";
 
         Alert.alert(title, message, [
@@ -63,22 +89,20 @@ const QuizScreen = () => {
       }
     } catch (error) {
       Alert.alert("Error", "Could not submit quiz. Please check internet.");
-      setLoading(false); // Only stop loading on error, otherwise we navigate away
+      setLoading(false);
     }
   };
 
-  // --- 2. MANUAL SUBMIT (User Clicked Button -> Show Alert) ---
   const handleUserSubmit = () => {
     Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Submit",
-        onPress: () => submitQuizNow(false), // Pass 'false' for manual
+        onPress: () => submitQuizNow(false),
       },
     ]);
   };
 
-  // --- LOGIC: Check if user visited the last question ---
   useEffect(() => {
     if (!data) return;
     if (currentQuestionIndex === data.questions.length - 1) {
@@ -86,9 +110,11 @@ const QuizScreen = () => {
     }
   }, [currentQuestionIndex, data]);
 
-  // --- RESUME LOGIC ---
   useEffect(() => {
     if (!quizId) return;
+    // Don't try to load if offline
+    if (!isConnected) return;
+
     if (data && activeQuizId === quizId) {
       console.log("Create: Resuming previous session...");
       return;
@@ -97,7 +123,7 @@ const QuizScreen = () => {
       dispatch(clearQuiz());
     }
     loadQuiz(quizId);
-  }, [quizId]);
+  }, [quizId, isConnected]); // Added isConnected dependency so it retries when online
 
   const loadQuiz = async (id: string) => {
     if (!token) return;
@@ -115,13 +141,15 @@ const QuizScreen = () => {
         dispatch(setQuizData({ response, quizId: id }));
       }
     } catch (error: any) {
-      Alert.alert("Error", "Failed to load quiz");
+      // Don't show alert if it failed just because of network (Modal handles that)
+      if (isConnected) {
+        Alert.alert("Error", "Failed to load quiz");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // --- 3. TIMER LOGIC (AUTO SUBMIT) ---
   useEffect(() => {
     if (!data?.expires_at) return;
     const interval = setInterval(() => {
@@ -132,9 +160,7 @@ const QuizScreen = () => {
       if (diff <= 0) {
         setTimeLeft("00:00");
         clearInterval(interval);
-        
-        // 🟢 FIX: Call submit directly, skipping the confirmation alert
-        submitQuizNow(true); 
+        submitQuizNow(true);
       } else {
         const minutes = Math.floor((diff / 1000 / 60) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
@@ -142,7 +168,7 @@ const QuizScreen = () => {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [data]); // Removed submitQuizNow from dependency to avoid loop issues
+  }, [data]);
 
   const handleOptionPress = (qId: string, optId: string) => {
     dispatch(selectOption({ questionId: qId, optionId: optId }));
@@ -153,13 +179,17 @@ const QuizScreen = () => {
     const selectedOptionId = userAnswers[currentQ.id];
 
     if (selectedOptionId) {
+      // 🟢 Try to save answer. If offline, catch block runs.
+      // Ideally, you'd queue this, but for now we just try.
       try {
-        await submitAnswer(
-          data.attempt_id,
-          currentQ.id,
-          selectedOptionId,
-          token!
-        );
+        if (isConnected) {
+          await submitAnswer(
+            data.attempt_id,
+            currentQ.id,
+            selectedOptionId,
+            token!
+          );
+        }
       } catch (e) {
         console.log("Silent save failed");
       }
@@ -168,7 +198,6 @@ const QuizScreen = () => {
     if (currentQuestionIndex < data.questions.length - 1) {
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
-      // User is on last question, so we ask for confirmation
       handleUserSubmit();
     }
   };
@@ -192,6 +221,28 @@ const QuizScreen = () => {
 
   return (
     <View className="flex-1 bg-white p-4">
+      {/* 🟢 4. NO INTERNET MODAL */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={!isConnected} // Show when isConnected is false
+        onRequestClose={() => {}} // Block back button close
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Ionicons name="cloud-offline" size={50} color="#DC2626" />
+            <Text style={styles.modalText}>Connection Lost</Text>
+            <Text style={styles.subText}>
+              Your internet connection appears to be offline. The timer is still
+              running on the server.
+            </Text>
+            <Text style={styles.subTextBold}>
+              Please reconnect to continue.
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       {/* HEADER */}
       <View className="flex-row justify-between items-center mb-6 border-b border-gray-200 pb-4 mt-8">
         <Text className="text-gray-500 font-bold">
@@ -230,7 +281,11 @@ const QuizScreen = () => {
                   : "bg-gray-50 border-gray-200"
               }`}
             >
-              <Text className={isSelected ? "text-blue-700 font-bold" : "text-gray-700"}>
+              <Text
+                className={
+                  isSelected ? "text-blue-700 font-bold" : "text-gray-700"
+                }
+              >
                 {option.text}
               </Text>
             </TouchableOpacity>
@@ -264,5 +319,51 @@ const QuizScreen = () => {
     </View>
   );
 };
+
+// 🟢 5. STYLES FOR MODAL
+const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent background
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "80%",
+  },
+  modalText: {
+    marginBottom: 10,
+    marginTop: 10,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  subText: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  subTextBold: {
+    textAlign: "center",
+    color: "#333",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});
 
 export default QuizScreen;
