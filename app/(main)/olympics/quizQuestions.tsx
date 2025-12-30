@@ -10,6 +10,7 @@ import {
   Modal,
   StyleSheet,
   StatusBar,
+  BackHandler,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -70,6 +71,36 @@ const QuizScreen = () => {
       setCurrentSelection(savedAnswer || null);
     }
   }, [currentQuestionIndex, data, userAnswers]);
+
+  // 🟢 Handle Hardware Back Button (Android)
+  useEffect(() => {
+    const backAction = () => {
+      Alert.alert(
+        "Quit Quiz?",
+        "Are you sure you want to leave? Your current progress will be lost.",
+        [
+          {
+            text: "Cancel",
+            onPress: () => null,
+            style: "cancel",
+          },
+          {
+            text: "Quit",
+            onPress: () => router.back(),
+            style: "destructive",
+          },
+        ]
+      );
+      return true; // This prevents the default back action
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, []);
 
   const submitQuizNow = async (autoSubmit = false) => {
     if (!isConnected) {
