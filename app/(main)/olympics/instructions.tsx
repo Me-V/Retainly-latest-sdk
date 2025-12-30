@@ -1,13 +1,16 @@
+// app/(main)/olympics/instructionScreen.tsx
 import React from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
+  StatusBar,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons"; // Make sure you have this or use simple text
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 
 const InstructionScreen = () => {
   const router = useRouter();
@@ -23,79 +26,185 @@ const InstructionScreen = () => {
       params: { quizId: String(quizId) },
     });
   };
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
+  const GLOW_SIZE = 12;
+  const GlowCard = ({
+    children,
+    className = "",
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <LinearGradient
+      colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      className={`rounded-[24px] border border-white/10 overflow-hidden ${className}`}
+    >
+      <LinearGradient
+        colors={[GLOW_COLOR, "transparent"]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", GLOW_COLOR]}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={[GLOW_COLOR, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", GLOW_COLOR]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      {children}
+    </LinearGradient>
+  );
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="flex-1 p-6">
-        {/* Quiz Title Header */}
-        <View className="mb-8 border-b border-gray-200 pb-4">
-          <Text className="text-3xl font-bold text-slate-900 mb-2">
-            {title}
+    <LinearGradient
+      // Deep purple gradient matching the screenshot
+      colors={["#3b0764", "#1a032a"]} // Adjust hex codes for exact purple tone
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      className="flex-1"
+    >
+      <StatusBar
+        barStyle="default"
+        backgroundColor="transparent"
+        translucent={true}
+      />
+      <SafeAreaView className="flex-1">
+        {/* Header with Back Button */}
+        <View className="px-4 pt-2">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="w-10 h-10 items-center justify-center"
+          >
+            <Ionicons name="chevron-back" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView className="flex-1 px-6 pt-4">
+          {/* Quiz Title & Description */}
+          <View className="mb-8 items-center">
+            <Text className="text-3xl font-bold text-white text-center mb-1 leading-tight">
+              {title || "Quiz Title"}
+            </Text>
+            {/* <Text className="text-white/80 text-base font-semibold text-center">
+              {description || "(Qualification Round)"}
+            </Text> */}
+          </View>
+
+          {/* Key Details Card (Glassy Effect) */}
+
+          <GlowCard className="flex-row items-center p-5 py-6">
+            {/* Duration Column */}
+            <View className="flex-1 items-center justify-center">
+              <Ionicons name="hourglass-outline" size={32} color="#F97316" />
+              <Text className="text-2xl font-bold text-white mt-2">
+                {duration || "30 min"}
+              </Text>
+              <Text className="text-white/60 text-sm">Duration</Text>
+            </View>
+
+            {/* Vertical Divider */}
+            <View className="w-[1px] bg-white/20 h-full mx-2" />
+
+            {/* Attempts Column */}
+            <View className="flex-1 items-center justify-center">
+              {/* Using text "1" style icon or a simple icon if preferred */}
+              <Text className="text-3xl font-bold text-white mb-1">
+                {attempts || 1}
+              </Text>
+              <Text className="text-2xl font-bold text-white mt-[-8px]">
+                {/* {attempts} - Usually attempts is a number, keeping consistent layout */}
+              </Text>
+              <Text className="text-white/60 text-sm mt-1">Attempt(s)</Text>
+            </View>
+          </GlowCard>
+
+          {/* Instructions List */}
+          <Text className="text-xl font-bold text-white my-6">
+            Instructions
           </Text>
-          <Text className="text-gray-500 text-base">{description}</Text>
-        </View>
 
-        {/* Key Details Card */}
-        <View className="flex-row justify-between bg-blue-50 p-4 rounded-xl mb-8 border border-blue-100">
-          <View className="items-center flex-1">
-            <Text className="text-2xl">⏳</Text>
-            <Text className="font-bold text-slate-700 mt-1">{duration}</Text>
-            <Text className="text-xs text-gray-500">Duration</Text>
+          <View className="space-y-6 pb-8">
+            <InstructionItem
+              icon="time-outline"
+              text="The timer starts immediately after you click 'Start Quiz'. It cannot be paused."
+            />
+            <InstructionItem
+              icon="wifi-outline"
+              text="Ensure you have a stable internet connection."
+            />
+            <InstructionItem
+              icon="alert-circle-outline"
+              text="Do not close the app. If you exit, the timer will keep running."
+            />
+            <InstructionItem
+              icon="checkmark-circle-outline" // Changed to circle check for better match
+              text="Click 'Save & Submit' on the last question to finish."
+            />
           </View>
-          <View className="w-[1px] bg-blue-200" />
-          <View className="items-center flex-1">
-            <Text className="text-2xl">Hz</Text>
-            <Text className="font-bold text-slate-700 mt-1">{attempts}</Text>
-            <Text className="text-xs text-gray-500">Attempts</Text>
-          </View>
+        </ScrollView>
+
+        {/* Footer Button */}
+        <View className="p-6 pt-2 pb-8">
+          <TouchableOpacity
+            onPress={handleStart}
+            activeOpacity={0.8}
+            className="bg-[#F99C36] py-4 rounded-2xl items-center shadow-lg" // Matching the orange button color
+          >
+            <Text className="text-white font-bold text-lg tracking-wider uppercase">
+              Start Quiz
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Instructions List */}
-        <Text className="text-xl font-semibold text-slate-800 mb-4">
-          Instructions
-        </Text>
-
-        <View className="space-y-4">
-          <InstructionItem
-            icon="time-outline"
-            text="The timer starts immediately after you click 'Start Quiz'. It cannot be paused."
-          />
-          <InstructionItem
-            icon="wifi-outline"
-            text="Ensure you have a stable internet connection."
-          />
-          <InstructionItem
-            icon="alert-circle-outline"
-            text="Do not close the app. If you exit, the timer will keep running."
-          />
-          <InstructionItem
-            icon="checkmark-done-outline"
-            text="Click 'Save & Submit' on the last question to finish."
-          />
-        </View>
-      </ScrollView>
-
-      {/* Footer Button */}
-      <View className="p-4 border-t border-gray-100">
-        <TouchableOpacity
-          onPress={handleStart}
-          className="bg-blue-600 py-4 rounded-xl items-center shadow-md"
-        >
-          <Text className="text-white font-bold text-lg">Start Quiz</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
-// Helper component for bullet points
+// Helper component for instruction items
 const InstructionItem = ({ icon, text }: { icon: any; text: string }) => (
-  <View className="flex-row items-start mb-4">
-    <View className="mr-3 mt-1">
-      {/* If you don't have icons, just use a bullet point: <Text>•</Text> */}
-      <Ionicons name={icon} size={20} color="#4B5563" />
+  <View className="flex-row items-start pr-4 mb-5">
+    <View className="mr-4 mt-0.5">
+      <Ionicons name={icon} size={24} color="white" />
     </View>
-    <Text className="text-gray-600 text-base flex-1 leading-6">{text}</Text>
+    <Text className="text-white text-base leading-6 flex-1">{text}</Text>
   </View>
 );
 

@@ -6,6 +6,7 @@ import {
   ScrollView,
   LayoutChangeEvent,
 } from "react-native";
+import { getLiveQuizzes, OlympicQuiz } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -98,6 +99,7 @@ const HomeDashboard: React.FC = () => {
 
   const [list, setList] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(false);
+  const [quizzes, setQuizzes] = useState<OlympicQuiz[]>([]);
 
   // Configuration for the glow design
   const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
@@ -137,6 +139,24 @@ const HomeDashboard: React.FC = () => {
     };
     load();
   }, [token, boardId, classId, streamId, includeStream]);
+
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      try {
+        // Only fetch if we have a token
+        if (token) {
+          const data = await getLiveQuizzes(token);
+          setQuizzes(data);
+        }
+      } catch (error) {
+        console.error("Failed to load quizzes", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuizzes();
+  }, [token]);
 
   const allFromApi = useMemo(() => {
     return (list as Subject[]).map((s, i) => ({
@@ -226,7 +246,7 @@ const HomeDashboard: React.FC = () => {
     <LinearGradient
       // Warm tint at top-left (#5A1C44) fading to dark purple
       colors={["#5A1C44", "#3B0A52", "#3A0353"]}
-      start={{ x: 0, y: 0 }}
+      start={{ x: 1, y: 1 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
@@ -367,18 +387,20 @@ const HomeDashboard: React.FC = () => {
               <Ionicons name="chevron-forward" size={20} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => handleQuickAction("olympics")}
-              className="flex-row items-center p-5 active:bg-white/5"
-            >
-              <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
-                <Ionicons name="search" size={20} color="#FBC02D" />
-              </View>
-              <Text className="flex-1 text-white text-[20px] font-semibold">
-                Olympics
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="white" />
-            </TouchableOpacity>
+            {quizzes.length > 0 && (
+              <TouchableOpacity
+                onPress={() => handleQuickAction("olympics")}
+                className="flex-row items-center p-5 active:bg-white/5"
+              >
+                <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
+                  <Ionicons name="search" size={20} color="#FBC02D" />
+                </View>
+                <Text className="flex-1 text-white text-[20px] font-semibold">
+                  Olympics
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color="white" />
+              </TouchableOpacity>
+            )}
           </GlowCard>
         </View>
       </ScrollView>
