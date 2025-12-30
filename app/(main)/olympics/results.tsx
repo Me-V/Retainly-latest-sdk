@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  TouchableOpacity,
-  SafeAreaView,
-} from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 import { getQuizResult, QuizResultResponse } from "@/services/api.olympics";
@@ -27,6 +22,8 @@ const QuizResultScreen = () => {
         const id = Array.isArray(attemptId) ? attemptId[0] : attemptId;
         const data = await getQuizResult(id, token);
         setResult(data);
+
+        console.log("Result ############", data);
       } catch (error: any) {
         // 🔴 INTELLIGENT ERROR HANDLING
         // If the backend returns 404 or 403, it usually means result is not ready.
@@ -65,11 +62,11 @@ const QuizResultScreen = () => {
           Status Pending
         </Text>
         <Text className="text-lg text-gray-500 text-center mb-8">
-          {errorMsg}
+          Result will be available soon!
         </Text>
 
         <TouchableOpacity
-          onPress={() => router.replace("/(main)/olympics/quizes")} // Go back to List
+          onPress={() => router.replace("/(main)/dashboard")} // Go back to List
           className="bg-blue-600 px-8 py-3 rounded-full"
         >
           <Text className="text-white font-bold text-lg">Back to Home</Text>
