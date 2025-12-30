@@ -362,7 +362,7 @@ const QuizScreen = () => {
             <Text className="text-white/60 font-bold mb-2 uppercase text-xs tracking-widest">
               Question
             </Text>
-            <Text className="text-white text-xl font-semibold leading-8">
+            <Text className="text-white text-[20px] font-semibold leading-8">
               {currentQ.text}
             </Text>
           </View>
@@ -385,7 +385,7 @@ const QuizScreen = () => {
                   }`}
                 >
                   <Text
-                    className={`text-base font-medium ${
+                    className={`text-[20px] font-medium ${
                       isSelected ? "text-white" : "text-white/80"
                     }`}
                   >
@@ -402,11 +402,18 @@ const QuizScreen = () => {
           <TouchableOpacity
             onPress={handlePrev}
             disabled={currentQuestionIndex === 0}
-            className={`px-6 py-4 rounded-xl ${
+            className={`bg-[#F99C36] px-8 py-4 rounded-2xl shadow-lg ${
               currentQuestionIndex === 0 ? "opacity-0" : "opacity-100"
             }`}
+            style={{
+              shadowColor: "#F99C36",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 6,
+            }}
           >
-            <Text className="text-white/60 font-semibold text-base">Back</Text>
+            <Text className="text-white font-semibold text-base">Back</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
