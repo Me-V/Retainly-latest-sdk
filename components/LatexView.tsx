@@ -5,9 +5,14 @@ import { WebView } from "react-native-webview";
 type Props = {
   latex: string;
   inline?: boolean;
+  color?: string;
 };
 
-export default function LatexView({ latex, inline = false }: Props) {
+export default function LatexView({
+  latex,
+  inline = false,
+  color = "#000000",
+}: Props) {
   const html = `
 <!DOCTYPE html>
 <html>
@@ -22,6 +27,9 @@ export default function LatexView({ latex, inline = false }: Props) {
         margin: 0;
         padding: 8px;
         background: transparent;
+      }
+      .katex {
+        color: ${color};
       }
     </style>
   </head>
