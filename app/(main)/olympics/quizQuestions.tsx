@@ -50,6 +50,10 @@ const QuizScreen = () => {
 
   // 🟢 State for Internet Connection
   const [isConnected, setIsConnected] = useState(true);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+
+  // 🟢 NEW: Track if the modal is for "Exit" or "Finish"
+  const [isExitMode, setIsExitMode] = useState(true);
 
   // 🟢 Network Listener Effect
   useEffect(() => {
@@ -72,33 +76,17 @@ const QuizScreen = () => {
     }
   }, [currentQuestionIndex, data, userAnswers]);
 
-  // 🟢 Handle Hardware Back Button (Android)
+  // 🟢 Handle Hardware Back Button -> EXIT MODE
   useEffect(() => {
     const backAction = () => {
-      Alert.alert(
-        "Quit Quiz?",
-        "Are you sure you want to leave? Your current progress will be lost.",
-        [
-          {
-            text: "Cancel",
-            onPress: () => null,
-            style: "cancel",
-          },
-          {
-            text: "Quit",
-            onPress: () => router.back(),
-            style: "destructive",
-          },
-        ]
-      );
-      return true; // This prevents the default back action
+      setIsExitMode(true); // Set to Exit Mode
+      setExitModalVisible(true);
+      return true;
     };
-
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
       backAction
     );
-
     return () => backHandler.remove();
   }, []);
 
@@ -137,13 +125,8 @@ const QuizScreen = () => {
   };
 
   const handleUserSubmit = () => {
-    Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Submit",
-        onPress: () => submitQuizNow(false),
-      },
-    ]);
+    setIsExitMode(true); // Set to Exit Mode
+    setExitModalVisible(true);
   };
 
   // Logic: Show End button if user is at the end OR has answered the last question
@@ -255,7 +238,8 @@ const QuizScreen = () => {
     if (currentQuestionIndex < data.questions.length - 1) {
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
-      handleUserSubmit();
+      setIsExitMode(false);
+      setExitModalVisible(true);
     }
   };
 
@@ -312,6 +296,109 @@ const QuizScreen = () => {
                 Please reconnect to continue.
               </Text>
             </View>
+          </View>
+        </Modal>
+
+        {/* 🟢 CUSTOM MODAL (Reusable for Exit & Finish) */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={exitModalVisible}
+          onRequestClose={() => setExitModalVisible(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.7)",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
+            }}
+          >
+            <LinearGradient
+              colors={["#3B0A52", "#180323"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={{
+                width: "100%",
+                borderRadius: 24,
+                paddingVertical: 32,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
+            >
+              {/* 🟢 DYNAMIC TITLE */}
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  color: "white",
+                  textAlign: "center",
+                  marginBottom: 16,
+                }}
+              >
+                {isExitMode ? "Exit Test?" : "Finish Quiz?"}
+              </Text>
+
+              {/* 🟢 DYNAMIC DESCRIPTION */}
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#E0E0E0",
+                  textAlign: "center",
+                  lineHeight: 24,
+                  marginBottom: 32,
+                }}
+              >
+                {isExitMode
+                  ? "If you go back, your answers will be submitted automatically.\nYou will not be able to continue the test."
+                  : "Are you sure you want to submit your answers?\nYou cannot undo this action."}
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  alignItems: "center",
+                  paddingHorizontal: 10,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => setExitModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 18,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setExitModalVisible(false);
+                    submitQuizNow(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {/* 🟢 DYNAMIC BUTTON TEXT */}
+                  <Text
+                    style={{
+                      color: "#F99C36",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {isExitMode ? "Submit & Exit" : "Submit Quiz"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
           </View>
         </Modal>
 
