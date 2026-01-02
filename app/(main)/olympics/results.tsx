@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Modal,
-  Dimensions,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -153,14 +153,22 @@ const QuizResultScreen = () => {
         {result && (
           <>
             <View className="flex-1 px-6 mt-10 items-center">
-              <Text className="text-[150px] mb-6">🏆</Text>
+              {isPass ? (
+                <Text className="text-[150px] mb-6">🏆</Text>
+              ) : (
+                <Image
+                  source={require("@/assets/Illustration/FailureGIF.gif")}
+                  className="w-[200px] h-[200px]"
+                  resizeMode="contain"
+                />
+              )}
 
               <Text
                 className={`text-3xl font-bold mb-2 ${
                   isPass ? "text-green-500" : "text-red-500"
                 }`}
               >
-                {isPass ? "Congratulations" : "Hard Luck"}
+                {isPass ? "Congratulations" : "Better luck next time!"}
               </Text>
 
               <Text className="text-gray-300 text-lg mb-10">

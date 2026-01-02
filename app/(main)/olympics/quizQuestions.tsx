@@ -55,6 +55,10 @@ const QuizScreen = () => {
   // 🟢 NEW: Track if the modal is for "Exit" or "Finish"
   const [isExitMode, setIsExitMode] = useState(true);
 
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
   // 🟢 Network Listener Effect
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -101,27 +105,33 @@ const QuizScreen = () => {
     try {
       const result = await submitQuiz(data.attempt_id, token!);
       if (result.status === "SUBMITTED") {
-        dispatch(clearQuiz());
-        const title = autoSubmit ? "Time's Up!" : "Success";
-        const message = autoSubmit
-          ? "Your quiz was automatically submitted."
-          : "Quiz Submitted Successfully!";
+        // 🟢 Stop loading so the Modal can render over the UI
+        setLoading(false);
 
-        Alert.alert(title, message, [
-          {
-            text: "View Result",
-            onPress: () =>
-              router.replace({
-                pathname: "/(main)/olympics/results",
-                params: { attemptId: data.attempt_id },
-              }),
-          },
-        ]);
+        // 🟢 Set Success Messages
+        setSuccessTitle(autoSubmit ? "Time's Up!" : "Success");
+        setSuccessMessage(
+          autoSubmit
+            ? "Your quiz was automatically submitted."
+            : "Quiz Submitted Successfully!"
+        );
+
+        // 🟢 Show Custom Success Modal
+        setSuccessModalVisible(true);
       }
     } catch (error) {
       Alert.alert("Error", "Could not submit quiz. Please check internet.");
       setLoading(false);
     }
+  };
+
+  const handleViewResult = () => {
+    setSuccessModalVisible(false);
+    dispatch(clearQuiz()); // 🟢 Clear data only when leaving
+    router.replace({
+      pathname: "/(main)/olympics/results",
+      params: { attemptId: data.attempt_id },
+    });
   };
 
   const handleUserSubmit = () => {
@@ -398,6 +408,92 @@ const QuizScreen = () => {
                   </Text>
                 </TouchableOpacity>
               </View>
+            </LinearGradient>
+          </View>
+        </Modal>
+
+        {/* 🟢 SUCCESS MODAL */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={successModalVisible}
+          onRequestClose={() => {}} // Prevent closing with back button
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.8)", // Slightly darker for focus
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
+            }}
+          >
+            <LinearGradient
+              colors={["#3B0A52", "#180323"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={{
+                width: "100%",
+                borderRadius: 24,
+                paddingVertical: 40,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 28,
+                  fontWeight: "bold",
+                  color: "white",
+                  textAlign: "center",
+                  marginBottom: 12,
+                }}
+              >
+                {successTitle} !
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#E0E0E0",
+                  textAlign: "center",
+                  lineHeight: 24,
+                  marginBottom: 32,
+                }}
+              >
+                {successMessage}
+              </Text>
+
+              <TouchableOpacity
+                onPress={handleViewResult}
+                activeOpacity={0.8}
+                style={{ width: "100%" }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#F99C36",
+                    paddingVertical: 16,
+                    borderRadius: 16,
+                    alignItems: "center",
+                    width: "100%",
+                    shadowColor: "#F99C36",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    View Result
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </LinearGradient>
           </View>
         </Modal>

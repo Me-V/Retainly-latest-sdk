@@ -5,11 +5,14 @@ import { MyLogo } from "@/assets/logo";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   GoogleSignin,
+  isErrorWithCode,
   isSuccessResponse,
+  statusCodes,
 } from "@react-native-google-signin/google-signin";
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { loginWithGoogle } from "@/services/api.auth";
+import auth from "@react-native-firebase/auth";
 
 // Added these imports for the UI design
 import { GoogleIcon, SignUpIcon } from "@/assets/logo2";
@@ -26,37 +29,86 @@ export default function SignInScreen() {
   const signIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
+
+      try {
+        await GoogleSignin.signOut();
+      } catch (error) {
+        // It's okay if this fails (e.g., if already signed out), just proceed.
+        console.log("Error signing out (safe to ignore):", error);
+      }
+
+      // 🟢 2. GET GOOGLE TOKEN
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {
-        const idToken = response.data.idToken;
+        const { idToken } = response.data;
+        const user = response.data.user;
+
+        console.log("🔹 Google ID Token:", idToken ? "Success" : "Missing");
 
         if (idToken) {
-          // 🔥 Call your Django API with Google ID token
-          const backendResponse = await loginWithGoogle(idToken);
+          // 🟢 3. EXCHANGE TOKENS: Google -> Firebase
+          // Create a Firebase credential with the Google token
+          const googleCredential = auth.GoogleAuthProvider.credential(idToken);
 
-          if (backendResponse?.token) {
-            // Store the Django token, not Google’s idToken
-            console.log(
-              "~Vasu Sharma :- Backend Google Token",
-              backendResponse
+          // Sign-in the user with the credential
+          await auth().signInWithCredential(googleCredential);
+
+          // 🟢 4. GET THE REAL FIREBASE TOKEN
+          // This is what your backend actually wants
+          const firebaseToken = await auth().currentUser?.getIdToken();
+
+          console.log(
+            "🔥 Firebase Token:",
+            firebaseToken ? "Ready to send" : "Missing"
+          );
+
+          if (firebaseToken) {
+            // 🟢 5. SEND FIREBASE TOKEN TO BACKEND
+            const backendResponse = await loginWithGoogle(
+              firebaseToken,
+              user.email
             );
-            dispatch(
-              setUser({
-                token: backendResponse.token, // DRF token
-                userInfo: response.data, // optional: Google profile
-              })
-            );
-          } else {
-            Alert.alert("Login failed", "Server did not return a token");
+
+            if (backendResponse?.token) {
+              console.log("✅ Backend Login Success:", backendResponse);
+              dispatch(
+                setUser({
+                  token: backendResponse.token,
+                  userInfo: user,
+                })
+              );
+              // Navigate to dashboard if needed
+              // router.replace("/(main)/dashboard");
+            } else {
+              Alert.alert("Login failed", "Server did not return a token");
+            }
           }
         }
       } else {
-        console.log("sign in was cancelled by user");
+        console.log("Sign in was cancelled");
       }
-    } catch (error) {
-      Alert.alert("Something went wrong");
-      console.error(error);
+    } catch (error: any) {
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.SIGN_IN_CANCELLED:
+            console.log("User cancelled the login flow");
+            break;
+          case statusCodes.IN_PROGRESS:
+            console.log("Sign in is in progress already");
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            console.log("Play services not available or outdated");
+            break;
+          default:
+            console.log("Error:", error.message);
+            Alert.alert("Google Sign-In Error", error.message);
+        }
+      } else {
+        // This usually catches Firebase configuration errors (missing google-services.json)
+        console.error("Firebase Auth Error:", error);
+        Alert.alert("Authentication Error", error.message);
+      }
     }
   };
 

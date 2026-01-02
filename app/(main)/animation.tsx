@@ -108,15 +108,23 @@ export default function AnimationsScreen() {
               ? ("/(main)/dashboard" as Href)
               : ("/(auth)/chat-phone" as Href);
           } else {
-            // Fallback by missing identity, else completeness
-            if (!hasEmail && hasPhone) target = "/(auth)/chat-email" as Href;
-            else if (hasEmail && !hasPhone)
-              target = "/(auth)/chat-phone" as Href;
-            else
-              target = allComplete
-                ? ("/(main)/dashboard" as Href)
-                : ("/(auth)/chat-email" as Href);
-          }
+  // FIXED LOGIC: Check completeness FIRST
+  if (allComplete) {
+    target = "/(main)/dashboard" as Href;
+  } 
+  // Then handle missing pieces if NOT complete
+  else if (!hasEmail) {
+    target = "/(auth)/chat-email" as Href;
+  } 
+  else if (!hasPhone) {
+    // This will only trigger if you uncomment hasPhone in allComplete later
+    // or if you specifically want to force it for incomplete profiles
+    target = "/(auth)/chat-phone" as Href;
+  } 
+  else {
+    target = "/(auth)/chat-email" as Href;
+  }
+}
         }
       } catch {
         target = "/(auth)/signup-options" as Href;

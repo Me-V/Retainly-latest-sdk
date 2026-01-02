@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
-          "client_id": "1082588136127-7i0m512012m6f5oud69f8ada59t0m5eq.apps.googleusercontent.com",
+          "client_id": "1082588136127-7508ec5bup346s12gpnok5jdfrs7tkm0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.education.retainlyapp",
-            "certificate_hash": "d3267b7bba640adbd2d6297b28016256466c9a16"
+            "certificate_hash": "e56d5d6c0bee962cf2c9f8953aadd2e00f098c56"
+          }
+        },
+        {
+          "client_id": "1082588136127-95dt61gvjm9mpp5toegctcc0meqqvean.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.education.retainlyapp",
+            "certificate_hash": "5f68854caed317d62e8191b076a544cfcecfb0bd"
+          }
+        },
+        {
+          "client_id": "1082588136127-vdkel4sliko36qsurtctf0i20o1k7f5p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.education.retainlyapp",
+            "certificate_hash": "455822043f057928ff970485957eaddc1ff584f2"
           }
         },
         {
