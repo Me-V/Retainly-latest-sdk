@@ -111,6 +111,10 @@ const HomeDashboard: React.FC = () => {
       // Functional navigation restored
       router.push("/practice/chooseSubject");
     }
+    if (key === "mock") {
+      // Functional navigation restored
+      router.push("/mock");
+    }
     if (key === "olympics") {
       // Functional navigation restored
       router.push("/olympics/quizes");

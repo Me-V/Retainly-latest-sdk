@@ -41,6 +41,7 @@ export default function EmailSignupScreen() {
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupHeading, setPopupHeading] = useState("");
   const [popupContent, setPopupContent] = useState("");
+  const [popupTheme, setPopupTheme] = useState<"light" | "dark">("light");
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true);
 
@@ -49,6 +50,7 @@ export default function EmailSignupScreen() {
   const GLOW_SIZE = 12;
 
   const handleSignup = async () => {
+    // 1. Validation Checks (Keep showing popup for errors)
     if (!email || !password || !confirmPassword) {
       setPopupHeading("Error");
       setPopupContent("Please fill in all fields");
@@ -65,17 +67,19 @@ export default function EmailSignupScreen() {
 
     setLoading(true);
     try {
+      // 2. Create User
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
+      // 3. Send Verification Email
       await sendEmailVerification(userCredential.user);
 
-      setPopupHeading("Email Sent!");
-      setPopupContent("Please check your email for the verification code.");
-      setPopupVisible(true);
+      // --- CHANGE IS HERE ---
+      // Instead of showing the popup, we directly switch the screen state
+      setEmailSent(true);
     } catch (err: any) {
       console.log(err);
       let message = "Something went wrong. Please try again.";
@@ -89,8 +93,10 @@ export default function EmailSignupScreen() {
         message = "Password is too weak. Please use at least 6 characters.";
       }
 
+      // Keep popup for API errors
       setPopupHeading("Signup Error");
       setPopupContent(message);
+      setPopupTheme("dark");
       setPopupVisible(true);
     } finally {
       setLoading(false);
@@ -447,6 +453,7 @@ export default function EmailSignupScreen() {
             heading={popupHeading}
             content={popupContent}
             cancelShow={false}
+            theme={popupTheme}
           />
         </ScrollView>
       </KeyboardAvoidingView>

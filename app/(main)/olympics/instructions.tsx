@@ -130,29 +130,40 @@ const InstructionScreen = () => {
 
           {/* Key Details Card (Glassy Effect) */}
 
-          <GlowCard className="flex-row items-center p-5 py-6">
-            {/* Duration Column */}
-            <View className="flex-1 items-center justify-center">
-              <Ionicons name="hourglass-outline" size={32} color="#F97316" />
-              <Text className="text-2xl font-bold text-white mt-2">
-                {duration || "30 min"}
-              </Text>
-              <Text className="text-white/60 text-sm">Duration</Text>
+          <GlowCard className="w-full">
+            {/* Top Row: Duration & Attempts */}
+            <View className="flex-row items-center p-5 py-6">
+              {/* Duration Column */}
+              <View className="flex-1 items-center justify-center">
+                <Ionicons name="hourglass-outline" size={32} color="#F97316" />
+                <Text className="text-2xl font-bold text-white mt-2">
+                  {duration || "30 min"}
+                </Text>
+                <Text className="text-white/60 text-sm">Duration</Text>
+              </View>
+
+              {/* Vertical Divider */}
+              <View className="w-[1px] bg-white/20 h-24 mx-2" />
+
+              {/* Attempts Column */}
+              <View className="flex-1 items-center justify-center">
+                {/* Fixed the layout to match the duration column style */}
+                <Text className="text-3xl font-bold text-white mb-1">
+                  {attempts || 1}
+                </Text>
+                <Text className="text-white/60 text-sm">Attempts</Text>
+              </View>
             </View>
 
-            {/* Vertical Divider */}
-            <View className="w-[1px] bg-white/20 h-full mx-2" />
+            {/* Horizontal Divider */}
+            <View className="h-[1px] bg-white/10 w-full" />
 
-            {/* Attempts Column */}
-            <View className="flex-1 items-center justify-center">
-              {/* Using text "1" style icon or a simple icon if preferred */}
-              <Text className="text-3xl font-bold text-white mb-1">
-                {attempts || 1}
+            {/* Bottom Section: Set Name */}
+            {/* Matches the screenshot's bottom bar style */}
+            <View className="py-4 items-center justify-center">
+              <Text className="text-xl font-bold text-white tracking-wider">
+                Set A
               </Text>
-              <Text className="text-2xl font-bold text-white mt-[-8px]">
-                {/* {attempts} - Usually attempts is a number, keeping consistent layout */}
-              </Text>
-              <Text className="text-white/60 text-sm mt-1">Attempt(s)</Text>
             </View>
           </GlowCard>
 

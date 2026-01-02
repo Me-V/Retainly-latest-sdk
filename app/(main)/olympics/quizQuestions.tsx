@@ -1,3 +1,4 @@
+// app/(main)/olympics/quizQuestions.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -8,11 +9,15 @@ import {
   Alert,
   Modal,
   StyleSheet,
+  StatusBar,
+  BackHandler,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import NetInfo from "@react-native-community/netinfo"; // 🟢 1. Import NetInfo
-import { Ionicons } from "@expo/vector-icons"; // For the warning icon
+import NetInfo from "@react-native-community/netinfo";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { startQuiz, submitAnswer, submitQuiz } from "@/services/api.olympics";
 import {
@@ -40,52 +45,79 @@ const QuizScreen = () => {
   const [timeLeft, setTimeLeft] = useState("");
   const [hasReachedEnd, setHasReachedEnd] = useState(false);
 
-  // 🟢 2. State for Internet Connection
-  const [isConnected, setIsConnected] = useState(true);
+  // 🟢 Local State: Tracks the user's selection BEFORE saving
+  const [currentSelection, setCurrentSelection] = useState<string | null>(null);
 
-  // 🟢 3. Network Listener Effect
+  // 🟢 State for Internet Connection
+  const [isConnected, setIsConnected] = useState(true);
+  const [exitModalVisible, setExitModalVisible] = useState(false);
+
+  // 🟢 NEW: Track if the modal is for "Exit" or "Finish"
+  const [isExitMode, setIsExitMode] = useState(true);
+
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [successTitle, setSuccessTitle] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // 🟢 Network Listener Effect
   useEffect(() => {
-    // Subscribe to network state updates
     const unsubscribe = NetInfo.addEventListener((state) => {
-      // state.isConnected can be null initially, treat it as true to avoid flash
       setIsConnected(state.isConnected ?? true);
     });
-
     return () => {
       unsubscribe();
     };
   }, []);
 
+  // 🟢 Sync Local Selection with Saved Redux Data
+  // Whenever we change questions, we load the "Saved" answer into our local state.
+  // If no saved answer exists, we reset to null (clearing any unsaved previous touches).
+  useEffect(() => {
+    if (data && data.questions) {
+      const currentQId = data.questions[currentQuestionIndex].id;
+      const savedAnswer = userAnswers[currentQId];
+      setCurrentSelection(savedAnswer || null);
+    }
+  }, [currentQuestionIndex, data, userAnswers]);
+
+  // 🟢 Handle Hardware Back Button -> EXIT MODE
+  useEffect(() => {
+    const backAction = () => {
+      setIsExitMode(true); // Set to Exit Mode
+      setExitModalVisible(true);
+      return true;
+    };
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+    return () => backHandler.remove();
+  }, []);
+
   const submitQuizNow = async (autoSubmit = false) => {
-    // Prevent submission if offline
     if (!isConnected) {
       Alert.alert("No Internet", "Please reconnect to submit.");
       return;
     }
-
     if (loading || !data) return;
 
     setLoading(true);
     try {
       const result = await submitQuiz(data.attempt_id, token!);
       if (result.status === "SUBMITTED") {
-        dispatch(clearQuiz());
+        // 🟢 Stop loading so the Modal can render over the UI
+        setLoading(false);
 
-        const title = autoSubmit ? "Time's Up!" : "Success";
-        const message = autoSubmit
-          ? "Your quiz was automatically submitted."
-          : "Quiz Submitted Successfully!";
+        // 🟢 Set Success Messages
+        setSuccessTitle(autoSubmit ? "Time's Up!" : "Success");
+        setSuccessMessage(
+          autoSubmit
+            ? "Your quiz was automatically submitted."
+            : "Quiz Submitted Successfully!"
+        );
 
-        Alert.alert(title, message, [
-          {
-            text: "View Result",
-            onPress: () =>
-              router.replace({
-                pathname: "/(main)/olympics/results",
-                params: { attemptId: data.attempt_id },
-              }),
-          },
-        ]);
+        // 🟢 Show Custom Success Modal
+        setSuccessModalVisible(true);
       }
     } catch (error) {
       Alert.alert("Error", "Could not submit quiz. Please check internet.");
@@ -93,26 +125,40 @@ const QuizScreen = () => {
     }
   };
 
-  const handleUserSubmit = () => {
-    Alert.alert("Finish Quiz", "Are you sure you want to submit?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Submit",
-        onPress: () => submitQuizNow(false),
-      },
-    ]);
+  const handleViewResult = () => {
+    setSuccessModalVisible(false);
+    dispatch(clearQuiz()); // 🟢 Clear data only when leaving
+    router.replace({
+      pathname: "/(main)/olympics/results",
+      params: { attemptId: data.attempt_id },
+    });
   };
 
+  const handleUserSubmit = () => {
+    setIsExitMode(true); // Set to Exit Mode
+    setExitModalVisible(true);
+  };
+
+  // Logic: Show End button if user is at the end OR has answered the last question
   useEffect(() => {
-    if (!data) return;
-    if (currentQuestionIndex === data.questions.length - 1) {
+    if (!data || !data.questions || data.questions.length === 0) return;
+
+    const totalQuestions = data.questions.length;
+    const lastQuestionId = data.questions[totalQuestions - 1].id;
+
+    // Check 1: Are we currently on the last page?
+    const isAtEnd = currentQuestionIndex === totalQuestions - 1;
+
+    // Check 2: Does the last question have an answer recorded in Redux?
+    const hasAnsweredLast = !!userAnswers[lastQuestionId];
+
+    if (isAtEnd || hasAnsweredLast) {
       setHasReachedEnd(true);
     }
-  }, [currentQuestionIndex, data]);
+  }, [currentQuestionIndex, data, userAnswers]);
 
   useEffect(() => {
     if (!quizId) return;
-    // Don't try to load if offline
     if (!isConnected) return;
 
     if (data && activeQuizId === quizId) {
@@ -123,7 +169,7 @@ const QuizScreen = () => {
       dispatch(clearQuiz());
     }
     loadQuiz(quizId);
-  }, [quizId, isConnected]); // Added isConnected dependency so it retries when online
+  }, [quizId, isConnected]);
 
   const loadQuiz = async (id: string) => {
     if (!token) return;
@@ -141,7 +187,6 @@ const QuizScreen = () => {
         dispatch(setQuizData({ response, quizId: id }));
       }
     } catch (error: any) {
-      // Don't show alert if it failed just because of network (Modal handles that)
       if (isConnected) {
         Alert.alert("Error", "Failed to load quiz");
       }
@@ -170,23 +215,28 @@ const QuizScreen = () => {
     return () => clearInterval(interval);
   }, [data]);
 
-  const handleOptionPress = (qId: string, optId: string) => {
-    dispatch(selectOption({ questionId: qId, optionId: optId }));
+  const handleOptionPress = (optId: string) => {
+    // 🟢 Update LOCAL state only. Do NOT dispatch to Redux yet.
+    setCurrentSelection(optId);
   };
 
   const handleNext = async () => {
     const currentQ = data.questions[currentQuestionIndex];
-    const selectedOptionId = userAnswers[currentQ.id];
 
-    if (selectedOptionId) {
-      // 🟢 Try to save answer. If offline, catch block runs.
-      // Ideally, you'd queue this, but for now we just try.
+    // 🟢 Check LOCAL selection
+    if (currentSelection) {
+      // 1. Commit to Redux (This "Saves" it and updates the orange bubble)
+      dispatch(
+        selectOption({ questionId: currentQ.id, optionId: currentSelection })
+      );
+
+      // 2. Submit to API
       try {
         if (isConnected) {
           await submitAnswer(
             data.attempt_id,
             currentQ.id,
-            selectedOptionId,
+            currentSelection,
             token!
           );
         }
@@ -198,7 +248,8 @@ const QuizScreen = () => {
     if (currentQuestionIndex < data.questions.length - 1) {
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
-      handleUserSubmit();
+      setIsExitMode(false);
+      setExitModalVisible(true);
     }
   };
 
@@ -208,11 +259,19 @@ const QuizScreen = () => {
     }
   };
 
+  const jumpToQuestion = (index: number) => {
+    dispatch(setQuestionIndex(index));
+  };
+
   if (loading || !data) {
     return (
-      <View className="flex-1 justify-center items-center">
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
+      <LinearGradient
+        colors={["#3b0764", "#1a032a"]}
+        className="flex-1 justify-center items-center"
+      >
+        <ActivityIndicator size="large" color="#F99C36" />
+        <Text className="text-white mt-4">Loading Quiz...</Text>
+      </LinearGradient>
     );
   }
 
@@ -220,129 +279,401 @@ const QuizScreen = () => {
   const totalQ = data.questions.length;
 
   return (
-    <View className="flex-1 bg-white p-4">
-      {/* 🟢 4. NO INTERNET MODAL */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={!isConnected} // Show when isConnected is false
-        onRequestClose={() => {}} // Block back button close
-      >
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Ionicons name="cloud-offline" size={50} color="#DC2626" />
-            <Text style={styles.modalText}>Connection Lost</Text>
-            <Text style={styles.subText}>
-              Your internet connection appears to be offline. The timer is still
-              running on the server.
-            </Text>
-            <Text style={styles.subTextBold}>
-              Please reconnect to continue.
-            </Text>
+    <LinearGradient
+      colors={["#3b0764", "#1a032a"]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      className="flex-1"
+    >
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* NO INTERNET MODAL */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={!isConnected}
+          onRequestClose={() => {}}
+        >
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <Ionicons name="cloud-offline" size={50} color="#DC2626" />
+              <Text style={styles.modalText}>Connection Lost</Text>
+              <Text style={styles.subText}>
+                Your internet connection appears to be offline. The timer is
+                still running on the server.
+              </Text>
+              <Text style={styles.subTextBold}>
+                Please reconnect to continue.
+              </Text>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      {/* HEADER */}
-      <View className="flex-row justify-between items-center mb-6 border-b border-gray-200 pb-4 mt-8">
-        <Text className="text-gray-500 font-bold">
-          Q {currentQuestionIndex + 1}/{totalQ}
-        </Text>
-
-        <View className="flex-row items-center gap-3">
-          <Text className="text-red-600 font-bold text-lg mr-2">
-            ⏰ {timeLeft}
-          </Text>
-          {hasReachedEnd && (
-            <TouchableOpacity
-              onPress={handleUserSubmit}
-              className="bg-red-100 px-3 py-1 rounded border border-red-200"
+        {/* 🟢 CUSTOM MODAL (Reusable for Exit & Finish) */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={exitModalVisible}
+          onRequestClose={() => setExitModalVisible(false)}
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.7)",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
+            }}
+          >
+            <LinearGradient
+              colors={["#3B0A52", "#180323"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={{
+                width: "100%",
+                borderRadius: 24,
+                paddingVertical: 32,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
             >
-              <Text className="text-red-600 font-bold text-xs">End Test</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              {/* 🟢 DYNAMIC TITLE */}
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "bold",
+                  color: "white",
+                  textAlign: "center",
+                  marginBottom: 16,
+                }}
+              >
+                {isExitMode ? "Exit Test?" : "Finish Quiz?"}
+              </Text>
 
-      <ScrollView className="flex-1">
-        <Text className="text-xl font-semibold mb-6 text-slate-800">
-          {currentQ.text}
-        </Text>
+              {/* 🟢 DYNAMIC DESCRIPTION */}
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#E0E0E0",
+                  textAlign: "center",
+                  lineHeight: 24,
+                  marginBottom: 32,
+                }}
+              >
+                {isExitMode
+                  ? "If you go back, your answers will be submitted automatically.\nYou will not be able to continue the test."
+                  : "Are you sure you want to submit your answers?\nYou cannot undo this action."}
+              </Text>
 
-        {currentQ.options.map((option: any) => {
-          const isSelected = userAnswers[currentQ.id] === option.id;
-          return (
-            <TouchableOpacity
-              key={option.id}
-              onPress={() => handleOptionPress(currentQ.id, option.id)}
-              className={`p-4 mb-3 rounded-lg border-2 ${
-                isSelected
-                  ? "bg-blue-50 border-blue-500"
-                  : "bg-gray-50 border-gray-200"
-              }`}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  alignItems: "center",
+                  paddingHorizontal: 10,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => setExitModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 18,
+                      fontWeight: "600",
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setExitModalVisible(false);
+                    submitQuizNow(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {/* 🟢 DYNAMIC BUTTON TEXT */}
+                  <Text
+                    style={{
+                      color: "#F99C36",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {isExitMode ? "Submit & Exit" : "Submit Quiz"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </View>
+        </Modal>
+
+        {/* 🟢 SUCCESS MODAL */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={successModalVisible}
+          onRequestClose={() => {}} // Prevent closing with back button
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.8)", // Slightly darker for focus
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 20,
+            }}
+          >
+            <LinearGradient
+              colors={["#3B0A52", "#180323"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={{
+                width: "100%",
+                borderRadius: 24,
+                paddingVertical: 40,
+                paddingHorizontal: 24,
+                alignItems: "center",
+              }}
             >
               <Text
-                className={
-                  isSelected ? "text-blue-700 font-bold" : "text-gray-700"
-                }
+                style={{
+                  fontSize: 28,
+                  fontWeight: "bold",
+                  color: "white",
+                  textAlign: "center",
+                  marginBottom: 12,
+                }}
               >
-                {option.text}
+                {successTitle} !
               </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
 
-      {/* FOOTER */}
-      <View className="flex-row justify-between mt-4 mb-6">
-        <TouchableOpacity
-          onPress={handlePrev}
-          disabled={currentQuestionIndex === 0}
-          className={`px-6 py-3 rounded-lg ${
-            currentQuestionIndex === 0 ? "bg-gray-300" : "bg-gray-800"
-          }`}
-        >
-          <Text className="text-white font-bold">Previous</Text>
-        </TouchableOpacity>
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: "#E0E0E0",
+                  textAlign: "center",
+                  lineHeight: 24,
+                  marginBottom: 32,
+                }}
+              >
+                {successMessage}
+              </Text>
 
-        <TouchableOpacity
-          onPress={handleNext}
-          className={`px-6 py-3 rounded-lg ${
-            currentQuestionIndex === totalQ - 1 ? "bg-green-600" : "bg-blue-600"
-          }`}
+              <TouchableOpacity
+                onPress={handleViewResult}
+                activeOpacity={0.8}
+                style={{ width: "100%" }}
+              >
+                <View
+                  style={{
+                    backgroundColor: "#F99C36",
+                    paddingVertical: 16,
+                    borderRadius: 16,
+                    alignItems: "center",
+                    width: "100%",
+                    shadowColor: "#F99C36",
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    View Result
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </Modal>
+
+        {/* --- HEADER --- */}
+        <View className="px-5 pt-2 pb-2">
+          <View className="flex-row justify-between items-end mb-4 pb-3 border-b border-white/10">
+            <Text className="text-white/80 text-lg font-medium">
+              Q {currentQuestionIndex + 1}/{totalQ}
+            </Text>
+
+            <View className="flex-row items-center gap-3">
+              {hasReachedEnd && (
+                <TouchableOpacity
+                  onPress={handleUserSubmit}
+                  className="bg-red-500/20 border border-red-500/50 px-3 py-1.5 rounded-lg"
+                >
+                  <Text className="text-red-400 font-bold text-xs uppercase tracking-wide">
+                    End Test
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <Text className="text-[#EF4444] font-bold text-xl tracking-wider">
+                {timeLeft}
+              </Text>
+            </View>
+          </View>
+
+          {/* QUESTION NAVIGATION BUBBLES */}
+          <View className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6 mt-2">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ alignItems: "center", paddingRight: 20 }}
+            >
+              {data.questions.map((_: any, index: number) => {
+                const isActive = index === currentQuestionIndex;
+                // 🟢 Bubble now relies on Redux userAnswers (only updated on Save)
+                const isAnswered = !!userAnswers[data.questions[index].id];
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => jumpToQuestion(index)}
+                    className={`w-10 h-10 rounded-full items-center justify-center mr-3 border ${
+                      isActive
+                        ? "bg-white/20 border-white/40"
+                        : isAnswered
+                        ? "bg-[#F99C36]/20 border-[#F99C36]/40"
+                        : "bg-white/5 border-white/10"
+                    }`}
+                  >
+                    <Text
+                      className={`${
+                        isActive
+                          ? "text-white font-bold"
+                          : isAnswered
+                          ? "text-[#F99C36]"
+                          : "text-white/50"
+                      }`}
+                    >
+                      {index + 1}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+
+        {/* --- MAIN CONTENT --- */}
+        <ScrollView
+          className="flex-1 px-5"
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
         >
-          <Text className="text-white font-bold">
-            {currentQuestionIndex === totalQ - 1 ? "Save & Submit" : "Next"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+          {/* QUESTION CARD */}
+          <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 mt-2">
+            <Text className="text-white/60 font-bold mb-2 uppercase text-xs tracking-widest">
+              Question
+            </Text>
+            <Text className="text-white text-[20px] font-semibold leading-8">
+              {currentQ.text}
+            </Text>
+          </View>
+
+          {/* OPTIONS */}
+          <View className="space-y-4 gap-4">
+            {currentQ.options.map((option: any) => {
+              // 🟢 Selection relies on LOCAL state for immediate feedback
+              const isSelected = currentSelection === option.id;
+
+              return (
+                <TouchableOpacity
+                  key={option.id}
+                  onPress={() => handleOptionPress(option.id)}
+                  activeOpacity={0.8}
+                  className={`p-5 rounded-2xl border ${
+                    isSelected
+                      ? "bg-[#F99C36]/20 border-[#F99C36]"
+                      : "bg-white/5 border-white/10"
+                  }`}
+                >
+                  <Text
+                    className={`text-[20px] font-medium ${
+                      isSelected ? "text-white" : "text-white/80"
+                    }`}
+                  >
+                    {option.text}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </ScrollView>
+
+        {/* --- FOOTER --- */}
+        <View className="px-5 pb-6 pt-2 flex-row justify-between items-center">
+          <TouchableOpacity
+            onPress={handlePrev}
+            disabled={currentQuestionIndex === 0}
+            className={`bg-[#F99C36] px-8 py-4 rounded-2xl shadow-lg ${
+              currentQuestionIndex === 0 ? "opacity-0" : "opacity-100"
+            }`}
+            style={{
+              shadowColor: "#F99C36",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 6,
+            }}
+          >
+            <Text className="text-white font-semibold text-base">Back</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleNext}
+            className="bg-[#F99C36] px-8 py-4 rounded-2xl shadow-lg"
+            style={{
+              shadowColor: "#F99C36",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 6,
+            }}
+          >
+            <Text className="text-white font-bold text-base uppercase tracking-wide">
+              {currentQuestionIndex === totalQ - 1
+                ? "Save & Submit"
+                : "Save & Continue"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
-// 🟢 5. STYLES FOR MODAL
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent background
+    backgroundColor: "rgba(0,0,0,0.8)",
   },
   modalView: {
     margin: 20,
-    backgroundColor: "white",
+    backgroundColor: "#1a032a",
     borderRadius: 20,
     padding: 35,
     alignItems: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
     width: "80%",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
   modalText: {
     marginBottom: 10,
@@ -350,19 +681,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: "#fff",
   },
   subText: {
     textAlign: "center",
-    color: "#666",
+    color: "rgba(255,255,255,0.7)",
     fontSize: 14,
     marginBottom: 5,
   },
   subTextBold: {
     textAlign: "center",
-    color: "#333",
+    color: "#F99C36",
     fontSize: 14,
     fontWeight: "600",
+    marginTop: 10,
   },
 });
 

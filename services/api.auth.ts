@@ -3,10 +3,12 @@ import axios from "axios";
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE; // change to your server IP
 
-export async function loginWithGoogle(idToken: string) {
+export async function loginWithGoogle(idToken: string, email: string) {
   try {
-    const res = await axios.post(`${API_BASE}/backend/api/login/google/`, {
-      id_token: idToken,
+    const res = await axios.post(`${API_BASE}/backend/api/signup/`, {
+      signup_method: "google",
+      email: email,
+      token: idToken,
     });
     return res.data; // this will contain { token, detail }
   } catch (err: any) {

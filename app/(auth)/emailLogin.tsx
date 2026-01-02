@@ -29,6 +29,7 @@ export default function EmailLoginScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalHeading, setModalHeading] = useState("Alert");
   const [modalContent, setModalContent] = useState("");
+  const [modalTheme, setModalTheme] = useState<"light" | "dark">("light");
 
   const dispatch = useDispatch();
 
@@ -36,15 +37,20 @@ export default function EmailLoginScreen() {
   const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
   const GLOW_SIZE = 12;
 
-  const showModal = (heading: string, content: string) => {
+  const showModal = (
+    heading: string,
+    content: string,
+    theme: "light" | "dark" = "light" // Default to light, but we will pass "dark" for errors
+  ) => {
     setModalHeading(heading);
     setModalContent(content);
+    setModalTheme(theme); // Set the theme
     setModalVisible(true);
   };
 
   const handleLogin = async () => {
     if (!email || !password) {
-      showModal("Error", "Please enter both email and password");
+      showModal("Error", "Please enter both email and password", "dark");
       return;
     }
 
@@ -102,7 +108,7 @@ export default function EmailLoginScreen() {
           message = data.password[0];
       }
 
-      showModal("Login Failed", message);
+      showModal("Login Failed", message, "dark");
     } finally {
       setLoading(false);
     }
@@ -274,6 +280,7 @@ export default function EmailLoginScreen() {
             onClose={() => setModalVisible(false)}
             heading={modalHeading}
             content={modalContent}
+            theme={modalTheme}
           />
         </ScrollView>
       </KeyboardAvoidingView>

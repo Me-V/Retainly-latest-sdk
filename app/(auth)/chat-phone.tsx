@@ -653,17 +653,21 @@ export default function ChatOnboardingProfile() {
           onClose={() => setPhoneConflictOpen(false)}
           heading="Number already in use"
           content="This phone number is already linked to another account."
-          primaryText="Change Number"
+          
+          primaryText="Change number"
           onPrimary={() => {
             setPhoneConflictOpen(false);
             resetPhoneFlow();
           }}
+          
           secondaryText="Skip and continue"
           onSecondary={() => {
             setPhoneConflictOpen(false);
             proceedToClassSelection();
           }}
+          
           dismissible={false}
+          theme="dark" // <--- ADD THIS
         />
       </KeyboardAvoidingView>
     </LinearGradient>
