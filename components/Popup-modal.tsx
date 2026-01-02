@@ -1,4 +1,3 @@
-// components/Popup-modal.tsx
 import React from "react";
 import {
   Dimensions,
@@ -8,6 +7,8 @@ import {
   ScrollView,
 } from "react-native";
 import Modal from "react-native-modal";
+
+import { LinearGradient } from "expo-linear-gradient";
 
 interface PopupModalProps {
   isVisible: boolean;
@@ -19,7 +20,8 @@ interface PopupModalProps {
   onPrimary?: () => void;
   secondaryText?: string;
   onSecondary?: () => void;
-  dismissible?: boolean; // NEW: default true
+  dismissible?: boolean;
+  theme?: "light" | "dark"; // New prop for styling
 }
 
 const PopupModal: React.FC<PopupModalProps> = ({
@@ -32,9 +34,12 @@ const PopupModal: React.FC<PopupModalProps> = ({
   onPrimary,
   secondaryText,
   onSecondary,
-  dismissible = true, // default
+  dismissible = true,
+  theme = "light",
 }) => {
-  const { width, height } = Dimensions.get("window");
+  const { width } = Dimensions.get("window");
+  const isDark = theme === "dark";
+
   const handlePrimary = () => (onPrimary ? onPrimary() : onClose());
   const handleSecondary = () => (onSecondary ? onSecondary() : onClose());
 
@@ -45,7 +50,7 @@ const PopupModal: React.FC<PopupModalProps> = ({
       animationOut="zoomOut"
       animationInTiming={200}
       animationOutTiming={180}
-      backdropOpacity={0.5}
+      backdropOpacity={0.6}
       backdropColor="#000"
       useNativeDriver
       useNativeDriverForBackdrop
@@ -55,40 +60,37 @@ const PopupModal: React.FC<PopupModalProps> = ({
       avoidKeyboard
       statusBarTranslucent={false}
       coverScreen={true}
-      deviceWidth={Dimensions.get("window").width}
-      deviceHeight={Dimensions.get("window").height}
       style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
         margin: 0,
         justifyContent: "center",
         alignItems: "center",
       }}
-      backdropTransitionOutTiming={0}
     >
-      <View
-        className="bg-white rounded-2xl"
+      {/* Replaced View with LinearGradient */}
+      <LinearGradient
+        // Apply the requested gradient for Dark Mode, White for Light Mode
+        colors={isDark ? ["#3B0A52", "#180323"] : ["#FFFFFF", "#FFFFFF"]}
+        start={{ x: 0, y: 0 }} // Top
+        end={{ x: 0, y: 1 }} // Bottom (180deg)
         style={{
+          borderRadius: 24,
           width: width * 0.9,
           maxWidth: 420,
-          paddingHorizontal: 20,
-          paddingTop: 20,
-          paddingBottom: 16,
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 24,
           shadowColor: "#000",
-          shadowOpacity: 0.15,
+          shadowOpacity: 0.25,
           shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 12,
-          elevation: 6,
+          shadowRadius: 16,
+          elevation: 10,
         }}
       >
         <Text
           style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: "#F98455",
+            fontSize: 22,
+            fontWeight: "bold",
+            color: isDark ? "white" : "#F98455",
             textAlign: "center",
             marginBottom: 12,
           }}
@@ -103,10 +105,10 @@ const PopupModal: React.FC<PopupModalProps> = ({
           >
             <Text
               style={{
-                color: "#374151",
+                color: isDark ? "#E5E7EB" : "#374151",
                 textAlign: "center",
-                lineHeight: 20,
-                fontSize: 14,
+                lineHeight: 22,
+                fontSize: 16,
               }}
             >
               {content}
@@ -123,10 +125,10 @@ const PopupModal: React.FC<PopupModalProps> = ({
         <View
           style={{
             width: "100%",
-            marginTop: 16,
+            marginTop: 24,
             flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
+            gap: 12,
           }}
         >
           {secondaryText ? (
@@ -134,20 +136,23 @@ const PopupModal: React.FC<PopupModalProps> = ({
               onPress={handleSecondary}
               activeOpacity={0.85}
               style={{
-                paddingHorizontal: 16,
-                paddingVertical: 10,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: "#F98455",
-                marginRight: 8,
-                marginBottom: 8,
-                minHeight: 44,
+                flex: 1,
+                paddingVertical: 14,
+                borderRadius: 16,
+                backgroundColor: isDark ? "#804A8A" : "transparent",
+                borderWidth: isDark ? 0 : 1,
+                borderColor: isDark ? "transparent" : "#F98455",
+                alignItems: "center",
                 justifyContent: "center",
               }}
-              accessibilityRole="button"
-              accessibilityLabel={secondaryText}
             >
-              <Text style={{ color: "#F98455", fontWeight: "600" }}>
+              <Text
+                style={{
+                  color: isDark ? "white" : "#F98455",
+                  fontWeight: "600",
+                  fontSize: 15,
+                }}
+              >
                 {secondaryText}
               </Text>
             </TouchableOpacity>
@@ -157,23 +162,20 @@ const PopupModal: React.FC<PopupModalProps> = ({
             onPress={handlePrimary}
             activeOpacity={0.85}
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              borderRadius: 12,
-              backgroundColor: "#F98455",
-              marginBottom: 8,
-              minHeight: 44,
+              flex: 1,
+              paddingVertical: 14,
+              borderRadius: 16,
+              backgroundColor: "#FF8A33",
+              alignItems: "center",
               justifyContent: "center",
             }}
-            accessibilityRole="button"
-            accessibilityLabel={primaryText}
           >
-            <Text style={{ color: "white", fontWeight: "600" }}>
+            <Text style={{ color: "white", fontWeight: "600", fontSize: 15 }}>
               {primaryText}
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
     </Modal>
   );
 };

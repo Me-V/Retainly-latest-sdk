@@ -41,6 +41,7 @@ export default function EmailSignupScreen() {
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupHeading, setPopupHeading] = useState("");
   const [popupContent, setPopupContent] = useState("");
+  const [popupTheme, setPopupTheme] = useState<"light" | "dark">("light");
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true);
 
@@ -95,6 +96,7 @@ export default function EmailSignupScreen() {
       // Keep popup for API errors
       setPopupHeading("Signup Error");
       setPopupContent(message);
+      setPopupTheme("dark");
       setPopupVisible(true);
     } finally {
       setLoading(false);
@@ -451,6 +453,7 @@ export default function EmailSignupScreen() {
             heading={popupHeading}
             content={popupContent}
             cancelShow={false}
+            theme={popupTheme}
           />
         </ScrollView>
       </KeyboardAvoidingView>
