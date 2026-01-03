@@ -27,6 +27,7 @@ import {
   clearQuiz,
 } from "@/store/slices/quizSlice";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
+import PopupModal from "@/components/Popup-modal";
 
 const QuizScreen = () => {
   const router = useRouter();
@@ -317,107 +318,30 @@ const QuizScreen = () => {
         </Modal>
 
         {/* 🟢 CUSTOM MODAL (Reusable for Exit & Finish) */}
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={exitModalVisible}
-          onRequestClose={() => setExitModalVisible(false)}
-        >
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.7)",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 20,
-            }}
-          >
-            <LinearGradient
-              colors={["#3B0A52", "#180323"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={{
-                width: "100%",
-                borderRadius: 24,
-                paddingVertical: 32,
-                paddingHorizontal: 24,
-                alignItems: "center",
-              }}
-            >
-              {/* 🟢 DYNAMIC TITLE */}
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontWeight: "bold",
-                  color: "white",
-                  textAlign: "center",
-                  marginBottom: 16,
-                }}
-              >
-                {isExitMode ? "Exit Test?" : "Finish Quiz?"}
-              </Text>
-
-              {/* 🟢 DYNAMIC DESCRIPTION */}
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: "#E0E0E0",
-                  textAlign: "center",
-                  lineHeight: 24,
-                  marginBottom: 32,
-                }}
-              >
-                {isExitMode
-                  ? "If you go back, your answers will be submitted automatically.\nYou will not be able to continue the test."
-                  : "Are you sure you want to submit your answers?\nYou cannot undo this action."}
-              </Text>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  width: "100%",
-                  alignItems: "center",
-                  paddingHorizontal: 10,
-                }}
-              >
-                <TouchableOpacity
-                  onPress={() => setExitModalVisible(false)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 18,
-                      fontWeight: "600",
-                    }}
-                  >
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setExitModalVisible(false);
-                    submitQuizNow(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  {/* 🟢 DYNAMIC BUTTON TEXT */}
-                  <Text
-                    style={{
-                      color: "#F99C36",
-                      fontSize: 20,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {isExitMode ? "Submit & Exit" : "Submit Quiz"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          </View>
-        </Modal>
+        <PopupModal
+          isVisible={exitModalVisible}
+          onClose={() => setExitModalVisible(false)}
+          theme="dark"
+          heading={isExitMode ? "Exit Quiz?" : "Finish Quiz?"}
+          content={
+            isExitMode
+              ? "Your progress is saved locally. You can come back and resume this quiz later."
+              : "Are you sure you want to submit your answers?\nYou cannot undo this action."
+          }
+          primaryText={isExitMode ? "Exit" : "Submit Quiz"}
+          onPrimary={() => {
+            setExitModalVisible(false);
+            if (isExitMode) {
+              // 🟢 EXIT MODE: Just go back, do NOT submit.
+              router.back();
+            } else {
+              // 🔴 FINISH MODE: Actually submit the quiz to the backend.
+              submitQuizNow(false);
+            }
+          }}
+          secondaryText="Cancel"
+          onSecondary={() => setExitModalVisible(false)}
+        />
 
         {/* 🟢 SUCCESS MODAL */}
         <Modal
