@@ -506,9 +506,9 @@ const QuizScreen = () => {
         </Modal>
 
         {/* --- HEADER --- */}
-        <View className="px-5 pt-2 pb-2">
+        <View className="px-5 pb-2">
           {/* QUESTION NAVIGATION BUBBLES */}
-          <View className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6 mt-2">
+          <View className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6">
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -523,12 +523,12 @@ const QuizScreen = () => {
                   <TouchableOpacity
                     key={index}
                     onPress={() => jumpToQuestion(index)}
-                    className={`w-10 h-10 rounded-full items-center justify-center mr-3 border ${
+                    className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${
                       isActive
                         ? "bg-white/20 border-white/40"
                         : isAnswered
-                        ? "bg-[#F99C36]/20 border-[#F99C36]/40"
-                        : "bg-white/5 border-white/10"
+                        ? "bg-[#10E315]/20 border-[#F99C36]/40"
+                        : "bg-[#C22929]/20 border-white/10"
                     }`}
                   >
                     <Text
@@ -536,8 +536,8 @@ const QuizScreen = () => {
                         isActive
                           ? "text-white font-bold"
                           : isAnswered
-                          ? "text-[#F99C36]"
-                          : "text-white/50"
+                          ? "text-[#3ae805]"
+                          : "text-[#e40d0d]"
                       }`}
                     >
                       {index + 1}
