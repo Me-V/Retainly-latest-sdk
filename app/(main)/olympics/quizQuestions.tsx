@@ -37,8 +37,8 @@ const QuizScreen = () => {
     ? params.quizId[0]
     : params.quizId;
 
-    const previewToken = Array.isArray(params.previewToken) 
-    ? params.previewToken[0] 
+  const previewToken = Array.isArray(params.previewToken)
+    ? params.previewToken[0]
     : params.previewToken;
 
   const { data, currentQuestionIndex, userAnswers, activeQuizId } = useSelector(
@@ -174,7 +174,7 @@ const QuizScreen = () => {
     }
     // Only load if we have the token
     if (previewToken) {
-        loadQuiz(quizId);
+      loadQuiz(quizId);
     }
   }, [quizId, isConnected]);
 
@@ -507,29 +507,6 @@ const QuizScreen = () => {
 
         {/* --- HEADER --- */}
         <View className="px-5 pt-2 pb-2">
-          <View className="flex-row justify-between items-end mb-4 pb-3 border-b border-white/10">
-            <Text className="text-white/80 text-lg font-medium">
-              Q {currentQuestionIndex + 1}/{totalQ}
-            </Text>
-
-            <View className="flex-row items-center gap-3">
-              {hasReachedEnd && (
-                <TouchableOpacity
-                  onPress={handleUserSubmit}
-                  className="bg-red-500/20 border border-red-500/50 px-3 py-1.5 rounded-lg"
-                >
-                  <Text className="text-red-400 font-bold text-xs uppercase tracking-wide">
-                    End Test
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <Text className="text-[#EF4444] font-bold text-xl tracking-wider">
-                {timeLeft}
-              </Text>
-            </View>
-          </View>
-
           {/* QUESTION NAVIGATION BUBBLES */}
           <View className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6 mt-2">
             <ScrollView
@@ -569,6 +546,29 @@ const QuizScreen = () => {
                 );
               })}
             </ScrollView>
+          </View>
+
+          <View className="flex-row justify-between items-end mb-4 pb-3 border-b border-white/10 px-2">
+            <Text className="text-white/80 text-lg font-medium">
+              Q {currentQuestionIndex + 1}/{totalQ}
+            </Text>
+
+            <View className="flex-row items-center gap-3">
+              {/* {hasReachedEnd && (
+                <TouchableOpacity
+                  onPress={handleUserSubmit}
+                  className="bg-red-500/20 border border-red-500/50 px-3 py-1.5 rounded-lg"
+                >
+                  <Text className="text-red-400 font-bold text-xs uppercase tracking-wide">
+                    End Test
+                  </Text>
+                </TouchableOpacity>
+              )} */}
+
+              <Text className="text-[#EF4444] font-bold text-xl tracking-wider">
+                {timeLeft}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -620,7 +620,7 @@ const QuizScreen = () => {
           <TouchableOpacity
             onPress={handlePrev}
             disabled={currentQuestionIndex === 0}
-            className={`bg-[#F99C36] px-8 py-4 rounded-2xl shadow-lg ${
+            className={`bg-[#F99C36] px-10 py-4 rounded-2xl shadow-lg ${
               currentQuestionIndex === 0 ? "opacity-0" : "opacity-100"
             }`}
             style={{
@@ -631,12 +631,12 @@ const QuizScreen = () => {
               elevation: 6,
             }}
           >
-            <Text className="text-white font-semibold text-base">Back</Text>
+            <Text className="text-white font-semibold text-base">Previous</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleNext}
-            className="bg-[#F99C36] px-8 py-4 rounded-2xl shadow-lg"
+            className="bg-[#F99C36] px-4 py-4 rounded-2xl shadow-lg"
             style={{
               shadowColor: "#F99C36",
               shadowOffset: { width: 0, height: 4 },
@@ -651,6 +651,18 @@ const QuizScreen = () => {
                 : "Save & Continue"}
             </Text>
           </TouchableOpacity>
+        </View>
+        <View className="flex-row items-center gap-3 justify-center mb-4">
+          {hasReachedEnd && (
+            <TouchableOpacity
+              onPress={handleUserSubmit}
+              className="bg-[#FFFFFF0D] border border-gray-600 px-6 py-3 rounded-2xl"
+            >
+              <Text className="text-white font-bold text-[24px] uppercase tracking-wide">
+                Submit
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </SafeAreaView>
     </LinearGradient>
