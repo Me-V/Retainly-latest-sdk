@@ -117,8 +117,8 @@ const InstructionScreen = () => {
             <View className="flex-row items-center p-5 py-6">
               {/* Duration Column */}
               <View className="flex-1 items-center justify-center">
-                <Ionicons name="hourglass-outline" size={32} color="#F97316" />
-                <Text className="text-2xl font-bold text-white mt-2">
+                <Ionicons name="hourglass-outline" size={25} color="#F97316" />
+                <Text className="text-xl font-bold text-white">
                   {displayDuration}
                 </Text>
                 <Text className="text-white/60 text-sm">Duration</Text>

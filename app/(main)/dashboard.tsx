@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  LayoutChangeEvent,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { getLiveQuizzes, OlympicQuiz } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
@@ -328,11 +322,13 @@ const HomeDashboard: React.FC = () => {
                 onPress={() => handleQuickAction("olympics")}
                 className="flex-row items-center p-5 active:bg-white/5"
               >
-                <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
-                  <Ionicons name="search" size={20} color="#FBC02D" />
-                </View>
+                <Image
+                  source={require("@/assets/olympiadLogo.png")}
+                  className="w-[30px] h-[30px] mr-4"
+                  resizeMode="contain"
+                />
                 <Text className="flex-1 text-white text-[20px] font-semibold">
-                  Olympics
+                  Maths Olympics
                 </Text>
                 <Ionicons name="chevron-forward" size={20} color="white" />
               </TouchableOpacity>
