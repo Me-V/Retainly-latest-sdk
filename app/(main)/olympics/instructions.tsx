@@ -67,7 +67,10 @@ const InstructionScreen = () => {
   const handleStart = () => {
     router.replace({
       pathname: "/(main)/olympics/quizQuestions",
-      params: { quizId: String(quizId) },
+      params: {
+        quizId: String(quizId),
+        previewToken: previewData?.preview_token,
+      },
     });
   };
 

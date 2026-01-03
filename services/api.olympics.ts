@@ -96,14 +96,15 @@ export const getQuizPreview = async (
 
 export const startQuiz = async (
   quizId: string,
-  token: string
+  token: string,
+  previewToken: string
 ): Promise<QuizStartResponse> => {
   try {
     // Note: If your backend expects a POST, change axios.get to axios.post
     // Based on standard REST design, '/start' is usually a POST.
     const response = await axios.post<QuizStartResponse>(
       `${API_BASE}/backend/api/olympics/quizzes/${quizId}/start/`,
-      {},
+      { preview_token: previewToken },
       {
         headers: { Authorization: `Token ${token}` },
       }

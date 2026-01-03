@@ -37,6 +37,10 @@ const QuizScreen = () => {
     ? params.quizId[0]
     : params.quizId;
 
+    const previewToken = Array.isArray(params.previewToken) 
+    ? params.previewToken[0] 
+    : params.previewToken;
+
   const { data, currentQuestionIndex, userAnswers, activeQuizId } = useSelector(
     (state: any) => state.quiz
   );
@@ -168,14 +172,17 @@ const QuizScreen = () => {
     if (activeQuizId !== quizId) {
       dispatch(clearQuiz());
     }
-    loadQuiz(quizId);
+    // Only load if we have the token
+    if (previewToken) {
+        loadQuiz(quizId);
+    }
   }, [quizId, isConnected]);
 
   const loadQuiz = async (id: string) => {
     if (!token) return;
     setLoading(true);
     try {
-      const response = await startQuiz(id, token);
+      const response = await startQuiz(id, token, previewToken);
       const now = new Date().getTime();
       const expiry = new Date(response.expires_at).getTime();
 
@@ -573,9 +580,6 @@ const QuizScreen = () => {
         >
           {/* QUESTION CARD */}
           <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 mt-2">
-            <Text className="text-white/60 font-bold mb-2 uppercase text-xs tracking-widest">
-              Question
-            </Text>
             <Text className="text-white text-[20px] font-semibold leading-8">
               {currentQ.text}
             </Text>
