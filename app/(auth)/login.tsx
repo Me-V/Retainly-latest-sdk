@@ -225,7 +225,12 @@ export default function SignInScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/(auth)/mobile-auth")}
+              onPress={() =>
+                router.push({
+                  pathname: "/(auth)/mobile-auth", // or whatever your path is
+                  params: { mode: "login" }, // 👈 Pass 'login'
+                })
+              }
               className="bg-[#F59E51] flex-row justify-center items-center rounded-3xl py-4 mb-8 relative"
               style={{
                 // iOS Colored Glow

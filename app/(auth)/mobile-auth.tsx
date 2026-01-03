@@ -16,7 +16,7 @@ import { getAuth, signInWithPhoneNumber } from "@react-native-firebase/auth";
 import { signupWithPhoneOTP } from "@/services/api.auth";
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import PopupModal from "@/components/Popup-modal";
 import { BackIcon, MobileLogo2, MyLogo } from "@/assets/logo";
 import VerifyPhone from "@/components/Verify-Phone";
@@ -65,6 +65,11 @@ const MobileLoginScreen = () => {
   const [countdown, setCountdown] = useState(0);
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
+
+  const params = useLocalSearchParams();
+  const isLoginMode = params.mode === "login";
+
+  const screenTitle = isLoginMode ? "Login with Mobile" : "Create Your Account";
 
   // Error/info popup
   const [popupVisible, setPopupVisible] = useState(false);
@@ -332,7 +337,7 @@ const MobileLoginScreen = () => {
 
           {!confirm && (
             <Text className="text-center text-white text-[24px] font-bold mt-8 mb-6">
-              Create Your Account
+              {screenTitle}
             </Text>
           )}
 
