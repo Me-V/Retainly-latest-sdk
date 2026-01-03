@@ -71,6 +71,29 @@ export const getLiveQuizzes = async (token: string): Promise<OlympicQuiz[]> => {
   }
 };
 
+export const getQuizPreview = async (
+  quizId: string,
+  token: string
+): Promise<QuizStartResponse> => {
+  try {
+    // Note: If your backend expects a GET, keep axios.get; otherwise use POST
+    // Based on standard REST design, '/start' is usually a POST.
+    const response = await axios.get<QuizStartResponse>(
+      `${API_BASE}/backend/api/olympics/quizzes/${quizId}/preview/`,
+      {
+        headers: {
+          // This is how we attach the "key" to the request
+          Authorization: `Token ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching quiz preview:", error);
+    throw error;
+  }
+};
+
 export const startQuiz = async (
   quizId: string,
   token: string
@@ -121,15 +144,18 @@ export const submitAnswer = async (
   }
 };
 
-export const submitQuiz = async (attemptId: string, token: string): Promise<SubmitQuizResponse> => {
+export const submitQuiz = async (
+  attemptId: string,
+  token: string
+): Promise<SubmitQuizResponse> => {
   try {
     const url = `${process.env.EXPO_PUBLIC_API_BASE}/backend/api/olympics/attempts/${attemptId}/submit/`;
-    
-    // It's a POST request (usually) or PATCH. 
+
+    // It's a POST request (usually) or PATCH.
     // Based on standard flows, 'submit' actions are often POST.
     // If you get a 405 Method Not Allowed, change this to axios.patch or axios.put
     const response = await axios.post<SubmitQuizResponse>(
-      url, 
+      url,
       {}, // Empty body
       {
         headers: { Authorization: `Token ${token}` },
@@ -142,16 +168,16 @@ export const submitQuiz = async (attemptId: string, token: string): Promise<Subm
   }
 };
 
-export const getQuizResult = async (attemptId: string, token: string): Promise<QuizResultResponse> => {
+export const getQuizResult = async (
+  attemptId: string,
+  token: string
+): Promise<QuizResultResponse> => {
   try {
     const url = `${process.env.EXPO_PUBLIC_API_BASE}/backend/api/olympics/attempts/${attemptId}/result/`;
-    
-    const response = await axios.get<QuizResultResponse>(
-      url, 
-      {
-        headers: { Authorization: `Token ${token}` },
-      }
-    );
+
+    const response = await axios.get<QuizResultResponse>(url, {
+      headers: { Authorization: `Token ${token}` },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching result:", error);

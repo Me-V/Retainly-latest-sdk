@@ -1,102 +1,86 @@
 // app/(main)/olympics/instructionScreen.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks"; // Import your Redux hook
+import { getQuizPreview } from "@/services/api.olympics"; // Import the API function
+import { GlowCard } from "@/components/Glow-Card";
+
+// Define the type for the preview response (based on your JSON)
+interface PreviewData {
+  quiz: {
+    id: string;
+    title: string;
+    description: string;
+    instructions: string;
+    duration_seconds: number;
+    max_attempts: number;
+  };
+  set: {
+    id: string;
+    set_code: string; // e.g., "A"
+  };
+  preview_token: string;
+}
 
 const InstructionScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const token = useAppSelector((s) => s.auth.token); // Get the user token
 
-  // Extract data passed from the List Screen
-  const { quizId, title, description, duration, attempts } = params;
+  // Extract initial params (these act as placeholders/fallbacks)
+  const { quizId, title, duration, attempts } = params;
+
+  // State to hold the API data
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 1. Fetch Preview Data on Mount
+  useEffect(() => {
+    const fetchPreview = async () => {
+      if (!quizId || !token) return;
+      try {
+        const data = await getQuizPreview(String(quizId), token);
+        setPreviewData(data as any); // Cast if your API types aren't fully updated yet
+      } catch (error) {
+        console.error("Failed to load quiz preview", error);
+        Alert.alert("Error", "Failed to load quiz instructions.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPreview();
+  }, [quizId, token]);
 
   const handleStart = () => {
-    // Navigate to the actual Quiz Screen (This is where the API call & Timer start)
     router.replace({
       pathname: "/(main)/olympics/quizQuestions",
       params: { quizId: String(quizId) },
     });
   };
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
-  const GLOW_SIZE = 12;
-  const GlowCard = ({
-    children,
-    className = "",
-  }: {
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <LinearGradient
-      colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      className={`rounded-[24px] border border-white/10 overflow-hidden ${className}`}
-    >
-      <LinearGradient
-        colors={[GLOW_COLOR, "transparent"]}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: GLOW_SIZE,
-        }}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={["transparent", GLOW_COLOR]}
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: GLOW_SIZE,
-        }}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={[GLOW_COLOR, "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 0,
-          width: GLOW_SIZE,
-        }}
-        pointerEvents="none"
-      />
-      <LinearGradient
-        colors={["transparent", GLOW_COLOR]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          right: 0,
-          width: GLOW_SIZE,
-        }}
-        pointerEvents="none"
-      />
-      {children}
-    </LinearGradient>
-  );
+
+  // Use API data if available, otherwise fall back to params
+  const displayTitle = previewData?.quiz?.title || title || "Quiz Title";
+  // const displayDuration = previewData ? `${Math.floor(previewData.quiz.duration_seconds / 60)} min` : (duration || "30 min");
+  const displayDuration = duration || "30 min"; // Often passed formatted from list
+  const displayAttempts = previewData?.quiz?.max_attempts || attempts || 1;
+  const displaySetCode = previewData?.set?.set_code || "A"; // 🟢 Display Set Code from API
 
   return (
     <LinearGradient
-      // Deep purple gradient matching the screenshot
-      colors={["#3b0764", "#1a032a"]} // Adjust hex codes for exact purple tone
+      colors={["#3b0764", "#1a032a"]}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       className="flex-1"
@@ -118,51 +102,42 @@ const InstructionScreen = () => {
         </View>
 
         <ScrollView className="flex-1 px-6 pt-4">
-          {/* Quiz Title & Description */}
+          {/* Quiz Title */}
           <View className="mb-8 items-center">
             <Text className="text-3xl font-bold text-white text-center mb-1 leading-tight">
-              {title || "Quiz Title"}
+              {displayTitle}
             </Text>
-            {/* <Text className="text-white/80 text-base font-semibold text-center">
-              {description || "(Qualification Round)"}
-            </Text> */}
           </View>
 
-          {/* Key Details Card (Glassy Effect) */}
-
+          {/* Key Details Card */}
           <GlowCard className="w-full">
-            {/* Top Row: Duration & Attempts */}
             <View className="flex-row items-center p-5 py-6">
               {/* Duration Column */}
               <View className="flex-1 items-center justify-center">
                 <Ionicons name="hourglass-outline" size={32} color="#F97316" />
                 <Text className="text-2xl font-bold text-white mt-2">
-                  {duration || "30 min"}
+                  {displayDuration}
                 </Text>
                 <Text className="text-white/60 text-sm">Duration</Text>
               </View>
 
-              {/* Vertical Divider */}
               <View className="w-[1px] bg-white/20 h-24 mx-2" />
 
               {/* Attempts Column */}
               <View className="flex-1 items-center justify-center">
-                {/* Fixed the layout to match the duration column style */}
                 <Text className="text-3xl font-bold text-white mb-1">
-                  {attempts || 1}
+                  {displayAttempts}
                 </Text>
                 <Text className="text-white/60 text-sm">Attempts</Text>
               </View>
             </View>
 
-            {/* Horizontal Divider */}
             <View className="h-[1px] bg-white/10 w-full" />
 
-            {/* Bottom Section: Set Name */}
-            {/* Matches the screenshot's bottom bar style */}
+            {/* Bottom Section: Set Name 🟢 (Dynamic Data) */}
             <View className="py-4 items-center justify-center">
               <Text className="text-xl font-bold text-white tracking-wider">
-                Set A
+                Set {displaySetCode}
               </Text>
             </View>
           </GlowCard>
@@ -173,6 +148,8 @@ const InstructionScreen = () => {
           </Text>
 
           <View className="space-y-6 pb-8">
+            {/* You can map over instructions from API if available, or keep static ones */}
+            {/* If API sends instructions as a string, you might parse it, or keep these defaults */}
             <InstructionItem
               icon="time-outline"
               text="The timer starts immediately after you click 'Start Quiz'. It cannot be paused."
@@ -186,7 +163,7 @@ const InstructionScreen = () => {
               text="Do not close the app. If you exit, the timer will keep running."
             />
             <InstructionItem
-              icon="checkmark-circle-outline" // Changed to circle check for better match
+              icon="checkmark-circle-outline"
               text="Click 'Save & Submit' on the last question to finish."
             />
           </View>
@@ -197,7 +174,7 @@ const InstructionScreen = () => {
           <TouchableOpacity
             onPress={handleStart}
             activeOpacity={0.8}
-            className="bg-[#F99C36] py-4 rounded-2xl items-center shadow-lg" // Matching the orange button color
+            className="bg-[#F99C36] py-4 rounded-2xl items-center shadow-lg"
           >
             <Text className="text-white font-bold text-lg tracking-wider uppercase">
               Start Quiz

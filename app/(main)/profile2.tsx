@@ -40,75 +40,7 @@ import { BackIcon, MailOpenSVG } from "@/assets/logo";
 import PopupModal from "@/components/Popup-modal";
 import { signInWithPhoneNumber } from "@react-native-firebase/auth";
 import { authforMobile } from "@/app/(auth)/mobile-auth";
-
-// --- GLOW CARD COMPONENT ---
-const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
-const GLOW_SIZE = 12;
-
-const GlowCard = ({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <LinearGradient
-    colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    className={`rounded-[24px] border border-white/10 overflow-hidden ${className}`}
-  >
-    <LinearGradient
-      colors={[GLOW_COLOR, "transparent"]}
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    <LinearGradient
-      colors={["transparent", GLOW_COLOR]}
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    <LinearGradient
-      colors={[GLOW_COLOR, "transparent"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={{
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        width: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    <LinearGradient
-      colors={["transparent", GLOW_COLOR]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={{
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        right: 0,
-        width: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    {children}
-  </LinearGradient>
-);
+import { GlowCard } from "@/components/Glow-Card";
 
 export default function StudentProfileScreen() {
   const token = useAppSelector((s) => s.auth.token);

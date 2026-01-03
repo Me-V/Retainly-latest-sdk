@@ -13,75 +13,7 @@ import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 import { LinearGradient } from "expo-linear-gradient"; // <--- Needed for background
 import { SafeAreaView } from "react-native-safe-area-context"; // <--- Better for custom headers
 import Ionicons from "@expo/vector-icons/Ionicons";
-
-// --- GLOW CARD COMPONENT (For the Glass effect) ---
-const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
-const GLOW_SIZE = 12;
-
-const GlowCard = ({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <LinearGradient
-    colors={["rgba(255, 255, 255, 0.15)", "rgba(255, 255, 255, 0.05)"]}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    className={`rounded-[24px] border border-white/10 overflow-hidden ${className}`}
-  >
-    <LinearGradient
-      colors={[GLOW_COLOR, "transparent"]}
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        height: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    <LinearGradient
-      colors={["transparent", GLOW_COLOR]}
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    <LinearGradient
-      colors={[GLOW_COLOR, "transparent"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={{
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        width: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    <LinearGradient
-      colors={["transparent", GLOW_COLOR]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      style={{
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        right: 0,
-        width: GLOW_SIZE,
-      }}
-      pointerEvents="none"
-    />
-    {children}
-  </LinearGradient>
-);
+import { GlowCard } from "@/components/Glow-Card";
 
 const Olympics = () => {
   const router = useRouter();
