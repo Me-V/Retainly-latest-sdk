@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,7 +15,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks"; // Import your Redux hook
 import { getQuizPreview } from "@/services/api.olympics"; // Import the API function
 import { GlowCard } from "@/components/Glow-Card";
-import NewPopupModal from "@/components/Popup-modal";
 import PopupModal from "@/components/Popup-modal";
 
 // Define the type for the preview response (based on your JSON)
@@ -71,15 +69,6 @@ const InstructionScreen = () => {
 
     fetchPreview();
   }, [quizId, token]);
-
-  // 🟢 4. Handle "View Result" Navigation
-  const handleViewResults = () => {
-    setLimitModalVisible(false);
-    router.replace({
-      pathname: "/(main)/olympics/results",
-      params: { quizId: String(quizId) },
-    });
-  };
 
   const handleStart = () => {
     router.replace({
@@ -167,10 +156,8 @@ const InstructionScreen = () => {
             onClose={() => router.back()} // Default close action (Go Back)
             heading="Limit Reached"
             content="All of your attempts are being used."
-            primaryText="View Result"
-            onPrimary={handleViewResults}
-            secondaryText="Go Back"
-            onSecondary={() => {
+            primaryText="Go Back"
+            onPrimary={() => {
               setLimitModalVisible(false);
               router.back();
             }}
