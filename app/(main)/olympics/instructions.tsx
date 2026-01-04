@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +15,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks"; // Import your Redux hook
 import { getQuizPreview } from "@/services/api.olympics"; // Import the API function
 import { GlowCard } from "@/components/Glow-Card";
+import PopupModal from "@/components/Popup-modal";
 
 // Define the type for the preview response (based on your JSON)
 interface PreviewData {
@@ -45,17 +45,23 @@ const InstructionScreen = () => {
   // State to hold the API data
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [limitModalVisible, setLimitModalVisible] = useState(false);
 
-  // 1. Fetch Preview Data on Mount
   useEffect(() => {
     const fetchPreview = async () => {
       if (!quizId || !token) return;
       try {
         const data = await getQuizPreview(String(quizId), token);
-        setPreviewData(data as any); // Cast if your API types aren't fully updated yet
-      } catch (error) {
+        setPreviewData(data as any);
+      } catch (error: any) {
         console.error("Failed to load quiz preview", error);
-        Alert.alert("Error", "Failed to load quiz instructions.");
+
+        // 🟢 3. Trigger Modal on 400 Error
+        if (error.response && error.response.status === 400) {
+          setLimitModalVisible(true);
+        } else {
+          Alert.alert("Error", "Failed to load quiz instructions.");
+        }
       } finally {
         setLoading(false);
       }
@@ -144,6 +150,20 @@ const InstructionScreen = () => {
               </Text>
             </View>
           </GlowCard>
+
+          <PopupModal
+            isVisible={limitModalVisible}
+            onClose={() => router.back()} // Default close action (Go Back)
+            heading="Limit Reached"
+            content="All of your attempts are being used."
+            primaryText="Go Back"
+            onPrimary={() => {
+              setLimitModalVisible(false);
+              router.back();
+            }}
+            dismissible={false} // Force user to choose an action
+            theme="dark" // Matches the screen background
+          />
 
           {/* Instructions List */}
           <Text className="text-xl font-bold text-white my-6">
