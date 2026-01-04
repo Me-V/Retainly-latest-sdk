@@ -11,6 +11,7 @@ import {
   StyleSheet,
   StatusBar,
   BackHandler,
+  Image,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -478,17 +479,6 @@ const QuizScreen = () => {
             </Text>
 
             <View className="flex-row items-center gap-3">
-              {/* {hasReachedEnd && (
-                <TouchableOpacity
-                  onPress={handleUserSubmit}
-                  className="bg-red-500/20 border border-red-500/50 px-3 py-1.5 rounded-lg"
-                >
-                  <Text className="text-red-400 font-bold text-xs uppercase tracking-wide">
-                    End Test
-                  </Text>
-                </TouchableOpacity>
-              )} */}
-
               <Text className="text-[#EF4444] font-bold text-xl tracking-wider">
                 {timeLeft}
               </Text>
@@ -507,6 +497,19 @@ const QuizScreen = () => {
             <Text className="text-white text-[20px] font-semibold leading-8">
               {currentQ.text}
             </Text>
+
+            {currentQ.image_url && currentQ.image_url !== "nan" && (
+              <View
+                className="mt-4 rounded-lg overflow-hidden bg-white" // Wrapper handles the background
+                style={{ width: "100%", height: 200 }}
+              >
+                <Image
+                  source={{ uri: currentQ.image_url }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain" // Ensures the whole formula fits inside
+                />
+              </View>
+            )}
           </View>
 
           {/* OPTIONS */}
@@ -533,6 +536,14 @@ const QuizScreen = () => {
                   >
                     {option.text}
                   </Text>
+
+                  {option.image_url !== "nan" && (
+                    <Image
+                      source={{ uri: option.image_url }}
+                      className="mt-4"
+                      style={{ width: "100%", height: 200 }}
+                    />
+                  )}
                 </TouchableOpacity>
               );
             })}
