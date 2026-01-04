@@ -176,24 +176,14 @@ const QuizResultScreen = () => {
               </Text>
 
               <GlowCard className="w-full bg-white/10 border border-white/5 rounded-3xl p-6">
-                {/* Percentage */}
-                <View className="flex-row justify-between items-center py-4 border-b border-white/10">
-                  <Text className="text-white text-lg font-semibold">
-                    Percentage:
-                  </Text>
-                  <Text className="text-orange-500 text-xl font-bold">
-                    {result.percentage}%
-                  </Text>
-                </View>
-
                 {/* Score */}
                 <View className="flex-row justify-between items-center py-4 border-b border-white/10">
                   <Text className="text-white text-lg font-semibold">
                     Score:
                   </Text>
-                  <Text className="text-white text-xl font-bold">
-                    {result.score}{" "}
-                    <Text className="text-base font-normal">
+                  <Text className="text-orange-500 text-xl font-bold">
+                    {result.score}
+                    <Text className="text-xl font-normal">
                       /{result.max_score}
                     </Text>
                   </Text>
@@ -206,6 +196,22 @@ const QuizResultScreen = () => {
                   </Text>
                   <Text className="text-white text-xl font-bold">
                     {result.attempted_count}/{result.total_questions}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between items-center py-4">
+                  <Text className="text-white text-lg font-semibold">
+                    Correct:
+                  </Text>
+                  <Text className="text-white text-xl font-bold">
+                    {result.correct_count}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between items-center py-4">
+                  <Text className="text-white text-lg font-semibold">
+                    Incorrect:
+                  </Text>
+                  <Text className="text-white text-xl font-bold">
+                    {result.incorrect_count}
                   </Text>
                 </View>
               </GlowCard>

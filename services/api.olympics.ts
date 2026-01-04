@@ -22,6 +22,8 @@ export interface QuizResultResponse {
   passing_percentage: number;
   result: "PASS" | "FAIL";
   result_out_at: string;
+  correct_count: number;
+  incorrect_count: number;
 }
 
 interface SubmitAnswerResponse {

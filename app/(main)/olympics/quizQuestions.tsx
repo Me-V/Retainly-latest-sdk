@@ -140,7 +140,7 @@ const QuizScreen = () => {
   };
 
   const handleUserSubmit = () => {
-    setIsExitMode(true); // Set to Exit Mode
+    setIsExitMode(false); // Set to Exit Mode
     setExitModalVisible(true);
   };
 
@@ -322,7 +322,7 @@ const QuizScreen = () => {
           isVisible={exitModalVisible}
           onClose={() => setExitModalVisible(false)}
           theme="dark"
-          heading={isExitMode ? "Exit Quiz?" : "Finish Quiz?"}
+          heading={isExitMode ? "Timmer won't stop !" : "Finish Quiz?"}
           content={
             isExitMode
               ? "Your progress is saved locally. You can come back and resume this quiz later."
@@ -451,8 +451,8 @@ const QuizScreen = () => {
                       isActive
                         ? "bg-white/20 border-white/40"
                         : isAnswered
-                        ? "bg-[#10E315]/20 border-[#F99C36]/40"
-                        : "bg-[#C22929]/20 border-white/10"
+                        ? "bg-[#10E315] border-[#F99C36]/40"
+                        : "bg-[#C22929] border-white/10"
                     }`}
                   >
                     <Text
@@ -460,8 +460,8 @@ const QuizScreen = () => {
                         isActive
                           ? "text-white font-bold"
                           : isAnswered
-                          ? "text-[#3ae805]"
-                          : "text-[#e40d0d]"
+                          ? "text-black"
+                          : "text-white"
                       }`}
                     >
                       {index + 1}
