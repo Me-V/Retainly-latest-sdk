@@ -190,10 +190,12 @@ const HomeDashboard: React.FC = () => {
             <Text className="text-white font-bold text-xs">LOGO</Text>
           </View>
           <View className="flex-row items-center space-x-4 gap-4">
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(main)/consentScreen")}
+            >
               <Ionicons name="notifications" size={24} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/(main)/profile2")}>
+            <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
               <View className="w-10 h-10 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
                 <Ionicons name="person" size={20} color="white" />
               </View>
