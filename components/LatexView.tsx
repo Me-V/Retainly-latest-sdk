@@ -1,7 +1,6 @@
-// components/LatexView.tsx
-import React from "react";
+import React, { useState } from "react";
 import { WebView } from "react-native-webview";
-import { Platform } from "react-native";
+import { View, Platform } from "react-native";
 
 type Props = {
   latex: string;
@@ -10,68 +9,112 @@ type Props = {
 };
 
 export default function LatexView({ latex, color = "#000000", style }: Props) {
+  const [size, setSize] = useState({ height: 0, width: 0 });
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const escapedLatex = latex.replace(/\\/g, "\\\\");
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
         
         <style>
-          body {
-            margin: 0;
-            padding: 16px;
+          * { margin: 0; padding: 0; }
+          
+          body, html {
+            background: transparent;
+            /* 🟢 inline-flex is the most robust way to shrink-wrap content */
+            display: inline-flex; 
+            height: auto;
+            overflow: hidden;
+          }
+
+          #content {
             color: ${color};
             font-family: -apple-system, Roboto, sans-serif;
-            font-size: 18px;
-            line-height: 1.6;
-            background: transparent;
+            font-size: 21px;
+            line-height: 1.8;
+            /* 🟢 Prevent any line breaks */
+            white-space: nowrap; 
+            padding-top: 4px;
           }
-          /* Make math big enough to read */
-          .katex { font-size: 1.1em; }
+          
+          .katex { font-size: 1.0em; margin: 0; }
         </style>
 
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
       </head>
       <body>
-        <div id="content">${latex}</div>
+        <span id="content"></span>
 
         <script>
-          document.addEventListener("DOMContentLoaded", function() {
-            if (window.renderMathInElement) {
-              renderMathInElement(document.body, {
-                delimiters: [
-                  {left: '$$', right: '$$', display: true},
-                  {left: '\\\\[', right: '\\\\]', display: true},
-                  {left: '$', right: '$', display: false},
-                  {left: '\\\\(', right: '\\\\)', display: false}
-                ],
-                throwOnError : false
-              });
-            }
-            
-            // Send height to React Native
-            setTimeout(function() {
-              var height = document.body.scrollHeight;
-              window.ReactNativeWebView.postMessage(height);
-            }, 500);
-          });
+          try {
+            katex.render("${escapedLatex}", document.getElementById('content'), {
+              displayMode: false,
+              throwOnError: false
+            });
+          } catch(e) {
+            document.getElementById('content').innerText = "Err";
+          }
+
+          function sendSize() {
+            var body = document.body;
+            // 🟢 Measure the body directly since it's inline-flex
+            var width = body.scrollWidth;
+            var height = body.scrollHeight;
+
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              width: width,
+              height: height
+            }));
+          }
+
+          setTimeout(sendSize, 10);
+          setTimeout(sendSize, 100);
         </script>
       </body>
     </html>
   `;
 
   return (
-    <WebView
-      originWhitelist={["*"]}
-      source={{ html: htmlContent }}
-      style={[{ backgroundColor: "transparent", minHeight: 100 }, style]}
-      scrollEnabled={true}
-      showsVerticalScrollIndicator={false}
-      // Fix for Android opacity issues
-      opacity={0.99}
-      androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
-    />
+    <View
+      style={[
+        style,
+        {
+          height: size.height,
+          width: size.width,
+          alignSelf: "center",
+          backgroundColor: "transparent",
+          // Only show once we have a valid width to prevent jumping
+          display: size.width > 0 ? "flex" : "none",
+        },
+      ]}
+    >
+      <WebView
+        originWhitelist={["*"]}
+        source={{ html: htmlContent }}
+        scrollEnabled={false}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        style={{ backgroundColor: "transparent" }}
+        onMessage={(event) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.width && data.height) {
+              setSize({
+                width: data.width,
+                height: data.height,
+              });
+              setIsLoaded(true);
+            }
+          } catch (e) {}
+        }}
+        opacity={isLoaded ? 0.99 : 0}
+        androidLayerType={Platform.OS === "android" ? "hardware" : "none"}
+      />
+    </View>
   );
 }

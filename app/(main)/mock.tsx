@@ -1,22 +1,13 @@
-// ExampleScreen.tsx
+import QuestionRenderer from "@/components/QuestionRenderer";
 import { View } from "react-native";
-import LatexView from "@/components/LatexView";
 
-const apiData = {
-  // 🔴 BAD: JavaScript removes the single backslashes
-  // content: `... \( x^2 ...`
+export default function App() {
+  const apiData =
+    "For real x, the minimum value of <equation>(x-1)^2 + (x-4)^2</equation> is:";
 
-  // 🟢 GOOD: Double backslashes preserve the LaTeX format
-  content: `The well known Pythagorean theorem \\( x^2 + y^2 = z^2 \\) was proved to be invalid for other exponents.
-Meaning the next equation has no integer solutions:
-
-\\[ x^n + y^n = z^n \\]`,
-};
-
-export default function ExampleScreen() {
   return (
-    <View style={{ flex: 1, paddingTop: 50, backgroundColor: "#f5f5f5" }}>
-      <LatexView latex={apiData.content} />
+    <View style={{ flex: 1, padding: 16, paddingTop: 50 }}>
+      <QuestionRenderer content={apiData} />
     </View>
   );
 }
