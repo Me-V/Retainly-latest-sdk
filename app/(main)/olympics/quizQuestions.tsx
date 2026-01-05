@@ -19,6 +19,7 @@ import NetInfo from "@react-native-community/netinfo";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRef } from "react";
 
 import { startQuiz, submitAnswer, submitQuiz } from "@/services/api.olympics";
 import {
@@ -35,6 +36,7 @@ const QuizScreen = () => {
   const dispatch = useDispatch();
   const token = useAppSelector((s) => s.auth.token);
   const params = useLocalSearchParams();
+  const scrollRef = useRef<ScrollView>(null);
   const quizId = Array.isArray(params.quizId)
     ? params.quizId[0]
     : params.quizId;
@@ -74,6 +76,23 @@ const QuizScreen = () => {
       unsubscribe();
     };
   }, []);
+
+  // 🟢 3. Auto-scroll logic: Runs whenever currentQuestionIndex changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      // Calculate position: (Bubble Width + Margin) * Index
+      // Assuming bubble width ~40px (w-10) and margin ~12px (mr-3) => ~52px per item
+      // Centering offset: Subtract half screen width to keep active item in middle
+      const itemWidth = 52;
+      const centerOffset = 150; // Adjust based on your UI width
+      const x = currentQuestionIndex * itemWidth - centerOffset;
+
+      scrollRef.current.scrollTo({
+        x: Math.max(0, x), // Prevent negative scrolling
+        animated: true,
+      });
+    }
+  }, [currentQuestionIndex]);
 
   // 🟢 Sync Local Selection with Saved Redux Data
   // Whenever we change questions, we load the "Saved" answer into our local state.
@@ -435,6 +454,7 @@ const QuizScreen = () => {
           {/* QUESTION NAVIGATION BUBBLES */}
           <View className="bg-white/5 border border-white/10 rounded-2xl p-3 mb-6">
             <ScrollView
+              ref={scrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{ alignItems: "center", paddingRight: 20 }}
@@ -450,7 +470,7 @@ const QuizScreen = () => {
                     onPress={() => jumpToQuestion(index)}
                     className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${
                       isActive
-                        ? "bg-white/20 border-white/40"
+                        ? "bg-[#F99C36] border-white/40"
                         : isAnswered
                         ? "bg-[#10E315] border-[#F99C36]/40"
                         : "bg-[#C22929] border-white/10"
