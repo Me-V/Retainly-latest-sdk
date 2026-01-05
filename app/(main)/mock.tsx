@@ -1,9 +1,10 @@
-import QuestionRenderer from "@/components/QuestionRenderer";
+import React from "react";
 import { View } from "react-native";
+import QuestionRenderer from "@/components/QuestionRenderer";
 
 export default function App() {
-  const apiData =
-    "For real x, the minimum value of <equation>(x-1)^2 + (x-4)^2</equation> is:";
+  // 🟢 USE String.raw`...` TO PRESERVE BACKSLASHES
+  const apiData = String.raw`How many factors does <equation>2^3 \cdot 3^5 \cdot 5^1</equation> have?`;
 
   return (
     <View style={{ flex: 1, padding: 16, paddingTop: 50 }}>
