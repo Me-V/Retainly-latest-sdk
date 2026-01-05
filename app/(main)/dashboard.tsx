@@ -329,9 +329,27 @@ const HomeDashboard: React.FC = () => {
                   className="w-[30px] h-[30px] mr-4"
                   resizeMode="contain"
                 />
-                <Text className="flex-1 text-white text-[20px] font-semibold">
-                  Maths Olympics
-                </Text>
+
+                {/* Text Container */}
+                <View className="flex-1 justify-center">
+                  {/* Relative container for text + floating badge */}
+                  <View className="relative self-start">
+                    <Text className="text-white text-[20px] font-semibold">
+                      Maths Olympics
+                    </Text>
+
+                    {/* Floating Live Badge */}
+                    <View
+                      className="absolute -top-3 -right-12 bg-[#FF453A] px-2 py-[2px] rounded-full border border-white/10"
+                      style={{ transform: [{ scale: 0.9 }] }} // Optional: slight scale down if needed
+                    >
+                      <Text className="text-white text-[11px] font-bold tracking-wide">
+                        Live
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
                 <Ionicons name="chevron-forward" size={20} color="white" />
               </TouchableOpacity>
             )}
