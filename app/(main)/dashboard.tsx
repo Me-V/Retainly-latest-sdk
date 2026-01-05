@@ -8,6 +8,7 @@ import { getSubjects } from "@/services/api.edu";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
+import { LiveBadge } from "@/components/dashboard/LiveBadge";
 
 // Utility progress bar
 const ProgressBar = ({
@@ -338,15 +339,7 @@ const HomeDashboard: React.FC = () => {
                       Maths Olympics
                     </Text>
 
-                    {/* Floating Live Badge */}
-                    <View
-                      className="absolute -top-3 -right-12 bg-[#FF453A] px-2 py-[2px] rounded-full border border-white/10"
-                      style={{ transform: [{ scale: 0.9 }] }} // Optional: slight scale down if needed
-                    >
-                      <Text className="text-white text-[11px] font-bold tracking-wide">
-                        Live
-                      </Text>
-                    </View>
+                    <LiveBadge />
                   </View>
                 </View>
 
