@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRef } from "react";
+import QuestionRenderer from "@/components/QuestionRenderer";
 
 import { startQuiz, submitAnswer, submitQuiz } from "@/services/api.olympics";
 import {
@@ -514,19 +515,18 @@ const QuizScreen = () => {
         >
           {/* QUESTION CARD */}
           <View className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-6 mt-2">
-            <Text className="text-white text-[20px] font-semibold leading-8">
-              {currentQ.text}
-            </Text>
+            {/* 🟢 REPLACED plain Text with QuestionRenderer */}
+            <QuestionRenderer content={currentQ.text} textColor="white" />
 
             {currentQ.image_url && currentQ.image_url !== "nan" && (
               <View
-                className="mt-4 rounded-lg overflow-hidden bg-white" // Wrapper handles the background
+                className="mt-4 rounded-lg overflow-hidden bg-white"
                 style={{ width: "100%", height: 200 }}
               >
                 <Image
                   source={{ uri: currentQ.image_url }}
                   style={{ width: "100%", height: "100%" }}
-                  resizeMode="contain" // Ensures the whole formula fits inside
+                  resizeMode="contain"
                 />
               </View>
             )}
@@ -535,7 +535,6 @@ const QuizScreen = () => {
           {/* OPTIONS */}
           <View className="space-y-4 gap-4">
             {currentQ.options.map((option: any) => {
-              // 🟢 Selection relies on LOCAL state for immediate feedback
               const isSelected = currentSelection === option.id;
 
               return (
@@ -549,13 +548,12 @@ const QuizScreen = () => {
                       : "bg-white/5 border-white/10"
                   }`}
                 >
-                  <Text
-                    className={`text-[20px] font-medium ${
-                      isSelected ? "text-white" : "text-white/80"
-                    }`}
-                  >
-                    {option.text}
-                  </Text>
+                  {/* 🟢 REPLACED plain Text with QuestionRenderer */}
+                  {/* Note: Logic added to dim text color if not selected, similar to your original code */}
+                  <QuestionRenderer
+                    content={option.text}
+                    textColor={isSelected ? "white" : "rgba(255,255,255,0.8)"}
+                  />
 
                   {option.image_url !== "nan" && (
                     <Image

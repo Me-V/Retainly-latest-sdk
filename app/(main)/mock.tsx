@@ -3,7 +3,6 @@ import { View } from "react-native";
 import QuestionRenderer from "@/components/QuestionRenderer";
 
 export default function App() {
-  // 🟢 USE String.raw`...` TO PRESERVE BACKSLASHES
   const apiData = String.raw`How many factors does <equation>2^3 \cdot 3^5 \cdot 5^1</equation> have?`;
 
   return (
