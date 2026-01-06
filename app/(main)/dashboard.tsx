@@ -334,7 +334,7 @@ const HomeDashboard: React.FC = () => {
                 {/* Text Container */}
                 <View className="flex-1 justify-center">
                   {/* Relative container for text + floating badge */}
-                  <View className="relative self-start">
+                  <View className="flex-row items-center self-start">
                     <Text className="text-white text-[20px] font-semibold">
                       Maths Olympics
                     </Text>

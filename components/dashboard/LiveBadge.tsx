@@ -2,47 +2,40 @@ import React, { useEffect, useRef } from "react";
 import { Text, Animated, Easing } from "react-native";
 
 export const LiveBadge = () => {
-  // 1. Initialize Animated Value
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // 2. Define Animation Loop
     const pulse = Animated.loop(
       Animated.sequence([
-        // Grow to 1.15x
-        Animated.timing(scaleAnim, {
-          toValue: 1.15,
+        Animated.timing(opacityAnim, {
+          toValue: 0.6,
           duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true, // Hardware acceleration
+          useNativeDriver: true,
         }),
-        // Shrink back to 1x
-        Animated.timing(scaleAnim, {
+        Animated.timing(opacityAnim, {
           toValue: 1,
           duration: 800,
-          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
       ])
     );
-
-    // 3. Start
     pulse.start();
-
-    // Cleanup on unmount
     return () => pulse.stop();
-  }, [scaleAnim]);
+  }, []);
 
   return (
     <Animated.View
-      className="absolute -top-3 -right-12 bg-[#FF453A] px-2 py-[2px] rounded-full border border-white/10"
       style={{
-        transform: [{ scale: scaleAnim }],
+        opacity: opacityAnim,
+        marginLeft: 6,
+        marginTop: -15, // 👈 makes it look like superscript
+        backgroundColor: "#FF453A",
+        paddingHorizontal: 7,
+        paddingVertical: 3,
       }}
+      className="rounded-full border border-white/10"
     >
-      <Text className="text-white text-[11px] font-bold tracking-wide">
-        Live
-      </Text>
+      <Text className="text-white text-[10px] font-bold">Live</Text>
     </Animated.View>
   );
 };
