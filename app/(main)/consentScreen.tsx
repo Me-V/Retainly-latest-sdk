@@ -25,7 +25,7 @@ const ParentalConsentScreen = () => {
 
   // 🟢 1. Get Params passed from SignInScreen
   const params = useLocalSearchParams();
-  const { consentText, consentVersion, pendingAuth, userData } = params;
+  const { consentText, consentVersion, pendingAuth } = params;
 
   const [isChecked, setIsChecked] = useState(false);
   const [loading, setLoading] = useState(false);

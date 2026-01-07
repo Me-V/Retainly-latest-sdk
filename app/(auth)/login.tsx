@@ -7,7 +7,6 @@ import {
   GoogleSignin,
   isErrorWithCode,
   isSuccessResponse,
-  statusCodes,
 } from "@react-native-google-signin/google-signin";
 import { setUser } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
