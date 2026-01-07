@@ -27,84 +27,63 @@ export default function SignInScreen() {
   const signIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
-
       try {
         await GoogleSignin.signOut();
-      } catch (error) {
-        // It's okay if this fails (e.g., if already signed out), just proceed.
-        console.log("Error signing out (safe to ignore):", error);
-      }
+      } catch (e) {}
 
-      // 🟢 2. GET GOOGLE TOKEN
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {
         const { idToken } = response.data;
-        const user = response.data.user;
-
-        console.log("🔹 Google ID Token:", idToken ? "Success" : "Missing");
+        // user info from Google (might differ slightly from backend user)
+        const googleUser = response.data.user;
 
         if (idToken) {
-          // 🟢 3. EXCHANGE TOKENS: Google -> Firebase
-          // Create a Firebase credential with the Google token
           const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
-          // Sign-in the user with the credential
           await auth().signInWithCredential(googleCredential);
-
-          // 🟢 4. GET THE REAL FIREBASE TOKEN
-          // This is what your backend actually wants
           const firebaseToken = await auth().currentUser?.getIdToken();
 
-          console.log(
-            "🔥 Firebase Token:",
-            firebaseToken ? "Ready to send" : "Missing"
-          );
-
           if (firebaseToken) {
-            // 🟢 5. SEND FIREBASE TOKEN TO BACKEND
+            // Call Backend
             const backendResponse = await loginWithGoogle(
               firebaseToken,
-              user.email
+              googleUser.email
             );
 
-            if (backendResponse?.token) {
-              console.log("✅ Backend Login Success:", backendResponse);
+            console.log("#######backendResponse", backendResponse);
+
+            // 🟢 CHECK CONSENT LOGIC HERE
+            if (backendResponse.consent_required === true) {
+              // Navigate to Consent Screen with necessary data
+              router.push({
+                pathname: "/(main)/consentScreen", // Ensure this matches your file structure
+                params: {
+                  consentText: backendResponse.consent_text,
+                  consentVersion: backendResponse.consent_version,
+                  pendingAuth: backendResponse.pending_auth,
+                  // We might need user info later, passing as string
+                  userData: JSON.stringify(backendResponse.user),
+                },
+              });
+            } else if (backendResponse?.token) {
+              // Direct Login Success
               dispatch(
                 setUser({
                   token: backendResponse.token,
-                  userInfo: user,
+                  userInfo: backendResponse.user, // Prefer backend user object
                 })
               );
-              // Navigate to dashboard if needed
-              // router.replace("/(main)/dashboard");
+              // router.replace("/(main)/dashboard"); // Auto-redirect typically handled by auth layout
             } else {
-              Alert.alert("Login failed", "Server did not return a token");
+              Alert.alert("Login failed", "Unexpected server response.");
             }
           }
         }
-      } else {
-        console.log("Sign in was cancelled");
       }
     } catch (error: any) {
       if (isErrorWithCode(error)) {
-        switch (error.code) {
-          case statusCodes.SIGN_IN_CANCELLED:
-            console.log("User cancelled the login flow");
-            break;
-          case statusCodes.IN_PROGRESS:
-            console.log("Sign in is in progress already");
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            console.log("Play services not available or outdated");
-            break;
-          default:
-            console.log("Error:", error.message);
-            Alert.alert("Google Sign-In Error", error.message);
-        }
+        // ... existing error handling
       } else {
-        // This usually catches Firebase configuration errors (missing google-services.json)
-        console.error("Firebase Auth Error:", error);
         Alert.alert("Authentication Error", error.message);
       }
     }

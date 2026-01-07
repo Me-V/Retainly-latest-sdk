@@ -17,6 +17,19 @@ export async function loginWithGoogle(idToken: string, email: string) {
   }
 }
 
+export async function acceptConsent(consentVersion: string, pendingAuth: string) {
+  try {
+    const res = await axios.post(`${API_BASE}/backend/api/consent/accept/`, {
+      consent_version: consentVersion,
+      pending_auth: pendingAuth,
+    });
+    return res.data; // Returns { token, detail, user, ... }
+  } catch (err: any) {
+    console.error("Consent acceptance error:", err.response?.data || err.message);
+    throw err;
+  }
+}
+
 // ✅ New function: signup with phone OTP
 export async function signupWithPhoneOTP(phoneNumber: string, idToken: string) {
   try {
