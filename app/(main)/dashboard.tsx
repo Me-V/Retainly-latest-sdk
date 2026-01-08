@@ -104,8 +104,6 @@ const HomeDashboard: React.FC = () => {
       router.push("/practice/chooseSubject");
     }
     if (key === "mock") {
-      // Functional navigation restored
-      router.push("/mock");
     }
     if (key === "olympics") {
       // Functional navigation restored
@@ -191,9 +189,7 @@ const HomeDashboard: React.FC = () => {
             <Text className="text-white font-bold text-xs">LOGO</Text>
           </View>
           <View className="flex-row items-center space-x-4 gap-4">
-            <TouchableOpacity
-              onPress={() => router.push("/(main)/consentScreen")}
-            >
+            <TouchableOpacity>
               <Ionicons name="notifications" size={24} color="white" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
