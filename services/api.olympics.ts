@@ -48,6 +48,37 @@ export interface QuizStartResponse {
   }[];
 }
 
+export interface UnlockResponse {
+  unlocked?: boolean;
+  unlocked_via?: string;
+  detail?: string;
+  locked_until_admin?: string | boolean;
+  attempts_left?: string | number;
+}
+
+export interface PreviewData {
+  quiz: {
+    id: string;
+    title: string;
+    description: string;
+    instructions: string;
+    duration_seconds: number;
+    max_attempts: number;
+  };
+  set: {
+    id: string;
+    set_code: string;
+  };
+  preview_token: string;
+}
+
+export interface PinRequiredResponse {
+  detail: string;
+  pin_required: "True";
+  locked_until_admin: "True" | "False";
+  attempts_left: string;
+}
+
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE;
 
 /**
@@ -73,25 +104,51 @@ export const getLiveQuizzes = async (token: string): Promise<OlympicQuiz[]> => {
   }
 };
 
+// 1. Fetch Preview (Returns Union Type)
 export const getQuizPreview = async (
   quizId: string,
-  token: string
+  token: string,
+  password?: string // 🟢 Added optional password parameter
 ): Promise<QuizStartResponse> => {
   try {
-    // Note: If your backend expects a GET, keep axios.get; otherwise use POST
-    // Based on standard REST design, '/start' is usually a POST.
     const response = await axios.get<QuizStartResponse>(
       `${API_BASE}/backend/api/olympics/quizzes/${quizId}/preview/`,
       {
         headers: {
-          // This is how we attach the "key" to the request
+          Authorization: `Token ${token}`,
+        },
+        // 🟢 Pass password as a query param if provided
+        // Result: .../preview/?password=1234
+        params: password ? { password: password } : {},
+      }
+    );
+    return response.data;
+  } catch (error) {
+    // We intentionally don't catch/swallow the error here so the UI can handle the 400 status
+    // console.error("Error fetching quiz preview:", error);
+    throw error;
+  }
+};
+
+// 2. Submit PIN (New Endpoint)
+export const unlockQuiz = async (
+  quizId: string,
+  token: string,
+  pin: string
+): Promise<UnlockResponse> => {
+  try {
+    const response = await axios.post<UnlockResponse>(
+      `${API_BASE}/backend/api/olympics/quizzes/${quizId}/unlock/`,
+      { pin }, // Body
+      {
+        headers: {
           Authorization: `Token ${token}`,
         },
       }
     );
     return response.data;
   } catch (error) {
-    console.error("Error fetching quiz preview:", error);
+    // We throw error to be handled by the UI (specifically 400s)
     throw error;
   }
 };

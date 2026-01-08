@@ -1,4 +1,3 @@
-// app/(main)/olympics/instructionScreen.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -7,17 +6,22 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  TextInput,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks"; // Import your Redux hook
-import { getQuizPreview } from "@/services/api.olympics"; // Import the API function
+import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 import { GlowCard } from "@/components/Glow-Card";
+import { getQuizPreview, unlockQuiz } from "@/services/api.olympics";
 import PopupModal from "@/components/Popup-modal";
 
-// Define the type for the preview response (based on your JSON)
+// Define the type for the preview response
 interface PreviewData {
   quiz: {
     id: string;
@@ -29,44 +33,83 @@ interface PreviewData {
   };
   set: {
     id: string;
-    set_code: string; // e.g., "A"
+    set_code: string;
   };
   preview_token: string;
 }
 
+// 🟢 Define possible modal states
+type ModalState = "NONE" | "PIN_REQUIRED" | "LOCKED_ADMIN" | "LIMIT_REACHED";
+
 const InstructionScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const token = useAppSelector((s) => s.auth.token); // Get the user token
+  const token = useAppSelector((s) => s.auth.token);
 
-  // Extract initial params (these act as placeholders/fallbacks)
+  // Params
   const { quizId, title, duration, attempts } = params;
 
-  // State to hold the API data
+  // Data State
   const [previewData, setPreviewData] = useState<PreviewData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [limitModalVisible, setLimitModalVisible] = useState(false);
 
-  useEffect(() => {
-    const fetchPreview = async () => {
-      if (!quizId || !token) return;
-      try {
-        const data = await getQuizPreview(String(quizId), token);
-        setPreviewData(data as any);
-      } catch (error: any) {
-        console.error("Failed to load quiz preview", error);
+  // 🟢 Enhanced Modal State
+  const [currentModal, setCurrentModal] = useState<ModalState>("NONE");
+  const [pinInput, setPinInput] = useState("");
+  const [attemptsLeft, setAttemptsLeft] = useState<string | number>(3);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-        // 🟢 3. Trigger Modal on 400 Error
-        if (error.response && error.response.status === 400) {
-          setLimitModalVisible(true);
-        } else {
-          Alert.alert("Error", "Failed to load quiz instructions.");
+  const [verifying, setVerifying] = useState(false);
+
+  // Reusable function to fetch data (with optional pin)
+  const fetchPreview = async (pin?: string) => {
+    if (!quizId || !token) return;
+    setLoading(true);
+    setErrorMessage(null); // Clear previous errors
+
+    try {
+      const data = await getQuizPreview(String(quizId), token, pin);
+
+      // ✅ Success: Data loaded
+      setPreviewData(data as any);
+      setCurrentModal("NONE"); // Close any open modals
+    } catch (error: any) {
+      console.log("Quiz Preview Error:", error.response?.data);
+
+      if (error.response && error.response.status === 400) {
+        const errorData = error.response.data;
+
+        // 🟢 Case 1: Locked until Admin (0 attempts or admin lock)
+        if (
+          errorData.locked_until_admin === "True" ||
+          errorData.locked_until_admin === true
+        ) {
+          setCurrentModal("LOCKED_ADMIN");
+          setAttemptsLeft(0);
         }
-      } finally {
-        setLoading(false);
+        // 🟢 Case 2: PIN Required
+        else if (
+          errorData.pin_required === "True" ||
+          errorData.pin_required === true
+        ) {
+          setCurrentModal("PIN_REQUIRED");
+          // Update attempts left if backend sends it
+          if (errorData.attempts_left) setAttemptsLeft(errorData.attempts_left);
+        }
+        // 🟢 Case 3: Generic Limit Reached (Old behavior)
+        else {
+          setCurrentModal("LIMIT_REACHED");
+        }
+      } else {
+        Alert.alert("Error", "Failed to load quiz instructions.");
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Initial Load
+  useEffect(() => {
     fetchPreview();
   }, [quizId, token]);
 
@@ -80,12 +123,61 @@ const InstructionScreen = () => {
     });
   };
 
+  // 🟢 Handle Pin Submission
+  const verifyPin = async () => {
+    if (pinInput.length === 0) {
+      setErrorMessage("Please enter a PIN");
+      return;
+    }
+
+    setVerifying(true); // Start button loading
+    setErrorMessage(null);
+
+    try {
+      // 1. Call the Unlock API
+      const response = await unlockQuiz(String(quizId), token!, pinInput);
+
+      // 2. Check success
+      if (response.unlocked === true) {
+        // Success! Close modal and refresh the screen data
+        setCurrentModal("NONE");
+        setPinInput("");
+
+        // Reload the preview (This will now return 200 OK with the actual start token)
+        await fetchPreview();
+      }
+    } catch (error: any) {
+      console.log("Unlock Error:", error.response?.data);
+
+      if (error.response && error.response.status === 400) {
+        const data = error.response.data;
+
+        // Update attempts if provided
+        if (data.attempts_left !== undefined) {
+          setAttemptsLeft(data.attempts_left);
+        }
+
+        // CHECK: Is it completely locked now?
+        if (String(data.locked_until_admin) === "True") {
+          setCurrentModal("LOCKED_ADMIN");
+        } else {
+          // Just a wrong password, stay on PIN modal but show error
+          setPinInput("");
+          setErrorMessage(data.detail || "Wrong password. Please try again.");
+        }
+      } else {
+        setErrorMessage("Something went wrong. Please try again.");
+      }
+    } finally {
+      setVerifying(false); // Stop button loading
+    }
+  };
+
   // Use API data if available, otherwise fall back to params
   const displayTitle = previewData?.quiz?.title || title || "Quiz Title";
-  // const displayDuration = previewData ? `${Math.floor(previewData.quiz.duration_seconds / 60)} min` : (duration || "30 min");
-  const displayDuration = duration || "30 min"; // Often passed formatted from list
+  const displayDuration = duration || "30 min";
   const displayAttempts = previewData?.quiz?.max_attempts || attempts || 1;
-  const displaySetCode = previewData?.set?.set_code || "A"; // 🟢 Display Set Code from API
+  const displaySetCode = previewData?.set?.set_code || "A";
 
   return (
     <LinearGradient
@@ -95,12 +187,12 @@ const InstructionScreen = () => {
       className="flex-1"
     >
       <StatusBar
-        barStyle="default"
+        barStyle="light-content"
         backgroundColor="transparent"
         translucent={true}
       />
       <SafeAreaView className="flex-1">
-        {/* Header with Back Button */}
+        {/* Header */}
         <View className="px-4 pt-2">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -109,9 +201,7 @@ const InstructionScreen = () => {
             <Ionicons name="chevron-back" size={28} color="white" />
           </TouchableOpacity>
         </View>
-
         <ScrollView className="flex-1 px-6 pt-4">
-          {/* Quiz Title */}
           <View className="mb-8 items-center">
             <Text className="text-3xl font-bold text-white text-center mb-1 leading-tight">
               {displayTitle}
@@ -121,7 +211,6 @@ const InstructionScreen = () => {
           {/* Key Details Card */}
           <GlowCard className="w-full">
             <View className="flex-row items-center p-5 py-6">
-              {/* Duration Column */}
               <View className="flex-1 items-center justify-center">
                 <Ionicons name="hourglass-outline" size={25} color="#F97316" />
                 <Text className="text-xl font-bold text-white">
@@ -129,10 +218,7 @@ const InstructionScreen = () => {
                 </Text>
                 <Text className="text-white/60 text-sm">Duration</Text>
               </View>
-
               <View className="w-[1px] bg-white/20 h-24 mx-2" />
-
-              {/* Attempts Column */}
               <View className="flex-1 items-center justify-center">
                 <Text className="text-3xl font-bold text-white mb-1">
                   {displayAttempts}
@@ -140,10 +226,7 @@ const InstructionScreen = () => {
                 <Text className="text-white/60 text-sm">Attempts</Text>
               </View>
             </View>
-
             <View className="h-[1px] bg-white/10 w-full" />
-
-            {/* Bottom Section: Set Name 🟢 (Dynamic Data) */}
             <View className="py-4 items-center justify-center">
               <Text className="text-xl font-bold text-white tracking-wider">
                 Set {displaySetCode}
@@ -151,28 +234,11 @@ const InstructionScreen = () => {
             </View>
           </GlowCard>
 
-          <PopupModal
-            isVisible={limitModalVisible}
-            onClose={() => router.back()} // Default close action (Go Back)
-            heading="Limit Reached"
-            content="All of your attempts are being used."
-            primaryText="Go Back"
-            onPrimary={() => {
-              setLimitModalVisible(false);
-              router.back();
-            }}
-            dismissible={false} // Force user to choose an action
-            theme="dark" // Matches the screen background
-          />
-
           {/* Instructions List */}
           <Text className="text-xl font-bold text-white my-6">
             Instructions
           </Text>
-
           <View className="space-y-6 pb-8">
-            {/* You can map over instructions from API if available, or keep static ones */}
-            {/* If API sends instructions as a string, you might parse it, or keep these defaults */}
             <InstructionItem
               icon="time-outline"
               text="The timer starts immediately after you click 'Start Quiz'. It cannot be paused."
@@ -191,25 +257,203 @@ const InstructionScreen = () => {
             />
           </View>
         </ScrollView>
-
-        {/* Footer Button */}
+        {/* Start Button - 🟢 Updated to handle loading state */}
         <View className="p-6 pt-2 pb-8">
           <TouchableOpacity
             onPress={handleStart}
             activeOpacity={0.8}
-            className="bg-[#F99C36] py-4 rounded-2xl items-center shadow-lg"
+            disabled={loading} // 🟢 Disable interaction while loading
+            className={`py-4 rounded-2xl items-center shadow-lg ${
+              loading ? "bg-white/10" : "bg-[#F99C36]"
+            }`}
           >
-            <Text className="text-white font-bold text-lg tracking-wider uppercase">
-              Start Quiz
-            </Text>
+            {loading ? (
+              <View className="flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="#9CA3AF" />
+              </View>
+            ) : (
+              <Text className="text-white font-bold text-lg tracking-wider uppercase">
+                Start Quiz
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
+        {/* 🟢 MODAL LOGIC */}
+        {/* 1. Limit Reached Modal (Old Behavior) */}
+        <PopupModal
+          isVisible={currentModal === "LIMIT_REACHED"}
+          onClose={() => router.back()}
+          heading="Limit Reached"
+          content="All of your attempts are being used."
+          primaryText="Go Back"
+          onPrimary={() => {
+            router.back();
+          }}
+          dismissible={false}
+          theme="dark"
+        />
+        {/* 2. Admin Locked Modal - 🟢 Updated to match "No Attempts Left" Screenshot */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={currentModal === "LOCKED_ADMIN"}
+          onRequestClose={() => router.back()}
+        >
+          <View className="flex-1 justify-center items-center bg-black/80 px-6">
+            {/* Modal Container: Matches the dark purple theme */}
+            <View className="bg-[#1e0b36] w-full max-w-[340px] rounded-[30px] p-8 items-center border border-white/10 shadow-2xl">
+              {/* Title */}
+              <Text className="text-white text-2xl font-bold mb-6 text-center tracking-wide">
+                No Attempts Left
+              </Text>
+
+              {/* Body Text - Section 1 */}
+              <Text className="text-gray-300 text-center text-[15px] leading-6 mb-4">
+                You have used all available attempts to enter this test.
+              </Text>
+
+              {/* Body Text - Section 2 */}
+              <Text className="text-gray-300 text-center text-[15px] leading-6 mb-8">
+                For security reasons, no further attempts are allowed.{"\n"}
+                <Text className="text-gray-300 text-center text-[15px] leading-6 mb-8">
+                  Please contact admin for assistance.
+                </Text>
+              </Text>
+
+              {/* OK Button - Orange & Centered */}
+              <TouchableOpacity
+                onPress={() => router.back()}
+                activeOpacity={0.8}
+                className="bg-[#F99C36] w-32 py-3 rounded-xl items-center justify-center shadow-lg"
+              >
+                <Text className="text-white font-bold text-lg">OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+        {/* Pin Modal */}
+        {/* 3. PIN Entry Modal - 🟢 Updated with Attempts Counter */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={currentModal === "PIN_REQUIRED"}
+          onRequestClose={() => router.back()}
+        >
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            className="flex-1 justify-center items-center bg-black/80 px-4"
+          >
+            {/* Modal Container */}
+            <View className="bg-[#1e0b36] w-full max-w-[360px] rounded-[30px] p-6 items-center border border-white/10 shadow-2xl">
+              {/* Title */}
+              <Text className="text-white text-2xl font-bold mb-2 text-center tracking-wide">
+                Enter Quiz PIN
+              </Text>
+
+              {/* Subtitle */}
+              <Text className="text-gray-300 text-center mb-2 text-[15px] leading-5 px-2">
+                Please enter the admin quiz PIN to{"\n"}access this quiz.
+              </Text>
+
+              {/* 🟢 NEW: Attempts Remaining Indicator */}
+              <View className="mb-6 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                <Text className="text-gray-400 text-xs font-medium">
+                  Attempts Remaining:{" "}
+                  <Text className="text-[#F99C36] font-bold text-sm">
+                    {attemptsLeft}
+                  </Text>
+                </Text>
+              </View>
+
+              {/* Split Input Visuals (7 Boxes) */}
+              <View className="w-full mb-4">
+                {/* The Visual Boxes */}
+                <View className="flex-row justify-between w-full mb-2">
+                  {Array(7)
+                    .fill(0)
+                    .map((_, index) => (
+                      <View
+                        key={index}
+                        className={`w-[12%] aspect-[0.85] rounded-lg items-center justify-center border ${
+                          pinInput.length === index
+                            ? "border-[#F99C36] bg-white/10" // Highlight active box
+                            : "border-white/10 bg-white/5" // Inactive box
+                        }`}
+                      >
+                        <Text className="text-white text-lg font-bold">
+                          {pinInput[index] || ""}
+                        </Text>
+                      </View>
+                    ))}
+                </View>
+
+                {/* The Actual Logic Input (Invisible but interactive) */}
+                <TextInput
+                  className="absolute inset-0 w-full h-full opacity-0"
+                  keyboardType="number-pad"
+                  value={pinInput}
+                  onChangeText={(t) => {
+                    // Limit to 7 characters to match the boxes
+                    if (t.length <= 7) {
+                      setPinInput(t);
+                      setErrorMessage(null);
+                    }
+                  }}
+                  autoFocus={true}
+                  caretHidden={true}
+                />
+              </View>
+
+              {/* Error Message */}
+              {errorMessage ? (
+                <Text className="text-red-500 text-sm font-semibold mb-6">
+                  {errorMessage}
+                </Text>
+              ) : (
+                // Spacer to keep layout jump-free if no error
+                <View className="h-5 mb-6" />
+              )}
+
+              {/* Action Buttons */}
+              <View className="flex-row w-full justify-end">
+                {/* Cancel Button */}
+                <TouchableOpacity
+                  onPress={() => router.back()}
+                  className="mr-5 px-5 rounded-xl bg-[#2D1B4E] border border-white/10 items-center justify-center"
+                >
+                  <Text className="text-white font-semibold text-lg">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Enter Test Button (Orange) */}
+                <TouchableOpacity
+                  onPress={verifyPin}
+                  disabled={verifying}
+                  className={`px-5 py-3 rounded-xl items-center justify-center ${
+                    verifying ? "bg-orange-500/50" : "bg-[#F99C36]"
+                  }`}
+                >
+                  {verifying ? (
+                    <Text className="text-white font-semibold text-lg">
+                      Checking...
+                    </Text>
+                  ) : (
+                    <Text className="text-white font-semibold text-lg">
+                      Enter Test
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
       </SafeAreaView>
     </LinearGradient>
   );
 };
 
-// Helper component for instruction items
+// Helper component
 const InstructionItem = ({ icon, text }: { icon: any; text: string }) => (
   <View className="flex-row items-start pr-4 mb-5">
     <View className="mr-4 mt-0.5">
