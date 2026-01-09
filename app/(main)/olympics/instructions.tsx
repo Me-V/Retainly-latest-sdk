@@ -59,44 +59,47 @@ const InstructionScreen = () => {
   const [attemptsLeft, setAttemptsLeft] = useState<string | number>(3);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const [isAdminUnlock, setIsAdminUnlock] = useState(false);
+
   const [verifying, setVerifying] = useState(false);
 
-  // Reusable function to fetch data (with optional pin)
   const fetchPreview = async (pin?: string) => {
     if (!quizId || !token) return;
     setLoading(true);
-    setErrorMessage(null); // Clear previous errors
+    setErrorMessage(null);
 
     try {
       const data = await getQuizPreview(String(quizId), token, pin);
 
       // ✅ Success: Data loaded
       setPreviewData(data as any);
-      setCurrentModal("NONE"); // Close any open modals
+      setCurrentModal("NONE");
     } catch (error: any) {
       console.log("Quiz Preview Error:", error.response?.data);
 
       if (error.response && error.response.status === 400) {
         const errorData = error.response.data;
 
-        // 🟢 Case 1: Locked until Admin (0 attempts or admin lock)
+        // 🟢 Case 1: Locked until Admin (0 attempts)
         if (
           errorData.locked_until_admin === "True" ||
           errorData.locked_until_admin === true
         ) {
-          setCurrentModal("LOCKED_ADMIN");
+          // 🟢 CHANGE: Use PIN_REQUIRED modal, but set Admin Mode to true
+          setIsAdminUnlock(true);
+          setCurrentModal("PIN_REQUIRED");
           setAttemptsLeft(0);
         }
-        // 🟢 Case 2: PIN Required
+        // 🟢 Case 2: PIN Required (Normal User)
         else if (
           errorData.pin_required === "True" ||
           errorData.pin_required === true
         ) {
+          setIsAdminUnlock(false); // Normal mode
           setCurrentModal("PIN_REQUIRED");
-          // Update attempts left if backend sends it
           if (errorData.attempts_left) setAttemptsLeft(errorData.attempts_left);
         }
-        // 🟢 Case 3: Generic Limit Reached (Old behavior)
+        // 🟢 Case 3: Generic Limit Reached
         else {
           setCurrentModal("LIMIT_REACHED");
         }
@@ -123,27 +126,22 @@ const InstructionScreen = () => {
     });
   };
 
-  // 🟢 Handle Pin Submission
   const verifyPin = async () => {
     if (pinInput.length === 0) {
       setErrorMessage("Please enter a PIN");
       return;
     }
 
-    setVerifying(true); // Start button loading
+    setVerifying(true);
     setErrorMessage(null);
 
     try {
-      // 1. Call the Unlock API
       const response = await unlockQuiz(String(quizId), token!, pinInput);
 
-      // 2. Check success
       if (response.unlocked === true) {
-        // Success! Close modal and refresh the screen data
         setCurrentModal("NONE");
         setPinInput("");
-
-        // Reload the preview (This will now return 200 OK with the actual start token)
+        setIsAdminUnlock(false); // Reset admin mode
         await fetchPreview();
       }
     } catch (error: any) {
@@ -152,16 +150,17 @@ const InstructionScreen = () => {
       if (error.response && error.response.status === 400) {
         const data = error.response.data;
 
-        // Update attempts if provided
         if (data.attempts_left !== undefined) {
           setAttemptsLeft(data.attempts_left);
         }
 
         // CHECK: Is it completely locked now?
         if (String(data.locked_until_admin) === "True") {
-          setCurrentModal("LOCKED_ADMIN");
+          // 🟢 CHANGE: Switch to Admin Mode inside the same PIN modal
+          setIsAdminUnlock(true);
+          setErrorMessage("Maximum attempts reached. Admin PIN required.");
+          setPinInput(""); // Clear input so admin can type
         } else {
-          // Just a wrong password, stay on PIN modal but show error
           setPinInput("");
           setErrorMessage(data.detail || "Wrong password. Please try again.");
         }
@@ -169,7 +168,7 @@ const InstructionScreen = () => {
         setErrorMessage("Something went wrong. Please try again.");
       }
     } finally {
-      setVerifying(false); // Stop button loading
+      setVerifying(false);
     }
   };
 
@@ -331,8 +330,7 @@ const InstructionScreen = () => {
             </View>
           </View>
         </Modal>
-        {/* Pin Modal */}
-        {/* 3. PIN Entry Modal - 🟢 Updated with Attempts Counter */}
+        {/* 3. PIN Entry Modal - 🟢 Updated to handle Admin Text */}
         <Modal
           animationType="fade"
           transparent={true}
@@ -345,29 +343,35 @@ const InstructionScreen = () => {
           >
             {/* Modal Container */}
             <View className="bg-[#1e0b36] w-full max-w-[360px] rounded-[30px] p-6 items-center border border-white/10 shadow-2xl">
-              {/* Title */}
+              {/* 🟢 Dynamic Title */}
               <Text className="text-white text-2xl font-bold mb-2 text-center tracking-wide">
-                Enter Quiz PIN
+                {isAdminUnlock ? "Admin Unlock" : "Enter Quiz PIN"}
               </Text>
 
-              {/* Subtitle */}
+              {/* 🟢 Dynamic Subtitle */}
               <Text className="text-gray-300 text-center mb-2 text-[15px] leading-5 px-2">
-                Please enter the admin quiz PIN to{"\n"}access this quiz.
+                {isAdminUnlock
+                  ? "Maximum attempts reached.\nAsk the admin to put the PIN."
+                  : "Please enter the admin quiz PIN to\naccess this quiz."}
               </Text>
 
-              {/* 🟢 NEW: Attempts Remaining Indicator */}
-              <View className="mb-6 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                <Text className="text-gray-400 text-xs font-medium">
-                  Attempts Remaining:{" "}
-                  <Text className="text-[#F99C36] font-bold text-sm">
-                    {attemptsLeft}
+              {/* 🟢 Attempts Remaining: Only show if NOT in admin mode */}
+              {!isAdminUnlock && (
+                <View className="mb-6 bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                  <Text className="text-gray-400 text-xs font-medium">
+                    Attempts Remaining:{" "}
+                    <Text className="text-[#F99C36] font-bold text-sm">
+                      {attemptsLeft}
+                    </Text>
                   </Text>
-                </Text>
-              </View>
+                </View>
+              )}
 
-              {/* Split Input Visuals (7 Boxes) */}
+              {/* Spacer for Admin mode (since we hid the attempts pill) */}
+              {isAdminUnlock && <View className="mb-6" />}
+
+              {/* Split Input Visuals (7 Boxes) - Keeps logic same */}
               <View className="w-full mb-4">
-                {/* The Visual Boxes */}
                 <View className="flex-row justify-between w-full mb-2">
                   {Array(7)
                     .fill(0)
@@ -376,8 +380,8 @@ const InstructionScreen = () => {
                         key={index}
                         className={`w-[12%] aspect-[0.85] rounded-lg items-center justify-center border ${
                           pinInput.length === index
-                            ? "border-[#F99C36] bg-white/10" // Highlight active box
-                            : "border-white/10 bg-white/5" // Inactive box
+                            ? "border-[#F99C36] bg-white/10"
+                            : "border-white/10 bg-white/5"
                         }`}
                       >
                         <Text className="text-white text-lg font-bold">
@@ -387,13 +391,11 @@ const InstructionScreen = () => {
                     ))}
                 </View>
 
-                {/* The Actual Logic Input (Invisible but interactive) */}
                 <TextInput
                   className="absolute inset-0 w-full h-full opacity-0"
                   keyboardType="number-pad"
                   value={pinInput}
                   onChangeText={(t) => {
-                    // Limit to 7 characters to match the boxes
                     if (t.length <= 7) {
                       setPinInput(t);
                       setErrorMessage(null);
@@ -406,17 +408,15 @@ const InstructionScreen = () => {
 
               {/* Error Message */}
               {errorMessage ? (
-                <Text className="text-red-500 text-sm font-semibold mb-6">
+                <Text className="text-red-500 text-sm font-semibold mb-6 text-center">
                   {errorMessage}
                 </Text>
               ) : (
-                // Spacer to keep layout jump-free if no error
                 <View className="h-5 mb-6" />
               )}
 
               {/* Action Buttons */}
               <View className="flex-row w-full justify-end">
-                {/* Cancel Button */}
                 <TouchableOpacity
                   onPress={() => router.back()}
                   className="mr-5 px-5 rounded-xl bg-[#2D1B4E] border border-white/10 items-center justify-center"
@@ -426,7 +426,6 @@ const InstructionScreen = () => {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Enter Test Button (Orange) */}
                 <TouchableOpacity
                   onPress={verifyPin}
                   disabled={verifying}
@@ -440,7 +439,7 @@ const InstructionScreen = () => {
                     </Text>
                   ) : (
                     <Text className="text-white font-semibold text-lg">
-                      Enter Test
+                      {isAdminUnlock ? "Unlock" : "Enter Test"}
                     </Text>
                   )}
                 </TouchableOpacity>
