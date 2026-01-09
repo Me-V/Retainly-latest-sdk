@@ -1,6 +1,13 @@
 import { router } from "expo-router";
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from "react-native";
 import { MyLogo } from "@/assets/logo";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -22,8 +29,12 @@ GoogleSignin.configure({
 
 export default function SignInScreen() {
   const dispatch = useDispatch();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const signIn = async () => {
+    if (isGoogleLoading) return; // Prevent double taps
+    setIsGoogleLoading(true); // 🟢 Start Loading
+
     try {
       await GoogleSignin.hasPlayServices();
       try {
@@ -34,7 +45,6 @@ export default function SignInScreen() {
 
       if (isSuccessResponse(response)) {
         const { idToken } = response.data;
-        // user info from Google (might differ slightly from backend user)
         const googleUser = response.data.user;
 
         if (idToken) {
@@ -43,7 +53,6 @@ export default function SignInScreen() {
           const firebaseToken = await auth().currentUser?.getIdToken();
 
           if (firebaseToken) {
-            // Call Backend
             const backendResponse = await loginWithGoogle(
               firebaseToken,
               googleUser.email
@@ -51,40 +60,41 @@ export default function SignInScreen() {
 
             console.log("#######backendResponse", backendResponse);
 
-            // 🟢 CHECK CONSENT LOGIC HERE
             if (backendResponse.consent_required === true) {
-              // Navigate to Consent Screen with necessary data
               router.push({
-                pathname: "/(main)/consentScreen", // Ensure this matches your file structure
+                pathname: "/(main)/consentScreen",
                 params: {
                   consentText: backendResponse.consent_text,
                   consentVersion: backendResponse.consent_version,
                   pendingAuth: backendResponse.pending_auth,
-                  // We might need user info later, passing as string
                   userData: JSON.stringify(backendResponse.user),
                 },
               });
             } else if (backendResponse?.token) {
-              // Direct Login Success
               dispatch(
                 setUser({
                   token: backendResponse.token,
-                  userInfo: backendResponse.user, // Prefer backend user object
+                  userInfo: backendResponse.user,
                 })
               );
-              // router.replace("/(main)/dashboard"); // Auto-redirect typically handled by auth layout
             } else {
               Alert.alert("Login failed", "Unexpected server response.");
             }
           }
         }
+      } else {
+        // User cancelled the sign-in flow
+        setIsGoogleLoading(false);
       }
     } catch (error: any) {
       if (isErrorWithCode(error)) {
-        // ... existing error handling
+        // Handle specific codes if needed
       } else {
         Alert.alert("Authentication Error", error.message);
       }
+    } finally {
+      // 🟢 Stop Loading (Note: if you navigate away on success, this might not run on unmounted component, which is fine)
+      setIsGoogleLoading(false);
     }
   };
 
@@ -177,13 +187,28 @@ export default function SignInScreen() {
             <TouchableOpacity
               className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-8 relative"
               onPress={signIn}
+              disabled={isGoogleLoading} // Disable button while loading
             >
               <View className="absolute left-5">
                 <GoogleIcon />
               </View>
-              <Text className="text-gray-700 font-medium text-[16px]">
-                Sign in with Google
-              </Text>
+
+              {isGoogleLoading ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator
+                    size="small"
+                    color="#374151"
+                    className="mr-3"
+                  />
+                  <Text className="text-gray-700 font-medium text-[16px]">
+                    Signing in...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-gray-700 font-medium text-[16px]">
+                  Sign in with Google
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Email Button */}
