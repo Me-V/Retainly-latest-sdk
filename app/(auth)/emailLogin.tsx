@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import Entypo from "@expo/vector-icons/Entypo";
@@ -137,7 +138,7 @@ export default function EmailLoginScreen() {
           }}
         >
           {/* Header Section */}
-          <View className="my-12 items-center relative z-10">
+          <View className="mt-12 items-center relative z-10">
             <TouchableOpacity
               onPress={() => router.back()}
               className="absolute left-6"
@@ -145,11 +146,11 @@ export default function EmailLoginScreen() {
               <Ionicons name="chevron-back" size={24} color="white" />
             </TouchableOpacity>
 
-            <View className="mt-14 items-center">
-              <MyLogo />
-              <Text className="text-white text-[15px] font-medium mt-5">
-                tagline
-              </Text>
+            <View className="mt-12 items-center">
+              <Image
+                source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+                className="w-[200px] h-[200px]" // 🟢 Size matches your old SVG
+              />
             </View>
           </View>
 

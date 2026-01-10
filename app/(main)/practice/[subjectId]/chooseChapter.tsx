@@ -10,6 +10,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   useWindowDimensions,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -181,13 +182,14 @@ export default function SubjectTopics() {
     >
       <ScrollView className="flex-1" contentContainerClassName="pb-6 flex-grow">
         {/* Header */}
-        <View className="px-6 pt-12 flex-row justify-between items-center z-10">
+        <View className="px-6 flex-row justify-between items-center z-10">
           <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
             <BackIcon color="white" />
           </TouchableOpacity>
-          <View className="w-10 h-10 rounded-full bg-[#E3642A] border border-white/20 items-center justify-center">
-            <Text className="text-white font-bold text-[8px]">LOGO</Text>
-          </View>
+          <Image
+            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+            className="w-[90px] h-[90px] mt-6" // 🟢 Size matches your old SVG
+          />
         </View>
 
         {/* Title */}

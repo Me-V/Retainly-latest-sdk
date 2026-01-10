@@ -184,11 +184,12 @@ const HomeDashboard: React.FC = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View className="px-6 pt-12 flex-row items-center justify-between mb-6">
-          <View className="w-12 h-12 rounded-full bg-[#F59E51] items-center justify-center">
-            <Text className="text-white font-bold text-xs">LOGO</Text>
-          </View>
-          <View className="flex-row items-center space-x-4 gap-4">
+        <View className="px-2 flex-row items-center justify-between mb-6">
+          <Image
+            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+            className="w-[80px] h-[80px] mt-6" // 🟢 Size matches your old SVG
+          />
+          <View className="flex-row items-center space-x-4 gap-4 mr-4">
             <TouchableOpacity>
               <Ionicons name="notifications" size={24} color="white" />
             </TouchableOpacity>
