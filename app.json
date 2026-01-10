@@ -5,7 +5,7 @@
     "owner": "hello_kitty17",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/companyLogo.png",
+    "icon": "./assets/AppLogo.png",
     "scheme": "education",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/companyLogo.png",
+        "foregroundImage": "./assets/AppLogo.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.education.retainlyapp",
@@ -23,7 +23,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/companyLogo.png"
+      "favicon": "./assets/AppLogo.png"
     },
     "plugins": [
       "expo-router",
@@ -34,7 +34,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/companyLogo.png",
+          "image": "./assets/AppLogo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
