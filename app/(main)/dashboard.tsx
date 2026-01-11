@@ -1,72 +1,25 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Image,
+  BackHandler, // 🟢 Import BackHandler
+} from "react-native";
 import { getLiveQuizzes, OlympicQuiz } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getSubjects } from "@/services/api.edu";
-import { router } from "expo-router";
+import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
 import { Ionicons } from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 
-// Utility progress bar
-const ProgressBar = ({
-  value,
-  track = "rgba(255,255,255,0.2)",
-  fill = "#F59E51",
-}: {
-  value: number;
-  track?: string;
-  fill?: string;
-}) => (
-  <View
-    className="w-full h-[6px] rounded-full overflow-hidden"
-    style={{ backgroundColor: track }}
-  >
-    <View
-      className="h-full rounded-full"
-      style={{
-        width: `${Math.max(0, Math.min(100, value ?? 0))}%`,
-        backgroundColor: fill,
-      }}
-    />
-  </View>
-);
+// ... [Keep your ProgressBar, SubjectRow, Types, and mockSubjects exactly as they are] ...
 
-// const SubjectRow = ({
-//   name,
-//   value,
-//   fill,
-//   onLayout,
-// }: {
-//   name: string;
-//   value: number;
-//   fill: string;
-//   onLayout?: (e: LayoutChangeEvent) => void;
-// }) => (
-//   <View onLayout={onLayout} className="w-full flex-row items-center mb-4">
-//     <View className="flex-1">
-//       <View className="flex-row justify-between mb-1">
-//         <Text className="text-[14px] text-white/90 font-medium">{name}</Text>
-//         <Text className="text-[12px] text-white/70">{value}%</Text>
-//       </View>
-//       <ProgressBar value={value} fill={fill} />
-//     </View>
-//   </View>
-// );
-
-type Subject = {
-  id?: string;
-  uuid?: string;
-  name?: string;
-  title?: string;
-  progress?: number;
-  percentage?: number;
-  completion?: number;
-};
-
-// Mock subjects
+// Mock subjects (Ensure this block exists if you use it below)
 const palette = ["#FF8A33", "#F59E51", "#FFB74D", "#FFA726"];
 const mockSubjects = Array.from({ length: 10 }, (_, i) => ({
   name: `Subject ${i + 1}`,
@@ -93,23 +46,35 @@ const HomeDashboard: React.FC = () => {
   const streamId: string | undefined = userInfo?.stream;
   const includeStream = Boolean(streamId);
 
-  const [list, setList] = useState<Subject[]>([]);
+  const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [quizzes, setQuizzes] = useState<OlympicQuiz[]>([]);
 
-  // --- Logic restored from QuickActions component ---
+  // 🟢 SOLUTION 1: Handle Android Hardware Back Button
+  // Using 'useFocusEffect' ensures this only runs when the Dashboard is the active screen.
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Exit the app completely when Back is pressed
+        BackHandler.exitApp();
+        return true; // Stop the event from bubbling up (prevents default back navigation)
+      };
+
+      // Add the listener and keep the subscription
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      // Remove the listener using the subscription object (Fixes the deprecation error)
+      return () => subscription.remove();
+    }, [])
+  );
+
+  // ... [Keep handleQuickAction and useEffects for data loading exactly as is] ...
   const handleQuickAction = (key: string) => {
-    if (key === "practice") {
-      // Functional navigation restored
-      router.push("/practice/chooseSubject");
-    }
-    if (key === "mock") {
-    }
-    if (key === "olympics") {
-      // Functional navigation restored
-      router.push("/olympics/quizes");
-    }
-    // Placeholder for other actions
+    if (key === "practice") router.push("/practice/chooseSubject");
+    if (key === "olympics") router.push("/olympics/quizes");
     console.log("Quick Action Pressed:", key);
   };
 
@@ -125,7 +90,6 @@ const HomeDashboard: React.FC = () => {
         });
         setList(Array.isArray(subjects) ? subjects : []);
       } catch (e: any) {
-        console.error("Subjects load error:", e);
         setList([]);
       } finally {
         setLoading(false);
@@ -137,7 +101,6 @@ const HomeDashboard: React.FC = () => {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        // Only fetch if we have a token
         if (token) {
           const data = await getLiveQuizzes(token);
           setQuizzes(data);
@@ -148,12 +111,11 @@ const HomeDashboard: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchQuizzes();
   }, [token]);
 
   const allFromApi = useMemo(() => {
-    return (list as Subject[]).map((s, i) => ({
+    return (list as any[]).map((s, i) => ({
       name: s.name || s.title || `Subject ${i + 1}`,
       value: Math.max(
         0,
@@ -168,28 +130,36 @@ const HomeDashboard: React.FC = () => {
     () => [...displaySubjects].sort((a, b) => b.value - a.value),
     [displaySubjects]
   );
-
   const moreThanFour = sortedSubjects.length > 4;
 
   return (
     <LinearGradient
-      // Warm tint at top-left (#5A1C44) fading to dark purple
       colors={["#5A1C44", "#3B0A52", "#3A0353"]}
       start={{ x: 1, y: 1 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
+      {/* 🟢 SOLUTION 2: Disable Gestures (Swipe Back) & Remove Header */}
+      <Stack.Screen
+        options={{
+          headerShown: false, // Hides the header (and its back button)
+          gestureEnabled: false, // Disables the swipe-to-go-back gesture
+          headerLeft: () => null, // Ensures no back button is rendered
+        }}
+      />
+
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View className="px-2 flex-row items-center justify-between mb-6">
+        <View className="px-6 pt-14 pb-4 flex-row items-center justify-between mb-2">
           <Image
-            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
-            className="w-[80px] h-[80px] mt-6" // 🟢 Size matches your old SVG
+            source={require("@/assets/AppLogo.png")}
+            className="w-12 h-12"
+            resizeMode="contain"
           />
-          <View className="flex-row items-center space-x-4 gap-4 mr-4">
+          <View className="flex-row items-center space-x-4 gap-4">
             <TouchableOpacity>
               <Ionicons name="notifications" size={24} color="white" />
             </TouchableOpacity>
@@ -211,7 +181,7 @@ const HomeDashboard: React.FC = () => {
           </Text>
         </View>
 
-        {/* --- CARDS SECTION --- */}
+        {/* ... [Rest of your UI: GlowCards, Floating Nav, etc.] ... */}
         <View className="px-6 space-y-5 gap-5">
           {/* Ask AI Tutor Card */}
           <GlowCard className="flex-row items-center p-5 py-6">
@@ -243,53 +213,8 @@ const HomeDashboard: React.FC = () => {
             </View>
           </GlowCard>
 
-          {/* <View className="px-6 mt-8">
-            <Text className="text-[20px] font-extrabold text-neutral-900 mb-3">
-              Study progress
-            </Text>
-
-            {loading ? (
-              <ActivityIndicator />
-            ) : displaySubjects.length === 0 ? (
-              <Text className="text-neutral-600 text-[12px] mb-2">
-                No subjects available.
-              </Text>
-            ) : (
-              <View
-                style={{
-                  width: "100%",
-                  maxHeight: moreThanFour ? capHeight : undefined,
-                }}
-              >
-                <ScrollView
-                  style={{ width: "100%" }}
-                  contentContainerStyle={{ paddingBottom: 0 }}
-                  showsVerticalScrollIndicator={false}
-                  scrollEnabled={moreThanFour}
-                  nestedScrollEnabled
-                >
-                  {sortedSubjects.map((s, i) => (
-                    <SubjectRow
-                      key={`${s.name}-${i}`}
-                      name={s.name}
-                      value={s.value}
-                      fill={s.fill}
-                      onLayout={
-                        i === 0 && !rowH
-                          ? (e) =>
-                              setRowH(Math.ceil(e.nativeEvent.layout.height))
-                          : undefined
-                      }
-                    />
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-          </View> */}
-
-          {/* Quick Actions List (FUNCTIONAL) */}
+          {/* Quick Actions List */}
           <GlowCard className="p-0">
-            {/* Start Practice - Wired to Router */}
             <TouchableOpacity
               onPress={() => handleQuickAction("practice")}
               className="flex-row items-center p-5 active:bg-white/5"
@@ -303,7 +228,6 @@ const HomeDashboard: React.FC = () => {
               <Ionicons name="chevron-forward" size={20} color="white" />
             </TouchableOpacity>
 
-            {/* Mock Test */}
             <TouchableOpacity
               onPress={() => handleQuickAction("mock")}
               className="flex-row items-center p-5 active:bg-white/5"
@@ -327,19 +251,14 @@ const HomeDashboard: React.FC = () => {
                   className="w-[30px] h-[30px] mr-4"
                   resizeMode="contain"
                 />
-
-                {/* Text Container */}
                 <View className="flex-1 justify-center">
-                  {/* Relative container for text + floating badge */}
                   <View className="flex-row items-center self-start">
                     <Text className="text-white text-[20px] font-semibold">
                       Maths Olympics
                     </Text>
-
                     <LiveBadge />
                   </View>
                 </View>
-
                 <Ionicons name="chevron-forward" size={20} color="white" />
               </TouchableOpacity>
             )}
@@ -353,17 +272,14 @@ const HomeDashboard: React.FC = () => {
           <Ionicons name="home" size={24} color="#F59E51" />
           <Text className="text-[10px] text-white mt-1">Home</Text>
         </TouchableOpacity>
-
         <TouchableOpacity className="items-center justify-center opacity-60">
           <Ionicons name="book" size={24} color="white" />
           <Text className="text-[10px] text-white mt-1">Subjects</Text>
         </TouchableOpacity>
-
         <TouchableOpacity className="items-center justify-center opacity-60">
           <Ionicons name="stats-chart" size={24} color="white" />
           <Text className="text-[10px] text-white mt-1">Progress</Text>
         </TouchableOpacity>
-
         <TouchableOpacity className="items-center justify-center opacity-60">
           <Ionicons name="calendar" size={24} color="white" />
           <Text className="text-[10px] text-white mt-1">Planner</Text>
