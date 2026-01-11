@@ -10,9 +10,10 @@ import {
   Platform,
   InteractionManager,
   Keyboard,
+  BackHandler,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
 import { getAuth, signInWithPhoneNumber } from "@react-native-firebase/auth";
 import { patchMe, patchPhone } from "@/services/api.auth";
@@ -87,6 +88,7 @@ export default function ChatOnboardingProfile() {
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupHeading, setPopupHeading] = useState("Alert");
   const [popupContent, setPopupContent] = useState("");
+  const [popupTheme, setPopupTheme] = useState<"light" | "dark">("light");
   const [phoneConflictOpen, setPhoneConflictOpen] = useState(false);
 
   const [classOptions, setClassOptions] = useState<OptionItem[]>([]);
@@ -103,9 +105,14 @@ export default function ChatOnboardingProfile() {
 
   const autoNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showPopup = (content: string, heading = "Alert") => {
+  const showPopup = (
+    content: string,
+    heading = "Alert",
+    theme: "light" | "dark" = "dark" // <--- Default to "dark" for consistent styling
+  ) => {
     setPopupHeading(heading);
     setPopupContent(content);
+    setPopupTheme(theme); // <--- Set the theme
     setPopupVisible(true);
   };
 
@@ -143,6 +150,21 @@ export default function ChatOnboardingProfile() {
       keyboardDidHideListener.remove();
       keyboardDidShowListener.remove();
     };
+  }, []);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      // Exit the app when back is pressed on this screen
+      BackHandler.exitApp();
+      return true; // Stop default navigation behavior
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
@@ -511,6 +533,13 @@ export default function ChatOnboardingProfile() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
+      <Stack.Screen
+        options={{
+          headerShown: false, // Hides default header
+          gestureEnabled: false, // 🟢 Disables Swipe-to-go-back (iOS)
+          headerLeft: () => null, // Removes back button arrow
+        }}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -646,6 +675,7 @@ export default function ChatOnboardingProfile() {
           heading={popupHeading}
           content={popupContent}
           cancelShow={false}
+          theme={popupTheme} // <--- Pass the theme state here
         />
 
         <PopupModal
@@ -653,19 +683,16 @@ export default function ChatOnboardingProfile() {
           onClose={() => setPhoneConflictOpen(false)}
           heading="Number already in use"
           content="This phone number is already linked to another account."
-          
           primaryText="Change number"
           onPrimary={() => {
             setPhoneConflictOpen(false);
             resetPhoneFlow();
           }}
-          
           secondaryText="Skip and continue"
           onSecondary={() => {
             setPhoneConflictOpen(false);
             proceedToClassSelection();
           }}
-          
           dismissible={false}
           theme="dark" // <--- ADD THIS
         />

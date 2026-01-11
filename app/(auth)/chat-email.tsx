@@ -9,9 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  BackHandler,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import { BotIcon, UserIcon } from "@/assets/logo2";
 import PopupModal from "@/components/Popup-modal";
@@ -75,10 +76,16 @@ export default function ChatProfileScreen() {
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupHeading, setPopupHeading] = useState("Alert");
   const [popupContent, setPopupContent] = useState("");
+  const [popupTheme, setPopupTheme] = useState<"light" | "dark">("light");
 
-  const showPopup = (content: string, heading = "Alert") => {
+  const showPopup = (
+    content: string,
+    heading = "Alert",
+    theme: "light" | "dark" = "dark" // Default to "dark" for errors as requested
+  ) => {
     setPopupHeading(heading);
     setPopupContent(content);
+    setPopupTheme(theme); // <--- Set theme
     setPopupVisible(true);
   };
 
@@ -133,6 +140,22 @@ export default function ChatProfileScreen() {
     })();
   }, [token]);
 
+  // 🟢 Handle Back Button (Exit App instead of going back)
+  useEffect(() => {
+    const onBackPress = () => {
+      // Exit the app when back is pressed on this screen
+      BackHandler.exitApp();
+      return true; // Stop default navigation behavior
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+
+    return () => subscription.remove();
+  }, []);
+
   // Auto-scroll on new messages
   useEffect(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
@@ -148,7 +171,7 @@ export default function ChatProfileScreen() {
   const handleSubmitName = () => {
     const name = currentInput.trim();
     if (!name) {
-      showPopup("Please enter your name");
+      showPopup("Please enter your name", "Error");
       return;
     }
     setUserName(name);
@@ -168,7 +191,7 @@ export default function ChatProfileScreen() {
     const email = currentInput.trim();
     // basic check
     if (!/\S+@\S+\.\S+/.test(email)) {
-      showPopup("Please enter a valid email address");
+      showPopup("Please enter a valid email address", "Error");
       return;
     }
     setUserEmail(email);
@@ -386,6 +409,13 @@ export default function ChatProfileScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
+      <Stack.Screen
+        options={{
+          headerShown: false, // Hides default header
+          gestureEnabled: false, // 🟢 Disables Swipe-to-go-back (iOS)
+          headerLeft: () => null, // Removes back button arrow
+        }}
+      />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -520,6 +550,7 @@ export default function ChatProfileScreen() {
           heading={popupHeading}
           content={popupContent}
           cancelShow={false}
+          theme={popupTheme} // <--- Pass the theme prop here
         />
       </KeyboardAvoidingView>
     </LinearGradient>

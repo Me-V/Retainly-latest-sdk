@@ -68,6 +68,8 @@ const QuizScreen = () => {
   const [successTitle, setSuccessTitle] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  const [isSaving, setIsSaving] = useState(false);
+
   // 🟢 Network Listener Effect
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
@@ -250,11 +252,16 @@ const QuizScreen = () => {
   };
 
   const handleNext = async () => {
+    // Prevent double clicking
+    if (isSaving) return;
+
     const currentQ = data.questions[currentQuestionIndex];
 
     // 🟢 Check LOCAL selection
     if (currentSelection) {
-      // 1. Commit to Redux (This "Saves" it and updates the orange bubble)
+      setIsSaving(true); // Start Button Loader
+
+      // 1. Commit to Redux
       dispatch(
         selectOption({ questionId: currentQ.id, optionId: currentSelection })
       );
@@ -271,9 +278,12 @@ const QuizScreen = () => {
         }
       } catch (e) {
         console.log("Silent save failed");
+      } finally {
+        setIsSaving(false); // Stop Button Loader
       }
     }
 
+    // Navigate
     if (currentQuestionIndex < data.questions.length - 1) {
       dispatch(setQuestionIndex(currentQuestionIndex + 1));
     } else {
@@ -589,7 +599,8 @@ const QuizScreen = () => {
 
           <TouchableOpacity
             onPress={handleNext}
-            className="bg-[#F99C36] px-4 py-4 rounded-2xl shadow-lg"
+            disabled={isSaving} // 🟢 Disable interaction while saving
+            className="bg-[#F99C36] px-4 py-4 rounded-2xl shadow-lg flex-row justify-center items-center min-w-[160px]"
             style={{
               shadowColor: "#F99C36",
               shadowOffset: { width: 0, height: 4 },
@@ -598,11 +609,17 @@ const QuizScreen = () => {
               elevation: 6,
             }}
           >
-            <Text className="text-white font-bold text-base uppercase tracking-wide">
-              {currentQuestionIndex === totalQ - 1
-                ? "Save & Submit"
-                : "Save & Continue"}
-            </Text>
+            {isSaving ? (
+              // 🟢 Show Spinner
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              // 🟢 Show Text
+              <Text className="text-white font-bold text-base uppercase tracking-wide">
+                {currentQuestionIndex === totalQ - 1
+                  ? "Save & Submit"
+                  : "Save & Continue"}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
         <View className="flex-row items-center gap-3 justify-center mb-4">

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { MyLogo } from "@/assets/logo";
 import { LinearGradient } from "expo-linear-gradient";
@@ -113,12 +114,10 @@ export default function SignInScreen() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header - Aligned to mt-12 to match Signup Screen */}
         <View className="mt-12 items-center">
-          <View className="mt-14 mb-10 items-center">
-            <MyLogo />
-            <Text className="text-white text-[15px] font-medium mt-5">
-              tagline
-            </Text>
-          </View>
+          <Image
+            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+            className="w-[200px] h-[200px]" // 🟢 Size matches your old SVG
+          />
         </View>
 
         {/* --- CARD CONTAINER (With Fixed 4-Sided Glow) --- */}

@@ -9,6 +9,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { initializeApp, getApps, getApp } from "@react-native-firebase/app";
@@ -226,16 +227,41 @@ const MobileLoginScreen = () => {
 
       const user = authforMobile.currentUser;
       const idToken = await user?.getIdToken(true);
+
+      console.log("<<<<<<<<<<<<<<<<<<<Token in redux", idToken);
+
       if (!idToken) throw new Error("Failed to get ID token from Firebase.");
 
       const fullNumber = formatE164(selectedCountry.dialCode, phone);
+
+      // 🟢 Call backend
       const data = await signupWithPhoneOTP(fullNumber, idToken);
 
+      console.log("Phone Signup Response:", data);
+
+      // 🟢 SCENARIO A: CONSENT REQUIRED
+      if (data.consent_required === true) {
+        // Navigate to Consent Screen
+        router.push({
+          pathname: "/(main)/consentScreen",
+          params: {
+            consentText: data.consent_text,
+            consentVersion: data.consent_version,
+            pendingAuth: data.pending_auth,
+            userData: JSON.stringify(data.user),
+          },
+        });
+        return; // Stop execution here
+      }
+
+      // 🟢 SCENARIO B: SUCCESS (Token Received)
       if (data?.token) {
         dispatch(setUser({ token: data.token, userInfo: { fullNumber } }));
         router.replace("/(main)/animation");
         setStatus("Phone verified and authorized!");
-      } else {
+      }
+      // 🟢 SCENARIO C: NO TOKEN (Should generally not happen for phone, but safe to handle)
+      else {
         showPopup({
           heading: "Signup incomplete",
           content: "No token received from backend. Please try again.",
@@ -318,7 +344,7 @@ const MobileLoginScreen = () => {
           }}
         >
           {/* Header Section */}
-          <View className="mt-12 mb-4 items-center relative z-10">
+          <View className="mt-12 items-center relative z-10">
             <TouchableOpacity
               onPress={() => router.back()}
               className="absolute left-6"
@@ -327,16 +353,16 @@ const MobileLoginScreen = () => {
               {/* Ensure your BackIcon accepts a color prop or is white by default */}
             </TouchableOpacity>
 
-            <View className="mt-14 items-center">
-              <MyLogo />
-              <Text className="text-white text-[15px] font-medium mt-5">
-                tagline
-              </Text>
+            <View className="mt-5 items-center">
+              <Image
+                source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+                className="w-[200px] h-[200px]" // 🟢 Size matches your old SVG
+              />
             </View>
           </View>
 
           {!confirm && (
-            <Text className="text-center text-white text-[24px] font-bold mt-8 mb-6">
+            <Text className="text-center text-white text-[24px] font-bold mt-0 mb-8">
               {screenTitle}
             </Text>
           )}

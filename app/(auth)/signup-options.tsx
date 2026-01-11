@@ -1,6 +1,13 @@
 import { router } from "expo-router";
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Image,
+} from "react-native";
 import { MyLogo } from "@/assets/logo";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -126,13 +133,12 @@ export default function SignInScreen() {
     >
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header - Aligned to mt-12 to match other screens */}
-        <View className="mt-12 items-center">
-          <View className="mt-14 mb-10 items-center">
-            <MyLogo />
-            <Text className="text-white text-[15px] font-medium mt-5">
-              tagline
-            </Text>
-          </View>
+
+        <View className="mt-20 items-center">
+          <Image
+            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+            className="w-[200px] h-[200px]" // 🟢 Size matches your old SVG
+          />
         </View>
 
         <LinearGradient
