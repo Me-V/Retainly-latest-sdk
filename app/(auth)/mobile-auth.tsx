@@ -227,16 +227,41 @@ const MobileLoginScreen = () => {
 
       const user = authforMobile.currentUser;
       const idToken = await user?.getIdToken(true);
+
+      console.log("<<<<<<<<<<<<<<<<<<<Token in redux", idToken);
+
       if (!idToken) throw new Error("Failed to get ID token from Firebase.");
 
       const fullNumber = formatE164(selectedCountry.dialCode, phone);
+
+      // 🟢 Call backend
       const data = await signupWithPhoneOTP(fullNumber, idToken);
 
+      console.log("Phone Signup Response:", data);
+
+      // 🟢 SCENARIO A: CONSENT REQUIRED
+      if (data.consent_required === true) {
+        // Navigate to Consent Screen
+        router.push({
+          pathname: "/(main)/consentScreen",
+          params: {
+            consentText: data.consent_text,
+            consentVersion: data.consent_version,
+            pendingAuth: data.pending_auth,
+            userData: JSON.stringify(data.user),
+          },
+        });
+        return; // Stop execution here
+      }
+
+      // 🟢 SCENARIO B: SUCCESS (Token Received)
       if (data?.token) {
         dispatch(setUser({ token: data.token, userInfo: { fullNumber } }));
         router.replace("/(main)/animation");
         setStatus("Phone verified and authorized!");
-      } else {
+      }
+      // 🟢 SCENARIO C: NO TOKEN (Should generally not happen for phone, but safe to handle)
+      else {
         showPopup({
           heading: "Signup incomplete",
           content: "No token received from backend. Please try again.",
