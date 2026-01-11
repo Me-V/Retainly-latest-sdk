@@ -88,6 +88,7 @@ export default function ChatOnboardingProfile() {
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupHeading, setPopupHeading] = useState("Alert");
   const [popupContent, setPopupContent] = useState("");
+  const [popupTheme, setPopupTheme] = useState<"light" | "dark">("light");
   const [phoneConflictOpen, setPhoneConflictOpen] = useState(false);
 
   const [classOptions, setClassOptions] = useState<OptionItem[]>([]);
@@ -104,9 +105,14 @@ export default function ChatOnboardingProfile() {
 
   const autoNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const showPopup = (content: string, heading = "Alert") => {
+  const showPopup = (
+    content: string,
+    heading = "Alert",
+    theme: "light" | "dark" = "dark" // <--- Default to "dark" for consistent styling
+  ) => {
     setPopupHeading(heading);
     setPopupContent(content);
+    setPopupTheme(theme); // <--- Set the theme
     setPopupVisible(true);
   };
 
@@ -669,6 +675,7 @@ export default function ChatOnboardingProfile() {
           heading={popupHeading}
           content={popupContent}
           cancelShow={false}
+          theme={popupTheme} // <--- Pass the theme state here
         />
 
         <PopupModal

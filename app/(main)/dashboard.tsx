@@ -153,13 +153,13 @@ const HomeDashboard: React.FC = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View className="px-6 pt-14 pb-4 flex-row items-center justify-between mb-2">
+        <View className="pt-2 pb-4 flex-row items-center justify-between mb-2">
           <Image
             source={require("@/assets/AppLogo.png")}
-            className="w-12 h-12"
+            className="w-[100px] h-[100px]"
             resizeMode="contain"
           />
-          <View className="flex-row items-center space-x-4 gap-4">
+          <View className="flex-row items-center space-x-4 gap-4 mr-10">
             <TouchableOpacity>
               <Ionicons name="notifications" size={24} color="white" />
             </TouchableOpacity>
@@ -172,7 +172,7 @@ const HomeDashboard: React.FC = () => {
         </View>
 
         {/* Welcome Text */}
-        <View className="px-6 mb-8">
+        <View className="px-8 mb-8">
           <Text className="text-[28px] font-bold text-white leading-tight">
             Welcome Back, Champion
           </Text>
