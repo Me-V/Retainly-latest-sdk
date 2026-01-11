@@ -108,23 +108,59 @@ export default function EmailSignupScreen() {
     setLoading(true);
     try {
       const user = auth.currentUser;
-      if (!user) throw new Error("No logged in user");
+      if (!user) throw new Error("Session expired. Please sign in again.");
 
+      // 1. Reload user to get fresh emailVerified status
+      await user.reload();
+
+      // 2. Force token refresh
       const idToken = await user.getIdToken(true);
+
+      // 3. Call backend
       const res = await signupWithEmailPassword(email, password, idToken);
 
-      dispatch(setUser({ token: res?.token, userInfo: { email } }));
+      console.log("Signup Response:", res);
 
-      setPopupHeading("Success");
-      setPopupContent("Email verified! You are now logged in.");
+      // 🟢 4. SCENARIO A: CONSENT REQUIRED
+      if (res.consent_required === true) {
+        setPopupVisible(false); // Close current popup
+
+        // Navigate to Consent Screen
+        router.push({
+          pathname: "/(main)/consentScreen",
+          params: {
+            consentText: res.consent_text,
+            consentVersion: res.consent_version,
+            pendingAuth: res.pending_auth,
+            userData: JSON.stringify(res.user),
+          },
+        });
+        return; // Stop execution here
+      }
+
+      // 🟢 5. SCENARIO B: DIRECT SUCCESS (Token Received)
+      if (res?.token) {
+        dispatch(setUser({ token: res.token, userInfo: { email } }));
+        setPopupHeading("Success");
+        setPopupContent("Email verified! You are now logged in.");
+      }
+      // 🟢 6. SCENARIO C: VERIFIED BUT NO TOKEN (Manual Login Needed)
+      else {
+        setPopupHeading("Verification Complete");
+        setPopupContent("Your email is verified! Please log in to continue.");
+      }
+
       setPopupVisible(true);
     } catch (err: any) {
-      console.log(err);
+      console.log("Verification Error:", err);
       const backendMsg =
         err.response?.data?.detail ||
-        "Please check your email for verification.";
-      setPopupHeading("Email not verified");
+        err.message ||
+        "Verification failed. Please check your email again.";
+
+      setPopupHeading("Not Verified Yet");
       setPopupContent(backendMsg);
+      setPopupTheme("dark");
       setPopupVisible(true);
     } finally {
       setLoading(false);
@@ -260,13 +296,6 @@ export default function EmailSignupScreen() {
               </TouchableOpacity>
             </View>
           </LinearGradient>
-
-          {/* Footer */}
-          <View className="mb-10 mt-auto">
-            <Text className="text-gray-400 font-medium text-xs text-center">
-              Terms & Conditions
-            </Text>
-          </View>
         </ScrollView>
       </LinearGradient>
     );
