@@ -1,4 +1,3 @@
-// app/(main)/practice/index.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -10,6 +9,7 @@ import {
   NativeScrollEvent,
   NativeSyntheticEvent,
   useWindowDimensions,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -18,7 +18,6 @@ import type { RootState } from "@/store";
 import { getSubjects } from "@/services/api.edu";
 import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { Image } from "react-native";
 
 type Subject = {
   id?: string;
@@ -30,7 +29,7 @@ type Subject = {
 const getId = (s: Subject) => s.id || s.uuid || "";
 const getName = (s: Subject) => s.name || s.title || "Subject";
 
-// --- GLASSY BUTTON COMPONENT ---
+// --- PURPLE GLASSY BUTTON COMPONENT (MATCHING SCREENSHOT) ---
 const SubjectBtn = ({
   label,
   onPress,
@@ -41,25 +40,25 @@ const SubjectBtn = ({
   <TouchableOpacity
     activeOpacity={0.8}
     onPress={onPress}
-    className="w-full mb-5"
+    className="w-full mb-4"
     style={{
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.5,
-      shadowRadius: 6,
-      elevation: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 6,
     }}
   >
     <LinearGradient
-      colors={["rgba(255, 255, 255, 0.2)", "rgba(255, 255, 255, 0.1)"]}
+      // Subtle white gradient: Lighter at top (12%), Darker at bottom (4%)
+      colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.04)"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      className="rounded-2xl py-5 border border-white/20 items-center justify-center"
+      className="rounded-xl py-4 items-center justify-center border border-white/10"
       style={{ borderRadius: 16 }}
     >
       <Text
-        className="text-white font-bold tracking-wide shadow-black/40 text-center px-2"
-        style={{ fontSize: 18, textShadowRadius: 2 }}
+        className="text-white font-semibold text-[16px] tracking-wide text-center px-4"
         adjustsFontSizeToFit={true}
         numberOfLines={1}
       >
@@ -71,26 +70,14 @@ const SubjectBtn = ({
 
 // --- DUMMY DATA ---
 const dummyList: Subject[] = [
-  { id: "1", name: "Mathematics" },
+  { id: "1", name: "Biology" },
   { id: "2", name: "Physics" },
   { id: "3", name: "Chemistry" },
-  { id: "4", name: "Biology" },
-  { id: "5", name: "Computer Science" },
-  { id: "6", name: "English Literature" },
-  { id: "7", name: "History" },
-  { id: "8", name: "Geography" },
-  { id: "9", name: "Civics" },
-  { id: "10", name: "Economics" },
-  { id: "11", name: "Business Studies" },
-  { id: "12", name: "Accountancy" },
-  { id: "13", name: "Psychology" },
-  { id: "14", name: "Sociology" },
-  { id: "15", name: "Political Science" },
-  { id: "16", name: "Environmental Science" },
-  { id: "17", name: "Physical Education" },
-  { id: "18", name: "Art & Design" },
-  { id: "19", name: "General Knowledge" },
-  { id: "20", name: "Logic & Reasoning" },
+  { id: "4", name: "History" },
+  { id: "5", name: "Civics" },
+  { id: "6", name: "Mathematics" },
+  { id: "7", name: "Geography" },
+  { id: "8", name: "Economics" },
 ];
 
 export default function PracticeSubjects() {
@@ -112,7 +99,7 @@ export default function PracticeSubjects() {
   const [scrollY, setScrollY] = useState(0);
 
   // Glow Config
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.2)";
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.1)"; // Adjusted for purple theme
   const GLOW_SIZE = 12;
 
   useEffect(() => {
@@ -170,7 +157,8 @@ export default function PracticeSubjects() {
 
   return (
     <LinearGradient
-      colors={["#C96E25", "#B73403"]}
+      // Updated to Deep Purple Gradient
+      colors={["#3B0A52", "#180323"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -182,42 +170,47 @@ export default function PracticeSubjects() {
             <BackIcon color="white" />
           </TouchableOpacity>
           <Image
-            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
-            className="w-[90px] h-[90px] mt-6" // 🟢 Size matches your old SVG
+            source={require("@/assets/AppLogo.png")}
+            className="w-[90px] h-[90px] mt-6"
           />
         </View>
 
         {/* Title */}
-        <View className="px-6 mt-6 items-center z-10">
-          <Text className="text-[28px] font-bold text-white mb-2 text-center">
+        <View className="px-6 items-center z-10">
+          <Text className="text-[26px] font-bold text-white mb-2 text-center tracking-wide">
             Select Subject
           </Text>
-          <Text className="text-[16px] text-white/80 font-medium text-center">
+          <Text className="text-[15px] text-white/70 font-normal text-center">
             What you want to practice today
           </Text>
         </View>
 
         {/* Main Content Area */}
-        <View className="flex-1 items-center px-6 mt-8 mb-10 w-full relative">
+        <View className="flex-1 items-center px-6 mt-10 mb-10 w-full relative">
           {loading ? (
-            <ActivityIndicator size="large" color="white" className="mt-10" />
+            <ActivityIndicator size="large" color="#F59E51" className="mt-10" />
           ) : (
             <>
-              {/* --- Up Arrow (Outside Container) --- */}
-              {/* {isScrollable && atBottom && (
+              {/* --- Up Arrow --- */}
+              {isScrollable && scrollY > 20 && (
                 <View
                   pointerEvents="none"
-                  className="absolute top-[-20px] z-20"
+                  className="absolute top-[-30px] z-20 items-center justify-center w-full"
                 >
-                  <Ionicons name="chevron-up" size={32} color="white" />
+                  <Ionicons
+                    name="chevron-up"
+                    size={24}
+                    color="white"
+                    style={{ opacity: 0.8 }}
+                  />
                 </View>
-              )} */}
+              )}
 
               {/* --- GLASS CONTAINER --- */}
               <LinearGradient
                 colors={[
-                  "rgba(255, 255, 255, 0.15)",
-                  "rgba(255, 255, 255, 0.05)",
+                  "rgba(255, 255, 255, 0.10)",
+                  "rgba(255, 255, 255, 0.03)",
                 ]}
                 className="rounded-[30px] border border-white/10 p-1 overflow-hidden"
                 style={{
@@ -226,7 +219,7 @@ export default function PracticeSubjects() {
                   borderRadius: 30,
                 }}
               >
-                {/* Inner Glows */}
+                {/* Glow Effects */}
                 <LinearGradient
                   colors={[GLOW_COLOR, "transparent"]}
                   style={{
@@ -308,13 +301,18 @@ export default function PracticeSubjects() {
                 </View>
               </LinearGradient>
 
-              {/* --- Down Arrow (Outside Container) --- */}
+              {/* --- Down Arrow --- */}
               {isScrollable && !atBottom && (
                 <View
                   pointerEvents="none"
-                  className="absolute bottom-[-5px] z-20"
+                  className="absolute bottom-[-10px] z-20 items-center justify-center w-full"
                 >
-                  <Ionicons name="chevron-down" size={32} color="white" />
+                  <Ionicons
+                    name="chevron-down"
+                    size={24}
+                    color="white"
+                    style={{ opacity: 0.8 }}
+                  />
                 </View>
               )}
             </>

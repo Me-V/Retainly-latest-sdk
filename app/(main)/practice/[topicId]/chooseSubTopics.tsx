@@ -39,7 +39,7 @@ const dummyData: SubTopic[] = [
   { id: "10", name: "Collisions in 1D" },
 ];
 
-// --- GLASSY BUTTON COMPONENT ---
+// --- SOLID PURPLE GLASSY BUTTON COMPONENT (Consistent Design) ---
 const SubTopicBtn = ({
   label,
   onPress,
@@ -52,23 +52,25 @@ const SubTopicBtn = ({
     onPress={onPress}
     className="w-full mb-4"
     style={{
-      shadowColor: "#000000",
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.5,
-      shadowRadius: 6,
-      elevation: 12,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 6,
     }}
   >
     <LinearGradient
-      colors={["rgba(255, 255, 255, 0.2)", "rgba(255, 255, 255, 0.1)"]}
+      // Subtle white gradient: Lighter at top (12%), Darker at bottom (4%)
+      colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.04)"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      className="rounded-2xl py-5 border border-white/20 items-center justify-center px-4"
+      className="rounded-xl py-4 items-center justify-center border border-white/10"
       style={{ borderRadius: 16 }}
     >
       <Text
-        className="text-white font-bold tracking-wide shadow-black/40 text-center"
-        style={{ fontSize: 16, textShadowRadius: 2 }}
+        className="text-white font-semibold text-[16px] tracking-wide text-center px-4"
+        adjustsFontSizeToFit={true}
+        minimumFontScale={0.85}
         numberOfLines={2}
         ellipsizeMode="tail"
       >
@@ -95,7 +97,7 @@ export default function ChooseSubTopics() {
   const [scrollY, setScrollY] = useState(0);
 
   // --- DESIGN CONSTANTS ---
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.2)";
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.1)"; // Adjusted for purple theme
   const GLOW_SIZE = 12;
 
   // Responsive Dimensions
@@ -134,7 +136,7 @@ export default function ChooseSubTopics() {
 
   // --- SCROLL LOGIC ---
   const canScroll = useMemo(
-    () => contentH > containerH + 1,
+    () => contentH > containerH + 10,
     [contentH, containerH]
   );
 
@@ -149,7 +151,8 @@ export default function ChooseSubTopics() {
 
   return (
     <LinearGradient
-      colors={["#C96E25", "#B73403"]}
+      // Deep Purple Gradient
+      colors={["#3B0A52", "#180323"]}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
       className="flex-1"
@@ -161,44 +164,52 @@ export default function ChooseSubTopics() {
             <BackIcon color="white" />
           </TouchableOpacity>
           <Image
-            source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
-            className="w-[90px] h-[90px] mt-6" // 🟢 Size matches your old SVG
+            source={require("@/assets/AppLogo.png")}
+            className="w-[90px] h-[90px] mt-6"
           />
         </View>
 
         {/* Title */}
-        <View className="px-6 mt-6 items-center z-10">
-          <Text className="text-[28px] font-bold text-white mb-2 text-center">
+        <View className="px-6 items-center z-10">
+          <Text className="text-[26px] font-bold text-white mb-2 text-center tracking-wide">
             Select Subtopics
           </Text>
-          <Text className="text-[16px] text-white/80 font-medium text-center">
+          <Text className="text-[15px] text-white/70 font-normal text-center">
             Narrow down your practice area
           </Text>
         </View>
 
         {/* Main Content Area */}
-        <View className="flex-1 items-center px-6 mt-8 mb-10 w-full relative">
+        <View className="flex-1 items-center px-6 mt-10 mb-10 w-full relative">
           {loading ? (
-            <ActivityIndicator size="large" color="white" className="mt-10" />
+            <ActivityIndicator size="large" color="#F59E51" className="mt-10" />
           ) : (
             <>
               {/* --- Up Arrow --- */}
               {canScroll && scrollY > 20 && (
                 <View
                   pointerEvents="none"
-                  className="absolute top-[-25px] z-20"
+                  className="absolute top-[-30px] z-20 items-center justify-center w-full"
                 >
-                  <Ionicons name="chevron-up" size={32} color="white" />
+                  <Ionicons
+                    name="chevron-up"
+                    size={24}
+                    color="white"
+                    style={{ opacity: 0.8 }}
+                  />
                 </View>
               )}
 
               {/* --- GLASS CONTAINER --- */}
               <LinearGradient
+                // White Gradient: Lighter at top, fades to clear
                 colors={[
                   "rgba(255, 255, 255, 0.15)",
-                  "rgba(255, 255, 255, 0.05)",
+                  "rgba(255, 255, 255, 0.02)",
                 ]}
-                className="rounded-[30px] border border-white/10 p-1 overflow-hidden mt-6"
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                className="rounded-[30px] border border-white/10 p-1 overflow-hidden"
                 style={{
                   maxHeight: containerMaxHeight,
                   width: containerWidth,
@@ -292,9 +303,14 @@ export default function ChooseSubTopics() {
               {canScroll && !atBottom && (
                 <View
                   pointerEvents="none"
-                  className="absolute bottom-[-25px] z-20"
+                  className="absolute bottom-[-10px] z-20 items-center justify-center w-full"
                 >
-                  <Ionicons name="chevron-down" size={32} color="white" />
+                  <Ionicons
+                    name="chevron-down"
+                    size={24}
+                    color="white"
+                    style={{ opacity: 0.8 }}
+                  />
                 </View>
               )}
             </>
