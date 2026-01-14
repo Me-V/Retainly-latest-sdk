@@ -14,11 +14,13 @@ import {
   useFocusEffect,
   useLocalSearchParams,
   useRouter,
+  useNavigation,
 } from "expo-router";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 import { getAttemptResult, QuizResultResponse } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { SpeakerIcon } from "@/assets/logo2";
+import { StackActions } from "@react-navigation/native";
 
 // --- GLOW CARD COMPONENT (Moved outside for performance) ---
 const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
@@ -91,6 +93,7 @@ const GlowCard = ({
 
 const QuizResultScreen = () => {
   const router = useRouter();
+  const navigation = useNavigation();
   const { attemptId } = useLocalSearchParams();
   const token = useAppSelector((s) => s.auth.token);
 
@@ -132,8 +135,10 @@ const QuizResultScreen = () => {
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
-        router.replace("/(main)/dashboard");
-        return true; // Stop default behavior
+        // "popToTop" goes back to the very first screen (Dashboard)
+        // and destroys the InstructionScreen so it can't show popups later.
+        navigation.dispatch(StackActions.popToTop());
+        return true;
       };
 
       const subscription = BackHandler.addEventListener(
@@ -142,12 +147,13 @@ const QuizResultScreen = () => {
       );
 
       return () => subscription.remove();
-    }, [])
+    }, [navigation])
   );
 
   const handleBackToDashboard = () => {
     setModalVisible(false);
-    router.replace("/(main)/dashboard");
+    // Identical logic: Clear stack history back to Dashboard
+    navigation.dispatch(StackActions.popToTop());
   };
 
   // 1. LOADING STATE
