@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,17 @@ import {
   TouchableOpacity,
   Modal,
   Image,
+  BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import {
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+  useRouter,
+} from "expo-router";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
-import { getQuizResult, QuizResultResponse } from "@/services/api.olympics";
+import { getAttemptResult, QuizResultResponse } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { SpeakerIcon } from "@/assets/logo2";
 
@@ -101,7 +107,7 @@ const QuizResultScreen = () => {
 
       try {
         const id = Array.isArray(attemptId) ? attemptId[0] : attemptId;
-        const data = await getQuizResult(id, token);
+        const data = await getAttemptResult(id, token);
         setResult(data);
         console.log("Result ############", data);
       } catch (error: any) {
@@ -122,6 +128,22 @@ const QuizResultScreen = () => {
 
     fetchResult();
   }, [attemptId, token]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        router.replace("/(main)/dashboard");
+        return true; // Stop default behavior
+      };
+
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      return () => subscription.remove();
+    }, [])
+  );
 
   const handleBackToDashboard = () => {
     setModalVisible(false);
@@ -148,6 +170,13 @@ const QuizResultScreen = () => {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
+      <Stack.Screen
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+          headerLeft: () => null,
+        }}
+      />
       <SafeAreaView className="flex-1">
         {/* 2. SUCCESS CONTENT (Only render if result exists) */}
         {result && (

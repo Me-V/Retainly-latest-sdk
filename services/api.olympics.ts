@@ -228,19 +228,30 @@ export const submitQuiz = async (
   }
 };
 
-export const getQuizResult = async (
-  attemptId: string,
-  token: string
-): Promise<QuizResultResponse> => {
+export const getQuizAttempts = async (quiz_id: string, token: string) => {
   try {
-    const url = `${process.env.EXPO_PUBLIC_API_BASE}/backend/api/olympics/attempts/${attemptId}/result/`;
+    const res = await axios.get(
+      `${API_BASE}/backend/api/olympics/quizzes/${quiz_id}/attempts/`,
+      {
+        headers: { Authorization: `Token ${token}` },
+      }
+    );
+    return res.data; // Assumes returns array of attempts: [{ id: "...", ... }]
+  } catch (error: any) {
+    throw error;
+  }
+};
 
-    const response = await axios.get<QuizResultResponse>(url, {
-      headers: { Authorization: `Token ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching result:", error);
+export const getAttemptResult = async (attempt_id: string, token: string) => {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/backend/api/olympics/attempts/${attempt_id}/result/`,
+      {
+        headers: { Authorization: `Token ${token}` },
+      }
+    );
+    return res.data;
+  } catch (error: any) {
     throw error;
   }
 };

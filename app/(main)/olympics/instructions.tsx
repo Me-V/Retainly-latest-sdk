@@ -18,7 +18,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppSelector } from "@/utils/profileHelpers/profile.storeHooks";
 import { GlowCard } from "@/components/Glow-Card";
-import { getQuizPreview, unlockQuiz } from "@/services/api.olympics";
+import {
+  getQuizPreview,
+  unlockQuiz,
+  getQuizAttempts, // 🟢 Add this
+} from "@/services/api.olympics";
 import PopupModal from "@/components/Popup-modal";
 
 // Define the type for the preview response
@@ -62,6 +66,8 @@ const InstructionScreen = () => {
   const [isAdminUnlock, setIsAdminUnlock] = useState(false);
 
   const [verifying, setVerifying] = useState(false);
+
+  const [fetchingResult, setFetchingResult] = useState(false);
 
   const fetchPreview = async (pin?: string) => {
     if (!quizId || !token) return;
@@ -169,6 +175,44 @@ const InstructionScreen = () => {
       }
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handleShowResults = async () => {
+    if (!token || !quizId) return;
+    setFetchingResult(true);
+    try {
+      // 1. Get List of Attempts
+      const attemptsList = await getQuizAttempts(String(quizId), token);
+
+      if (attemptsList && attemptsList.length > 0) {
+        // 2. Get the most recent attempt
+        // (Assuming the API returns the newest attempt at index 0)
+        const latestAttempt = attemptsList[0];
+
+        // 3. Handle different ID key names safely to avoid 404s
+        const attemptId =
+          latestAttempt.id || latestAttempt.attempt_id || latestAttempt.uuid;
+
+        if (attemptId) {
+          // 4. Close Modal & Navigate
+          setCurrentModal("NONE");
+
+          router.push({
+            pathname: "/(main)/olympics/results",
+            params: { attemptId: attemptId },
+          });
+        } else {
+          Alert.alert("Error", "Could not find valid Attempt ID.");
+        }
+      } else {
+        Alert.alert("Info", "No previous attempts found.");
+      }
+    } catch (error) {
+      console.error("Fetch Attempts Error:", error);
+      Alert.alert("Error", "Could not fetch attempts.");
+    } finally {
+      setFetchingResult(false);
     }
   };
 
@@ -285,24 +329,22 @@ const InstructionScreen = () => {
             )}
           </TouchableOpacity>
         </View>
-        {/* 🟢 MODAL LOGIC */}
-        {/* 1. Limit Reached Modal (Old Behavior) */}
+        {/* 1. Limit Reached Modal - 🟢 Updated */}
         <PopupModal
           isVisible={currentModal === "LIMIT_REACHED"}
           onClose={() => router.back()}
           heading="Limit Reached"
-          content="All of your attempts are being used."
-          // Primary Button: Go Back
+          content={
+            fetchingResult
+              ? "Fetching your result..."
+              : "All of your attempts are being used."
+          }
+          // Primary: Go Back
           primaryText="Go Back"
-          onPrimary={() => {
-            router.back();
-          }}
-          // 🟢 NEW: Secondary Button for Results
+          onPrimary={() => router.back()}
+          // 🟢 Secondary: Show Results
           secondaryText="Show Results"
-          onSecondary={() => {
-            console.log("Show Results clicked - Logic pending");
-            // Logic to be decided later
-          }}
+          onSecondary={handleShowResults}
           dismissible={false}
           theme="dark"
         />
