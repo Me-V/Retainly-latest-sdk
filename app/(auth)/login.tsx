@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { router, Stack, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  BackHandler,
 } from "react-native";
 import { MyLogo } from "@/assets/logo";
 import { LinearGradient } from "expo-linear-gradient";
@@ -99,6 +100,25 @@ export default function SignInScreen() {
     }
   };
 
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Exit the app completely when Back is pressed
+        BackHandler.exitApp();
+        return true; // Stop the event from bubbling up (prevents default back navigation)
+      };
+
+      // Add the listener and keep the subscription
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        onBackPress
+      );
+
+      // Remove the listener using the subscription object (Fixes the deprecation error)
+      return () => subscription.remove();
+    }, [])
+  );
+
   // Configuration for the glow
   const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
   const GLOW_SIZE = 12;
@@ -111,6 +131,13 @@ export default function SignInScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
+      <Stack.Screen
+        options={{
+          headerShown: false, // Hides the header (and its back button)
+          gestureEnabled: false, // Disables the swipe-to-go-back gesture
+          headerLeft: () => null, // Ensures no back button is rendered
+        }}
+      />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Header - Aligned to mt-12 to match Signup Screen */}
         <View className="mt-12 items-center">

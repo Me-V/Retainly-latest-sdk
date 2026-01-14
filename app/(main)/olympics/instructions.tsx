@@ -200,6 +200,7 @@ const InstructionScreen = () => {
             <Ionicons name="chevron-back" size={28} color="white" />
           </TouchableOpacity>
         </View>
+
         <ScrollView className="flex-1 px-6 pt-4">
           <View className="mb-8 items-center">
             <Text className="text-3xl font-bold text-white text-center mb-1 leading-tight">
@@ -227,9 +228,15 @@ const InstructionScreen = () => {
             </View>
             <View className="h-[1px] bg-white/10 w-full" />
             <View className="py-4 items-center justify-center">
-              <Text className="text-xl font-bold text-white tracking-wider">
-                Set {displaySetCode}
-              </Text>
+              {loading ? (
+                <View className="flex-1 justify-center items-center">
+                  <ActivityIndicator size="large" color="#F99C36" />
+                </View>
+              ) : (
+                <Text className="text-xl font-bold text-white tracking-wider">
+                  Set {displaySetCode}
+                </Text>
+              )}
             </View>
           </GlowCard>
 
@@ -256,6 +263,7 @@ const InstructionScreen = () => {
             />
           </View>
         </ScrollView>
+
         {/* Start Button - 🟢 Updated to handle loading state */}
         <View className="p-6 pt-2 pb-8">
           <TouchableOpacity
@@ -284,9 +292,16 @@ const InstructionScreen = () => {
           onClose={() => router.back()}
           heading="Limit Reached"
           content="All of your attempts are being used."
+          // Primary Button: Go Back
           primaryText="Go Back"
           onPrimary={() => {
             router.back();
+          }}
+          // 🟢 NEW: Secondary Button for Results
+          secondaryText="Show Results"
+          onSecondary={() => {
+            console.log("Show Results clicked - Logic pending");
+            // Logic to be decided later
           }}
           dismissible={false}
           theme="dark"
