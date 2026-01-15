@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -84,13 +85,11 @@ const ParentalConsentScreen = () => {
       <SafeAreaView className="flex-1">
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}>
           {/* Header */}
-          <View className="items-center mt-6 mb-8">
-            <View className="w-16 h-16 rounded-full bg-[#F59E51] items-center justify-center mb-3">
-              <Text className="text-white font-bold text-xs">LOGO</Text>
-            </View>
-            <Text className="text-white/60 text-sm font-medium">
-              Empowering Education
-            </Text>
+          <View className="mt-6 items-center">
+            <Image
+              source={require("@/assets/AppLogo.png")} // 🟢 Replace 'logo.png' with your actual file name
+              className="w-[200px] h-[200px]" // 🟢 Size matches your old SVG
+            />
           </View>
 
           {/* Main Content */}

@@ -150,10 +150,17 @@ const QuizResultScreen = () => {
     }, [navigation])
   );
 
-  const handleBackToDashboard = () => {
+  const resetToDashboard = () => {
     setModalVisible(false);
-    // Identical logic: Clear stack history back to Dashboard
-    navigation.dispatch(StackActions.popToTop());
+
+    // Method A: The cleanest Expo Router way
+    // dismissalAll() removes all screens in the stack except the root
+    if (router.canDismiss()) {
+      router.dismissAll();
+    }
+
+    // Ensure we are at dashboard
+    router.replace("/(main)/dashboard");
   };
 
   // 1. LOADING STATE
@@ -278,7 +285,7 @@ const QuizResultScreen = () => {
           animationType="fade"
           transparent={true}
           visible={modalVisible}
-          onRequestClose={handleBackToDashboard}
+          onRequestClose={resetToDashboard}
         >
           {/* Dark Overlay Background */}
           <View className="flex-1 bg-black/80 justify-center items-center px-6">
@@ -302,7 +309,7 @@ const QuizResultScreen = () => {
                 </Text>
 
                 <TouchableOpacity
-                  onPress={handleBackToDashboard}
+                  onPress={resetToDashboard}
                   className="bg-[#F99C36] w-full py-4 rounded-xl items-center"
                   style={{
                     shadowColor: "#F99C36",

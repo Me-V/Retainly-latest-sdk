@@ -198,7 +198,7 @@ const InstructionScreen = () => {
           // 4. Close Modal & Navigate
           setCurrentModal("NONE");
 
-          router.push({
+          router.replace({
             pathname: "/(main)/olympics/results",
             params: { attemptId: attemptId },
           });

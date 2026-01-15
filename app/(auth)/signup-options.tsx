@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { MyLogo } from "@/assets/logo";
 import { LinearGradient } from "expo-linear-gradient";
@@ -32,90 +33,72 @@ GoogleSignin.configure({
 
 export default function SignInScreen() {
   const dispatch = useDispatch();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const signIn = async () => {
+    if (isGoogleLoading) return; // Prevent double taps
+    setIsGoogleLoading(true); // 🟢 Start Loading
+
     try {
       await GoogleSignin.hasPlayServices();
-
       try {
         await GoogleSignin.signOut();
-      } catch (error) {
-        // It's okay if this fails (e.g., if already signed out), just proceed.
-        console.log("Error signing out (safe to ignore):", error);
-      }
+      } catch (e) {}
 
-      // 🟢 2. GET GOOGLE TOKEN
       const response = await GoogleSignin.signIn();
 
       if (isSuccessResponse(response)) {
         const { idToken } = response.data;
-        const user = response.data.user;
-
-        console.log("🔹 Google ID Token:", idToken ? "Success" : "Missing");
+        const googleUser = response.data.user;
 
         if (idToken) {
-          // 🟢 3. EXCHANGE TOKENS: Google -> Firebase
-          // Create a Firebase credential with the Google token
           const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
-          // Sign-in the user with the credential
           await auth().signInWithCredential(googleCredential);
-
-          // 🟢 4. GET THE REAL FIREBASE TOKEN
-          // This is what your backend actually wants
           const firebaseToken = await auth().currentUser?.getIdToken();
 
-          console.log(
-            "🔥 Firebase Token:",
-            firebaseToken ? "Ready to send" : "Missing"
-          );
-
           if (firebaseToken) {
-            // 🟢 5. SEND FIREBASE TOKEN TO BACKEND
             const backendResponse = await loginWithGoogle(
               firebaseToken,
-              user.email
+              googleUser.email
             );
 
-            if (backendResponse?.token) {
-              console.log("✅ Backend Login Success:", backendResponse);
+            console.log("#######backendResponse", backendResponse);
+
+            if (backendResponse.consent_required === true) {
+              router.push({
+                pathname: "/(main)/consentScreen",
+                params: {
+                  consentText: backendResponse.consent_text,
+                  consentVersion: backendResponse.consent_version,
+                  pendingAuth: backendResponse.pending_auth,
+                  userData: JSON.stringify(backendResponse.user),
+                },
+              });
+            } else if (backendResponse?.token) {
               dispatch(
                 setUser({
                   token: backendResponse.token,
-                  userInfo: user,
+                  userInfo: backendResponse.user,
                 })
               );
-              // Navigate to dashboard if needed
-              // router.replace("/(main)/dashboard");
             } else {
-              Alert.alert("Login failed", "Server did not return a token");
+              Alert.alert("Login failed", "Unexpected server response.");
             }
           }
         }
       } else {
-        console.log("Sign in was cancelled");
+        // User cancelled the sign-in flow
+        setIsGoogleLoading(false);
       }
     } catch (error: any) {
       if (isErrorWithCode(error)) {
-        switch (error.code) {
-          case statusCodes.SIGN_IN_CANCELLED:
-            console.log("User cancelled the login flow");
-            break;
-          case statusCodes.IN_PROGRESS:
-            console.log("Sign in is in progress already");
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            console.log("Play services not available or outdated");
-            break;
-          default:
-            console.log("Error:", error.message);
-            Alert.alert("Google Sign-In Error", error.message);
-        }
+        // Handle specific codes if needed
       } else {
-        // This usually catches Firebase configuration errors (missing google-services.json)
-        console.error("Firebase Auth Error:", error);
         Alert.alert("Authentication Error", error.message);
       }
+    } finally {
+      // 🟢 Stop Loading (Note: if you navigate away on success, this might not run on unmounted component, which is fine)
+      setIsGoogleLoading(false);
     }
   };
 
@@ -212,17 +195,31 @@ export default function SignInScreen() {
               </Text>
             </View>
 
-            {/* Google Button */}
             <TouchableOpacity
               className="bg-white flex-row justify-center items-center border border-gray-300 rounded-3xl py-4 mb-8 relative"
-              onPress={() => signIn()}
+              onPress={signIn}
+              disabled={isGoogleLoading} // Disable button while loading
             >
               <View className="absolute left-5">
                 <GoogleIcon />
               </View>
-              <Text className="text-gray-700 font-medium text-[16px]">
-                Google
-              </Text>
+
+              {isGoogleLoading ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator
+                    size="small"
+                    color="#374151"
+                    className="mr-3"
+                  />
+                  <Text className="text-gray-700 font-medium text-[16px]">
+                    Signing in...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-gray-700 font-medium text-[16px]">
+                  Sign in with Google
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Email Button */}

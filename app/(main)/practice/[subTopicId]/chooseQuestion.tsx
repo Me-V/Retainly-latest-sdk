@@ -70,7 +70,7 @@ export default function SubTopicQuestions() {
   const isTablet = width >= 768;
 
   // Use same container logic as previous screens
-  const containerMaxHeight = screenHeight * 0.65;
+  const containerMaxHeight = screenHeight * 0.6;
   const containerWidth = isTablet ? 600 : "100%";
 
   const token = useSelector((s: RootState) => s.auth.token);
@@ -150,7 +150,7 @@ export default function SubTopicQuestions() {
         </View>
 
         {/* Title */}
-        <View className="px-6 mt-4 items-center z-10">
+        <View className="px-6 mt-0 items-center z-10">
           <Text className="text-[26px] font-bold text-white mb-2 text-center tracking-wide">
             Select Question
           </Text>
@@ -282,7 +282,7 @@ export default function SubTopicQuestions() {
               {canScroll && !atBottom && (
                 <View
                   pointerEvents="none"
-                  className="absolute bottom-[-30px] z-20 items-center justify-center w-full"
+                  className="absolute bottom-[-10px] z-20 items-center justify-center w-full"
                 >
                   <Ionicons
                     name="chevron-down"

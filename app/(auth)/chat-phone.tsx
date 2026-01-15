@@ -105,6 +105,34 @@ export default function ChatOnboardingProfile() {
 
   const autoNavTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ... inside ChatOnboardingProfile component
+
+  const getFriendlyErrorMessage = (error: any) => {
+    const code = error?.code;
+    const msg = error?.message || "";
+
+    if (code === "auth/invalid-phone-number")
+      return "That phone number looks invalid.";
+    if (code === "auth/missing-phone-number")
+      return "Please enter a phone number.";
+    if (code === "auth/quota-exceeded")
+      return "SMS limit reached. Please try later.";
+    if (code === "auth/too-many-requests")
+      return "Too many attempts. Please wait a bit.";
+    if (code === "auth/invalid-verification-code")
+      return "Wrong code. Please check and try again.";
+    if (code === "auth/code-expired")
+      return "That code has expired. Please resend.";
+    if (code === "auth/network-request-failed")
+      return "Check your internet connection.";
+
+    // Fallback for non-firebase errors
+    if (msg.includes("network"))
+      return "Connection failed. Check your internet.";
+
+    return "Something went wrong. Please try again.";
+  };
+
   const showPopup = (
     content: string,
     heading = "Alert",
@@ -261,7 +289,8 @@ export default function ChatOnboardingProfile() {
         );
       }, 400);
     } catch (err: any) {
-      showPopup(err?.message || "Failed to send OTP", "Error");
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      showPopup(friendlyMsg, "Couldn't send OTP");
     }
   };
 
@@ -295,7 +324,8 @@ export default function ChatOnboardingProfile() {
         setIsUpdatingProfile(false);
       }
     } catch (err: any) {
-      showPopup("Verification failed. Please try again.", "Error");
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      showPopup(friendlyMsg, "Verification Failed");
       setOtp(["", "", "", "", "", ""]);
       otpInputRefs.current[0]?.focus();
     }
@@ -315,9 +345,10 @@ export default function ChatOnboardingProfile() {
           "otp"
         );
       }, 400);
-      showPopup("OTP resent successfully", "Success");
-    } catch {
-      showPopup("Failed to resend OTP", "Error");
+      showPopup("New code sent!", "Success");
+    } catch (err: any) {
+      const friendlyMsg = getFriendlyErrorMessage(err);
+      showPopup(friendlyMsg, "Resend Failed");
     }
   };
 
