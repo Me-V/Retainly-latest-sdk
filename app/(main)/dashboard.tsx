@@ -63,18 +63,19 @@ const HomeDashboard: React.FC = () => {
       // Add the listener and keep the subscription
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        onBackPress
+        onBackPress,
       );
 
       // Remove the listener using the subscription object (Fixes the deprecation error)
       return () => subscription.remove();
-    }, [])
+    }, []),
   );
 
   // ... [Keep handleQuickAction and useEffects for data loading exactly as is] ...
   const handleQuickAction = (key: string) => {
     if (key === "practice") router.push("/practice/chooseSubject");
     if (key === "olympics") router.push("/olympics/quizes");
+    if (key === "tutorials") router.push("/tutor/chat");
     console.log("Quick Action Pressed:", key);
   };
 
@@ -119,7 +120,7 @@ const HomeDashboard: React.FC = () => {
       name: s.name || s.title || `Subject ${i + 1}`,
       value: Math.max(
         0,
-        Math.min(100, Number(s.progress ?? s.percentage ?? s.completion ?? 0))
+        Math.min(100, Number(s.progress ?? s.percentage ?? s.completion ?? 0)),
       ),
       fill: palette[i % palette.length],
     }));
@@ -128,7 +129,7 @@ const HomeDashboard: React.FC = () => {
   const displaySubjects = allFromApi.length > 0 ? allFromApi : mockSubjects;
   const sortedSubjects = useMemo(
     () => [...displaySubjects].sort((a, b) => b.value - a.value),
-    [displaySubjects]
+    [displaySubjects],
   );
   const moreThanFour = sortedSubjects.length > 4;
 
@@ -229,7 +230,7 @@ const HomeDashboard: React.FC = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handleQuickAction("mock")}
+              onPress={() => handleQuickAction("tutorials")}
               className="flex-row items-center p-5 active:bg-white/5"
             >
               <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Retainly",
     "slug": "expo-project",
-    "owner": "hello_kitty19",
+    "owner": "hello_kitty21",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/AppLogo.png",
@@ -18,7 +18,11 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.education.retainlyapp",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -47,7 +51,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "6d8536a0-65d0-4756-947f-f3124269791a"
+        "projectId": "2b18da5c-20dc-4bb6-8455-018bec680df0"
       }
     }
   }
