@@ -1,90 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
-  PermissionsAndroid,
-  Platform,
   StatusBar,
   Text,
-  useColorScheme,
   View,
   TouchableOpacity,
   SafeAreaView,
 } from "react-native";
-import {
-  stopListening,
-  startListening,
-  addEventListener,
-} from "@ascendtis/react-native-voice-to-text";
+import { useVoiceRecognition } from "@/utils/useVoiceRecognition"; // 🟢 Import your hook
 
-// 🟢 NativeWind Import (Required to inject styles)
-function App() {
-  const isDarkMode = useColorScheme() === "dark";
+export default function App() {
+  // 🟢 Use the hook here
+  const { result, isListening, startListening, stopListening } =
+    useVoiceRecognition();
 
-  const [result, setResult] = useState(null);
-  const [isListening, setInListening] = useState(false);
-
-  useEffect(() => {
-    requestMicrophonePermission();
-
-    const startEventListener = addEventListener("onSpeechStart", () => {
-      setInListening(true);
-    });
-
-    const endEventListener = addEventListener("onSpeechEnd", () => {
-      setInListening(false);
-    });
-
-    const resultsEventListener = addEventListener("onSpeechResults", (e) => {
-      setResult(e.value);
-    });
-
-    const errorEventListener = addEventListener("onSpeechError", (e) => {
-      console.log("onSpeechError", e);
-      setInListening(false);
-    });
-
-    const resultsPartialEventListener = addEventListener(
-      "onSpeechPartialResults",
-      (e) => {
-        setResult(e.value);
-      }
-    );
-
-    return () => {
-      startEventListener.remove();
-      endEventListener.remove();
-      resultsEventListener.remove();
-      errorEventListener.remove();
-    };
-  }, []);
-
-  async function requestMicrophonePermission() {
-    if (Platform.OS !== "android") return true;
-
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        {
-          title: "Microphone Permission",
-          message: "App needs access to your microphone",
-          buttonPositive: "OK",
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
-      console.warn(err);
-      return false;
-    }
-  }
-
-  const _handlePressButton = async () => {
-    try {
-      if (isListening) {
-        await stopListening();
-      } else {
-        await startListening();
-      }
-    } catch (error) {
-      console.log("error", error);
+  const handleToggle = async () => {
+    if (isListening) {
+      await stopListening();
+    } else {
+      await startListening();
     }
   };
 
@@ -92,7 +25,7 @@ function App() {
     <View className="flex-1 bg-[#0f172a]">
       <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
 
-      {/* 🟢 BACKGROUND BLOBS */}
+      {/* Background Blobs */}
       <View className="absolute top-10 left-[-50px] w-80 h-80 bg-purple-900 rounded-full opacity-50" />
       <View className="absolute bottom-20 right-[-50px] w-80 h-80 bg-cyan-900 rounded-full opacity-50" />
 
@@ -102,7 +35,7 @@ function App() {
           Voice Transcription
         </Text>
 
-        {/* 🟢 GLASS CARD */}
+        {/* Glass Card */}
         <View className="w-full h-3/5 mb-12 rounded-3xl overflow-hidden border border-white/10 bg-white/5">
           <View className="flex-1 p-8 justify-center items-center">
             {result ? (
@@ -117,9 +50,9 @@ function App() {
           </View>
         </View>
 
-        {/* GLASS BUTTON */}
+        {/* Glass Button */}
         <TouchableOpacity
-          onPress={_handlePressButton}
+          onPress={handleToggle}
           activeOpacity={0.8}
           className={`flex-row items-center justify-center w-full py-5 rounded-2xl border border-white/20 ${
             isListening
@@ -127,7 +60,7 @@ function App() {
               : "bg-cyan-500/20 border-cyan-500/50"
           }`}
         >
-          {/* Status Indicator Dot */}
+          {/* Status Dot */}
           <View
             className={`w-3 h-3 rounded-full mr-3 shadow-sm ${
               isListening ? "bg-red-500" : "bg-cyan-400"
@@ -142,5 +75,3 @@ function App() {
     </View>
   );
 }
-
-export default App;

@@ -18,6 +18,7 @@ import type { RootState } from "@/store";
 import { getSubjects } from "@/services/api.edu";
 import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { GlassyListBtn } from "@/components/GlassyListBtn";
 
 type Subject = {
   id?: string;
@@ -28,45 +29,6 @@ type Subject = {
 
 const getId = (s: Subject) => s.id || s.uuid || "";
 const getName = (s: Subject) => s.name || s.title || "Subject";
-
-// --- PURPLE GLASSY BUTTON COMPONENT (MATCHING SCREENSHOT) ---
-const SubjectBtn = ({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress?: () => void;
-}) => (
-  <TouchableOpacity
-    activeOpacity={0.8}
-    onPress={onPress}
-    className="w-full mb-4"
-    style={{
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 6,
-    }}
-  >
-    <LinearGradient
-      // Subtle white gradient: Lighter at top (12%), Darker at bottom (4%)
-      colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.04)"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="rounded-xl py-4 items-center justify-center border border-white/10"
-      style={{ borderRadius: 16 }}
-    >
-      <Text
-        className="text-white font-semibold text-[16px] tracking-wide text-center px-4"
-        adjustsFontSizeToFit={true}
-        numberOfLines={1}
-      >
-        {label}
-      </Text>
-    </LinearGradient>
-  </TouchableOpacity>
-);
 
 // --- DUMMY DATA ---
 const dummyList: Subject[] = [
@@ -289,10 +251,11 @@ export default function PracticeSubjects() {
                         </Text>
                       ) : (
                         renderList.map((item) => (
-                          <SubjectBtn
+                          <GlassyListBtn
                             key={getId(item) || getName(item)}
                             label={getName(item)}
                             onPress={() => handleSelect(item)}
+                            numberOfLines={1} // 🟢 Subjects are 1 line
                           />
                         ))
                       )}
