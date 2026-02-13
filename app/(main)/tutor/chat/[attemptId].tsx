@@ -12,7 +12,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 // Services
 import { sendChatMessage, getChatHistory } from "@/services/api.chat";
@@ -30,6 +29,12 @@ type Message = {
   text: string;
   sender: "user" | "bot";
   isError?: boolean;
+  payload?: {
+    buttons?: { label: string; value: string }[];
+    hint_type?: "radio" | "checkbox"; // Though you mentioned radio only, keeping flexibility
+    decision?: string;
+    message?: string;
+  };
 };
 
 export default function ChatScreen() {
@@ -50,6 +55,8 @@ export default function ChatScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [sending, setSending] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const transcriptRef = useRef("");
@@ -95,8 +102,8 @@ export default function ChatScreen() {
     }
   };
 
-  const handleSend = async () => {
-    const textToSend = inputText.trim();
+  const handleSend = async (manualText?: string) => {
+    const textToSend = manualText || inputText.trim();
     if (!textToSend) return;
 
     // 1. Add User Message
@@ -108,10 +115,11 @@ export default function ChatScreen() {
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    // 2. Clear Staging Area
+    // 2. Clear Staging Area & Options
     if (isRecording) ExpoSpeechRecognitionModule.stop();
     setInputText("");
     transcriptRef.current = "";
+    setSelectedOptions([]); // Clear selected options
     setSending(true);
 
     // 3. API Call
@@ -127,6 +135,7 @@ export default function ChatScreen() {
           id: (Date.now() + 1).toString(),
           text: botText,
           sender: "bot",
+          payload: data?.payload, // Pass full payload to render buttons
         };
         setMessages((prev) => [...prev, botMsg]);
       }
@@ -141,6 +150,18 @@ export default function ChatScreen() {
     setInputText("");
     transcriptRef.current = "";
     if (isRecording) ExpoSpeechRecognitionModule.stop();
+  };
+
+  const handleOptionSelect = (value: string) => {
+    // For radio buttons, we just select one and immediately can trigger send or wait for submit
+    // Here we strictly follow radio button behavior (single select)
+    setSelectedOptions([value]);
+  };
+
+  const submitOption = () => {
+    if (selectedOptions.length > 0) {
+      handleSend(selectedOptions[0]);
+    }
   };
 
   // --- API & HISTORY ---
@@ -160,6 +181,8 @@ export default function ChatScreen() {
             isError:
               msg.payload?.decision === "Need Study" ||
               msg.payload?.decision === "Improvements",
+            // 🟢 FIX: Explicitly save the payload so buttons can render
+            payload: msg.payload,
           }));
           setMessages(history);
         }
@@ -201,7 +224,7 @@ export default function ChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           className="flex-1 px-4 mt-4"
-          contentContainerClassName="pb-60" // LARGE padding for footer area
+          contentContainerClassName="pb-60"
           onContentSizeChange={() =>
             scrollViewRef.current?.scrollToEnd({ animated: true })
           }
@@ -209,49 +232,127 @@ export default function ChatScreen() {
           {loadingHistory && messages.length <= 1 ? (
             <ActivityIndicator size="large" color="#EA580C" className="mt-10" />
           ) : (
-            messages.map((msg) => {
+            // 🟢 FIX: Directly map the array. Do NOT wrap in { messages: ... }
+            messages.map((msg, index) => {
               const isBot = msg.sender === "bot";
+
+              // Logic: Show options ONLY for the latest bot message that has buttons
+              const showOptions =
+                isBot &&
+                index === messages.length - 1 &&
+                msg.payload?.buttons &&
+                msg.payload.buttons.length > 0;
+
               return (
-                <View
-                  key={msg.id}
-                  className={`flex-row mb-6 items-start w-full ${isBot ? "justify-start" : "justify-end"}`}
-                >
-                  {/* Bot Icon */}
-                  {isBot && (
-                    <View className="w-10 h-10 rounded-full bg-[#F97316] items-center justify-center mr-2 mt-1">
-                      <BotIcon />
-                    </View>
-                  )}
-
-                  {/* Bubble */}
+                <View key={msg.id} className="w-full mb-6">
+                  {/* --- Message Bubble Row --- */}
                   <View
-                    className={`max-w-[80%] p-4 rounded-2xl relative ${
-                      isBot
-                        ? "bg-white/10 rounded-tl-none border border-white/5"
-                        : "bg-[#3f2020] border border-[#d97706] rounded-tr-none"
-                    }`}
+                    className={`flex-row items-start w-full ${isBot ? "justify-start" : "justify-end"}`}
                   >
-                    <Text
-                      className={`text-[16px] leading-6 ${isBot ? "text-white/90" : "text-[#fdba74]"}`}
-                    >
-                      {msg.text}
-                    </Text>
+                    {isBot && (
+                      <View className="w-10 h-10 rounded-full bg-[#F97316] items-center justify-center mr-2 mt-1">
+                        <BotIcon />
+                      </View>
+                    )}
 
-                    {!isBot && msg.isError !== false && (
-                      <View className="absolute -bottom-3 -left-3 bg-[#FBBF24] rounded-full border-2 border-[#3f2020]">
-                        <Ionicons
-                          name="alert-circle"
-                          size={24}
-                          color="#78350f"
-                        />
+                    <View
+                      className={`max-w-[80%] p-4 rounded-2xl relative ${isBot ? "bg-white/10 rounded-tl-none border border-white/5" : "bg-[#3f2020] border border-[#d97706] rounded-tr-none"}`}
+                    >
+                      <Text
+                        className={`text-[16px] leading-6 ${isBot ? "text-white/90" : "text-[#fdba74]"}`}
+                      >
+                        {msg.text}
+                      </Text>
+                      {!isBot && msg.isError !== false && (
+                        <View className="absolute -bottom-3 -left-3 bg-[#FBBF24] rounded-full border-2 border-[#3f2020]">
+                          <Ionicons
+                            name="alert-circle"
+                            size={24}
+                            color="#78350f"
+                          />
+                        </View>
+                      )}
+                    </View>
+
+                    {!isBot && (
+                      <View className="w-10 h-10 rounded-full bg-[#EA580C] items-center justify-center border-2 border-white ml-2 mt-1">
+                        <Ionicons name="person" size={20} color="white" />
                       </View>
                     )}
                   </View>
 
-                  {/* User Icon */}
-                  {!isBot && (
-                    <View className="w-10 h-10 rounded-full bg-[#EA580C] items-center justify-center border-2 border-white ml-2 mt-1">
-                      <Ionicons name="person" size={20} color="white" />
+                  {/* --- 🟢 UPDATED: Render Radio Buttons with Actual Text --- */}
+                  {showOptions && msg.payload?.buttons && (
+                    <View className="mt-3 ml-12 w-[80%]">
+                      <Text className="text-white/60 text-xs mb-2 uppercase tracking-widest font-bold">
+                        Select an option:
+                      </Text>
+
+                      {msg.payload.buttons.map((btn: any, i: number) => {
+                        // 🟢 FIX: Prioritize 'label' or 'text' property for display
+                        let val = "";
+                        let displayLabel = "";
+
+                        if (typeof btn === "object" && btn !== null) {
+                          // Value to send to backend
+                          val =
+                            btn.value || btn.label || btn.text || `opt_${i}`;
+                          // Text to show on screen (Try label -> text -> value)
+                          displayLabel =
+                            btn.label || btn.text || btn.value || "Option";
+                        } else {
+                          // Fallback for simple strings
+                          val = String(btn);
+                          displayLabel = String(btn);
+                        }
+
+                        const isSelected = selectedOptions.includes(val);
+
+                        return (
+                          <TouchableOpacity
+                            key={i}
+                            onPress={() => handleOptionSelect(val)}
+                            activeOpacity={0.7}
+                            className={`flex-row items-center p-3 mb-2 rounded-xl border ${isSelected ? "bg-[#EA580C]/20 border-[#EA580C]" : "bg-white/5 border-white/10"}`}
+                          >
+                            <Ionicons
+                              name={
+                                isSelected
+                                  ? "radio-button-on"
+                                  : "radio-button-off"
+                              }
+                              size={20}
+                              color={
+                                isSelected ? "#EA580C" : "rgba(255,255,255,0.4)"
+                              }
+                              style={{ marginRight: 10 }}
+                            />
+                            {/* 🟢 Shows actual text now */}
+                            <Text
+                              className={`flex-1 text-[15px] ${isSelected ? "text-white font-semibold" : "text-white/70"}`}
+                            >
+                              {displayLabel}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+
+                      {/* Submit Button */}
+                      {selectedOptions.length > 0 && (
+                        <TouchableOpacity
+                          onPress={submitOption}
+                          className="flex-row items-center justify-center p-3 mt-2 rounded-xl bg-[#EA580C]"
+                        >
+                          <Text className="mr-2 font-bold text-white">
+                            Submit Answer
+                          </Text>
+                          <Ionicons
+                            name="arrow-forward"
+                            size={18}
+                            color="white"
+                          />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   )}
                 </View>
@@ -259,17 +360,13 @@ export default function ChatScreen() {
             })
           )}
 
-          {/* 🟢 SIMPLER "THINKING" BUBBLE */}
+          {/* Thinking Bubble */}
           {sending && (
             <View className="flex-row items-start justify-start mb-6 w-full">
-              {/* Bot Avatar */}
               <View className="w-10 h-10 rounded-full bg-[#F97316] items-center justify-center mr-2 mt-1">
                 <BotIcon />
               </View>
-
-              {/* Bubble with Standard Loader */}
               <View className="p-4 rounded-2xl bg-white/10 rounded-tl-none border border-white/5 min-w-[60px] items-center justify-center">
-                {/* The Built-in Loader */}
                 <ActivityIndicator size="small" color="white" />
               </View>
             </View>
