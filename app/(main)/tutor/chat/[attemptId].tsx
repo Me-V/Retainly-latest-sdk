@@ -29,6 +29,7 @@ type Message = {
   text: string;
   sender: "user" | "bot";
   isError?: boolean;
+  isCorrect?: boolean;
   payload?: {
     buttons?: { label: string; value: string }[];
     hint_type?: "radio" | "checkbox"; // Though you mentioned radio only, keeping flexibility
@@ -106,36 +107,56 @@ export default function ChatScreen() {
     const textToSend = manualText || inputText.trim();
     if (!textToSend) return;
 
-    // 1. Add User Message
+    const userMsgId = Date.now().toString();
+
+    // 1. Add User Message (Initially default/orange until verified)
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: userMsgId,
       text: textToSend,
       sender: "user",
       isError: false,
+      isCorrect: false,
     };
     setMessages((prev) => [...prev, userMsg]);
 
-    // 2. Clear Staging Area & Options
     if (isRecording) ExpoSpeechRecognitionModule.stop();
     setInputText("");
     transcriptRef.current = "";
-    setSelectedOptions([]); // Clear selected options
+    setSelectedOptions([]);
     setSending(true);
 
-    // 3. API Call
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
 
-      console.log("--------------------->>>>>>API Response:", data);
+      console.log("API Response:", JSON.stringify(data, null, 2));
 
       const botText = data?.payload?.message || data?.message || data?.response;
+      const decision = data?.payload?.decision;
 
+      // 🟢 Check if decision is "Green" worthy
+      const isAnswerCorrect =
+        decision === "correct" || decision === "repeat_with_correction";
+
+      // 🟢 Check if decision is "Orange/Error" worthy
+      const isAnswerWrong =
+        decision === "Need Study" || decision === "Improvements";
+
+      // 2. Update the USER message status based on the decision
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === userMsgId
+            ? { ...m, isCorrect: isAnswerCorrect, isError: isAnswerWrong }
+            : m,
+        ),
+      );
+
+      // 3. Add Bot Message
       if (botText) {
         const botMsg: Message = {
           id: (Date.now() + 1).toString(),
           text: botText,
           sender: "bot",
-          payload: data?.payload, // Pass full payload to render buttons
+          payload: data?.payload,
         };
         setMessages((prev) => [...prev, botMsg]);
       }
@@ -178,10 +199,14 @@ export default function ChatScreen() {
                 ? msg.payload?.message || msg.text
                 : msg.text,
             sender: msg.role === "assistant" ? "bot" : "user",
+            // Orange Condition
             isError:
               msg.payload?.decision === "Need Study" ||
               msg.payload?.decision === "Improvements",
-            // 🟢 FIX: Explicitly save the payload so buttons can render
+            // Green Condition
+            isCorrect:
+              msg.payload?.decision === "correct" ||
+              msg.payload?.decision === "repeat_with_correction",
             payload: msg.payload,
           }));
           setMessages(history);
@@ -256,10 +281,22 @@ export default function ChatScreen() {
                     )}
 
                     <View
-                      className={`max-w-[80%] p-4 rounded-2xl relative ${isBot ? "bg-white/10 rounded-tl-none border border-white/5" : "bg-[#3f2020] border border-[#d97706] rounded-tr-none"}`}
+                      className={`max-w-[80%] p-4 rounded-2xl relative ${
+                        isBot
+                          ? "bg-white/10 rounded-tl-none border border-white/5"
+                          : msg.isCorrect
+                            ? "bg-[#064e3b] border border-[#22c55e] rounded-tr-none" // Green Style
+                            : "bg-[#3f2020] border border-[#d97706] rounded-tr-none" // Orange Style (Default/Error)
+                      }`}
                     >
                       <Text
-                        className={`text-[16px] leading-6 ${isBot ? "text-white/90" : "text-[#fdba74]"}`}
+                        className={`text-[15px] leading-6 ${
+                          isBot
+                            ? "text-white/90"
+                            : msg.isCorrect
+                              ? "text-green-100" // Green Text
+                              : "text-[#fdba74]" // Orange Text
+                        }`}
                       >
                         {msg.text}
                       </Text>
