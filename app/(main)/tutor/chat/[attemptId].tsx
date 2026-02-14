@@ -56,6 +56,8 @@ export default function ChatScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [sending, setSending] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  // 🟢 NEW: State to control "Next Question" button visibility
+  const [showNextButton, setShowNextButton] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
@@ -109,7 +111,7 @@ export default function ChatScreen() {
 
     const userMsgId = Date.now().toString();
 
-    // 1. Add User Message (Initially default/orange until verified)
+    // 1. Add User Message
     const userMsg: Message = {
       id: userMsgId,
       text: textToSend,
@@ -119,29 +121,33 @@ export default function ChatScreen() {
     };
     setMessages((prev) => [...prev, userMsg]);
 
+    // Reset UI states
     if (isRecording) ExpoSpeechRecognitionModule.stop();
     setInputText("");
     transcriptRef.current = "";
     setSelectedOptions([]);
     setSending(true);
+    setShowNextButton(false); // 🟢 Hide button while processing new answer
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
-
       console.log("API Response:", JSON.stringify(data, null, 2));
 
       const botText = data?.payload?.message || data?.message || data?.response;
       const decision = data?.payload?.decision;
 
-      // 🟢 Check if decision is "Green" worthy
+      // 🟢 Determine Status
       const isAnswerCorrect =
         decision === "correct" || decision === "repeat_with_correction";
-
-      // 🟢 Check if decision is "Orange/Error" worthy
       const isAnswerWrong =
         decision === "Need Study" || decision === "Improvements";
 
-      // 2. Update the USER message status based on the decision
+      // 🟢 Show Next Button if answer is correct
+      if (isAnswerCorrect) {
+        setShowNextButton(true);
+      }
+
+      // 2. Update User Message Color & Status
       setMessages((prev) =>
         prev.map((m) =>
           m.id === userMsgId
@@ -267,6 +273,11 @@ export default function ChatScreen() {
                 index === messages.length - 1 &&
                 msg.payload?.buttons &&
                 msg.payload.buttons.length > 0;
+              const isLastMessage = index === messages.length - 1;
+
+              // 🟢 HELPER: Determine if we need space for the icon
+              // Only add bottom padding if the answer is explicitly Correct OR Error
+              const hasStatus = msg.isCorrect || msg.isError;
 
               return (
                 <View key={msg.id} className="w-full mb-6">
@@ -274,43 +285,62 @@ export default function ChatScreen() {
                   <View
                     className={`flex-row items-start w-full ${isBot ? "justify-start" : "justify-end"}`}
                   >
+                    {/* Bot Avatar */}
                     {isBot && (
                       <View className="w-10 h-10 rounded-full bg-[#F97316] items-center justify-center mr-2 mt-1">
                         <BotIcon />
                       </View>
                     )}
 
+                    {/* Bubble */}
                     <View
-                      className={`max-w-[80%] p-4 rounded-2xl relative ${
+                      className={`max-w-[80%] rounded-2xl relative ${
                         isBot
-                          ? "bg-white/10 rounded-tl-none border border-white/5"
-                          : msg.isCorrect
-                            ? "bg-[#064e3b] border border-[#22c55e] rounded-tr-none" // Green Style
-                            : "bg-[#3f2020] border border-[#d97706] rounded-tr-none" // Orange Style (Default/Error)
+                          ? "bg-white/10 p-4 rounded-tl-none border border-white/5"
+                          : `${
+                              msg.isCorrect
+                                ? "bg-[#2f4f4f] border-[#4ade80]/30" // Green Theme
+                                : "bg-[#3f2020] border-[#d97706]" // Orange Theme
+                            } p-4 border rounded-tr-none ${
+                              // 🟢 FIX: Only take height (pb-10) if status exists
+                              hasStatus ? "pb-10" : ""
+                            }`
                       }`}
                     >
                       <Text
-                        className={`text-[15px] leading-6 ${
-                          isBot
-                            ? "text-white/90"
-                            : msg.isCorrect
-                              ? "text-green-100" // Green Text
-                              : "text-[#fdba74]" // Orange Text
-                        }`}
+                        className={`text-[15px] leading-6 ${isBot ? "text-white/90" : msg.isCorrect ? "text-[#4ade80]" : "text-[#fdba74]"}`}
                       >
                         {msg.text}
                       </Text>
-                      {!isBot && msg.isError !== false && (
-                        <View className="absolute -bottom-3 -left-3 bg-[#FBBF24] rounded-full border-2 border-[#3f2020]">
-                          <Ionicons
-                            name="alert-circle"
-                            size={24}
-                            color="#78350f"
-                          />
+
+                      {/* 🟢 Status Icons (Positioned Bottom-Left INSIDE) */}
+                      {!isBot && (
+                        <View className="absolute bottom-3 left-3">
+                          {msg.isCorrect ? (
+                            // Blue Checkmark Circle
+                            <View className="bg-[#3b82f6] rounded-full p-1 shadow-sm items-center justify-center w-4 h-4">
+                              <Ionicons
+                                name="checkmark"
+                                size={14}
+                                color="white"
+                                strokeWidth={5}
+                              />
+                            </View>
+                          ) : msg.isError ? (
+                            // Yellow Exclamation Circle
+                            <View className="bg-[#FACC15] rounded-full p-1 shadow-sm items-center justify-center w-4 h-4">
+                              <Ionicons
+                                name="alert"
+                                size={14}
+                                color="#451a03"
+                              />
+                            </View>
+                          ) : null}
                         </View>
                       )}
                     </View>
 
+                    {/* User Avatar */}
                     {!isBot && (
                       <View className="w-10 h-10 rounded-full bg-[#EA580C] items-center justify-center border-2 border-white ml-2 mt-1">
                         <Ionicons name="person" size={20} color="white" />
@@ -318,33 +348,25 @@ export default function ChatScreen() {
                     )}
                   </View>
 
-                  {/* --- 🟢 UPDATED: Render Radio Buttons with Actual Text --- */}
+                  {/* Radio Buttons */}
                   {showOptions && msg.payload?.buttons && (
                     <View className="mt-3 ml-12 w-[80%]">
                       <Text className="text-white/60 text-xs mb-2 uppercase tracking-widest font-bold">
                         Select an option:
                       </Text>
-
                       {msg.payload.buttons.map((btn: any, i: number) => {
-                        // 🟢 FIX: Prioritize 'label' or 'text' property for display
                         let val = "";
                         let displayLabel = "";
-
                         if (typeof btn === "object" && btn !== null) {
-                          // Value to send to backend
                           val =
                             btn.value || btn.label || btn.text || `opt_${i}`;
-                          // Text to show on screen (Try label -> text -> value)
                           displayLabel =
                             btn.label || btn.text || btn.value || "Option";
                         } else {
-                          // Fallback for simple strings
                           val = String(btn);
                           displayLabel = String(btn);
                         }
-
                         const isSelected = selectedOptions.includes(val);
-
                         return (
                           <TouchableOpacity
                             key={i}
@@ -364,7 +386,6 @@ export default function ChatScreen() {
                               }
                               style={{ marginRight: 10 }}
                             />
-                            {/* 🟢 Shows actual text now */}
                             <Text
                               className={`flex-1 text-[15px] ${isSelected ? "text-white font-semibold" : "text-white/70"}`}
                             >
@@ -373,8 +394,6 @@ export default function ChatScreen() {
                           </TouchableOpacity>
                         );
                       })}
-
-                      {/* Submit Button */}
                       {selectedOptions.length > 0 && (
                         <TouchableOpacity
                           onPress={submitOption}
@@ -390,6 +409,22 @@ export default function ChatScreen() {
                           />
                         </TouchableOpacity>
                       )}
+                    </View>
+                  )}
+
+                  {/* Next Question Button */}
+                  {isBot && isLastMessage && showNextButton && (
+                    <View className="mt-6 ml-12 self-start">
+                      <TouchableOpacity
+                        onPress={() =>
+                          Alert.alert("Action", "Load next question logic here")
+                        }
+                        className="bg-[#F97316] py-3 px-6 rounded-xl shadow-lg border border-white/20"
+                      >
+                        <Text className="text-white font-bold text-[15px]">
+                          Next question
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
