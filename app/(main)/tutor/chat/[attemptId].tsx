@@ -226,6 +226,16 @@ export default function ChatScreen() {
     fetchHistory();
   }, [attemptId, token]);
 
+  const lastMessage = messages[messages.length - 1];
+  const isBotOptionsInteraction =
+    lastMessage?.sender === "bot" &&
+    lastMessage?.payload?.buttons &&
+    lastMessage.payload.buttons.length > 0;
+
+  const isMicDisabled = sending || isBotOptionsInteraction;
+
+  const hasUserMessage = messages.some((msg) => msg.sender === "user");
+
   return (
     <LinearGradient colors={["#240b36", "#1a0b2e"]} className="flex-1">
       <SafeAreaView className="flex-1">
@@ -241,7 +251,7 @@ export default function ChatScreen() {
             <View className="absolute top-[-2px] left-[5%] w-4 h-4 rounded-full bg-[#EA580C] border-2 border-white shadow-sm" />
           </View>
         </View>
-        {!inputText && !isRecording && messages.length <= 1 && (
+        {!inputText && !isRecording && !hasUserMessage && (
           <View
             className="absolute inset-0 justify-center items-center z-0"
             pointerEvents="none"
@@ -318,7 +328,7 @@ export default function ChatScreen() {
                         <View className="absolute bottom-3 left-3">
                           {msg.isCorrect ? (
                             // Blue Checkmark Circle
-                            <View className="bg-[#3b82f6] rounded-full p-1 shadow-sm items-center justify-center w-4 h-4">
+                            <View className="bg-[#3b82f6] rounded-full p-1 shadow-sm items-center justify-center w-6 h-6">
                               <Ionicons
                                 name="checkmark"
                                 size={14}
@@ -328,7 +338,7 @@ export default function ChatScreen() {
                             </View>
                           ) : msg.isError ? (
                             // Yellow Exclamation Circle
-                            <View className="bg-[#FACC15] rounded-full p-1 shadow-sm items-center justify-center w-4 h-4">
+                            <View className="bg-[#FACC15] rounded-full p-1 shadow-sm items-center justify-center w-6 h-6">
                               <Ionicons
                                 name="alert"
                                 size={14}
@@ -416,9 +426,7 @@ export default function ChatScreen() {
                   {isBot && isLastMessage && showNextButton && (
                     <View className="mt-6 ml-12 self-start">
                       <TouchableOpacity
-                        onPress={() =>
-                          Alert.alert("Action", "Load next question logic here")
-                        }
+                        onPress={() => router.back()}
                         className="bg-[#F97316] py-3 px-6 rounded-xl shadow-lg border border-white/20"
                       >
                         <Text className="text-white font-bold text-[15px]">
@@ -476,15 +484,19 @@ export default function ChatScreen() {
             {/* CENTER: Mic Button */}
             <TouchableOpacity
               activeOpacity={0.8}
+              // 🟢 Disable interaction based on logic
+              disabled={isMicDisabled}
               onPress={handleToggleMic}
               className={`w-20 h-20 rounded-full items-center justify-center shadow-xl ${
-                isRecording
-                  ? "bg-red-500 border-4 border-red-300 scale-110"
-                  : "bg-[#EA580C] border-4 border-[#F97316]"
+                isMicDisabled
+                  ? "bg-gray-600 border-4 border-gray-500 opacity-50" // 🟢 Grayed out style
+                  : isRecording
+                    ? "bg-red-500 border-4 border-red-300 scale-110"
+                    : "bg-[#EA580C] border-4 border-[#F97316]"
               }`}
               style={{
                 elevation: 10,
-                shadowColor: "#EA580C",
+                shadowColor: isMicDisabled ? "#000" : "#EA580C",
                 shadowOffset: { width: 0, height: 8 },
                 shadowOpacity: 0.4,
                 shadowRadius: 8,
@@ -492,9 +504,9 @@ export default function ChatScreen() {
               }}
             >
               <Ionicons
-                name={isRecording ? "stop" : "mic"}
+                name={isRecording ? "stop" : isMicDisabled ? "mic-off" : "mic"} // 🟢 Optional: Change icon to mic-off
                 size={40}
-                color="white"
+                color={isMicDisabled ? "#ccc" : "white"}
               />
             </TouchableOpacity>
 
