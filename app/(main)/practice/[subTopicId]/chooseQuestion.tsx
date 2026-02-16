@@ -75,9 +75,8 @@ export default function SubTopicQuestions() {
   }, [token, subTopicId]);
 
   const handleOpenQuestion = async (q: Question) => {
-    
     console.log("Question:", q);
-    
+
     const questionId = getId(q);
     if (!questionId || !token) return;
 
@@ -90,8 +89,11 @@ export default function SubTopicQuestions() {
       if (response?.attempt_id) {
         router.push({
           pathname: "/tutor/chat/[attemptId]",
-          params: { attemptId: response.attempt_id },
-        } as const);
+          params: {
+            attemptId: response.attempt_id,
+            initialQuestion: q.text || q.title || "Practice Question",
+          },
+        });
       }
     } catch (error) {
       console.error(error);

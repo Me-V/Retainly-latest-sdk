@@ -40,14 +40,18 @@ type Message = {
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { attemptId } = useLocalSearchParams<{ attemptId: string }>();
+  const { attemptId, initialQuestion } = useLocalSearchParams<{
+    attemptId: string;
+    initialQuestion?: string;
+  }>();
   const token = useSelector((s: RootState) => s.auth.token);
 
   // --- STATE ---
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "init-1",
-      text: "If the distance traveled is 40 km in 1200 seconds, what is the speed? Explain your answer.",
+      // 🟢 2. Use the passed question text as the starting message
+      text: initialQuestion || "Loading question...",
       sender: "bot",
     },
   ]);
@@ -197,7 +201,14 @@ export default function ChatScreen() {
       if (!attemptId || !token) return;
       try {
         const data = await getChatHistory(token, attemptId);
-        if (data?.messages && Array.isArray(data.messages)) {
+
+        // 🟢 FIX: Only overwrite messages if history actually contains data.
+        // If it's a new session (length 0), we keep the initialQuestion we set in useState.
+        if (
+          data?.messages &&
+          Array.isArray(data.messages) &&
+          data.messages.length > 0
+        ) {
           const history: Message[] = data.messages.map((msg: any) => ({
             id: msg.sequence.toString(),
             text:
@@ -205,11 +216,9 @@ export default function ChatScreen() {
                 ? msg.payload?.message || msg.text
                 : msg.text,
             sender: msg.role === "assistant" ? "bot" : "user",
-            // Orange Condition
             isError:
               msg.payload?.decision === "Need Study" ||
               msg.payload?.decision === "Improvements",
-            // Green Condition
             isCorrect:
               msg.payload?.decision === "correct" ||
               msg.payload?.decision === "repeat_with_correction",
