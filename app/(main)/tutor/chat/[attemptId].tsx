@@ -183,15 +183,27 @@ export default function ChatScreen() {
     if (isRecording) ExpoSpeechRecognitionModule.stop();
   };
 
-  const handleOptionSelect = (value: string) => {
-    // For radio buttons, we just select one and immediately can trigger send or wait for submit
-    // Here we strictly follow radio button behavior (single select)
-    setSelectedOptions([value]);
+  const handleOptionSelect = (value: string, type: string = "radio") => {
+    if (type === "checkbox") {
+      setSelectedOptions((prev) => {
+        if (prev.includes(value)) {
+          // Unselect
+          return prev.filter((item) => item !== value);
+        } else {
+          // Select
+          return [...prev, value];
+        }
+      });
+    } else {
+      // Radio behavior (default) - only one selected
+      setSelectedOptions([value]);
+    }
   };
 
   const submitOption = () => {
     if (selectedOptions.length > 0) {
-      handleSend(selectedOptions[0]);
+      // Sends "Option A, Option B" for checkboxes, or just "Option A" for radio
+      handleSend(selectedOptions.join(", "));
     }
   };
 
@@ -202,8 +214,6 @@ export default function ChatScreen() {
       try {
         const data = await getChatHistory(token, attemptId);
 
-        // 🟢 FIX: Only overwrite messages if history actually contains data.
-        // If it's a new session (length 0), we keep the initialQuestion we set in useState.
         if (
           data?.messages &&
           Array.isArray(data.messages) &&
@@ -224,7 +234,32 @@ export default function ChatScreen() {
               msg.payload?.decision === "repeat_with_correction",
             payload: msg.payload,
           }));
-          setMessages(history);
+
+          // 🟢 FIX: Ensure the Initial Question is always at the top
+          // If the API history doesn't start with the question (or starts with a user reply), we prepend it.
+          if (initialQuestion) {
+            const firstMsg = history[0];
+
+            // Check if the first message text matches the initial question.
+            // If they are different, it means the API didn't return the prompt message.
+            const isQuestionMissing =
+              !firstMsg || firstMsg.text.trim() !== initialQuestion.trim();
+
+            if (isQuestionMissing) {
+              const questionMsg: Message = {
+                id: "init-1",
+                text: initialQuestion,
+                sender: "bot",
+              };
+              // Prepend the question to the history
+              setMessages([questionMsg, ...history]);
+            } else {
+              // Question is already in history, just set it
+              setMessages(history);
+            }
+          } else {
+            setMessages(history);
+          }
         }
       } catch (error) {
         console.error("History Error", error);
@@ -233,7 +268,7 @@ export default function ChatScreen() {
       }
     };
     fetchHistory();
-  }, [attemptId, token]);
+  }, [attemptId, token, initialQuestion]);
 
   const lastMessage = messages[messages.length - 1];
   const isBotOptionsInteraction =
@@ -294,8 +329,10 @@ export default function ChatScreen() {
                 msg.payload.buttons.length > 0;
               const isLastMessage = index === messages.length - 1;
 
-              // 🟢 HELPER: Determine if we need space for the icon
-              // Only add bottom padding if the answer is explicitly Correct OR Error
+              // 🟢 NEW: Check hint type
+              const isCheckbox = msg.payload?.hint_type === "checkbox";
+
+              // Helper: Determine if we need space for the icon (Status)
               const hasStatus = msg.isCorrect || msg.isError;
 
               return (
@@ -318,10 +355,9 @@ export default function ChatScreen() {
                           ? "bg-white/10 p-4 rounded-tl-none border border-white/5"
                           : `${
                               msg.isCorrect
-                                ? "bg-[#2f4f4f] border-[#4ade80]/30" // Green Theme
-                                : "bg-[#3f2020] border-[#d97706]" // Orange Theme
+                                ? "bg-[#2f4f4f] border-[#4ade80]/30"
+                                : "bg-[#3f2020] border-[#d97706]"
                             } p-4 border rounded-tr-none ${
-                              // 🟢 FIX: Only take height (pb-10) if status exists
                               hasStatus ? "pb-10" : ""
                             }`
                       }`}
@@ -332,11 +368,10 @@ export default function ChatScreen() {
                         {msg.text}
                       </Text>
 
-                      {/* 🟢 Status Icons (Positioned Bottom-Left INSIDE) */}
+                      {/* Status Icons (Bottom-Left) */}
                       {!isBot && (
                         <View className="absolute bottom-3 left-3">
                           {msg.isCorrect ? (
-                            // Blue Checkmark Circle
                             <View className="bg-[#3b82f6] rounded-full p-1 shadow-sm items-center justify-center w-6 h-6">
                               <Ionicons
                                 name="checkmark"
@@ -346,7 +381,6 @@ export default function ChatScreen() {
                               />
                             </View>
                           ) : msg.isError ? (
-                            // Yellow Exclamation Circle
                             <View className="bg-[#FACC15] rounded-full p-1 shadow-sm items-center justify-center w-6 h-6">
                               <Ionicons
                                 name="alert"
@@ -367,13 +401,17 @@ export default function ChatScreen() {
                     )}
                   </View>
 
-                  {/* Radio Buttons */}
+                  {/* 🟢 UPDATED: Options Area (Checkbox vs Radio) */}
                   {showOptions && msg.payload?.buttons && (
-                    <View className="mt-3 ml-12 w-[80%]">
+                    <View className="mt-6 ml-12 w-[80%]">
                       <Text className="text-white/60 text-xs mb-2 uppercase tracking-widest font-bold">
-                        Select an option:
+                        {isCheckbox
+                          ? "Select the options that apply:"
+                          : "Select an option:"}
                       </Text>
+
                       {msg.payload.buttons.map((btn: any, i: number) => {
+                        // Data extraction
                         let val = "";
                         let displayLabel = "";
                         if (typeof btn === "object" && btn !== null) {
@@ -385,20 +423,34 @@ export default function ChatScreen() {
                           val = String(btn);
                           displayLabel = String(btn);
                         }
+
                         const isSelected = selectedOptions.includes(val);
+
+                        // 🟢 Determine Icon based on Type
+                        let iconName: any = "radio-button-off";
+                        if (isCheckbox) {
+                          iconName = isSelected ? "checkbox" : "square-outline";
+                        } else {
+                          iconName = isSelected
+                            ? "radio-button-on"
+                            : "radio-button-off";
+                        }
+
                         return (
                           <TouchableOpacity
                             key={i}
-                            onPress={() => handleOptionSelect(val)}
+                            // Pass the hint_type to the handler
+                            onPress={() =>
+                              handleOptionSelect(
+                                val,
+                                msg.payload?.hint_type || "radio",
+                              )
+                            }
                             activeOpacity={0.7}
                             className={`flex-row items-center p-3 mb-2 rounded-xl border ${isSelected ? "bg-[#EA580C]/20 border-[#EA580C]" : "bg-white/5 border-white/10"}`}
                           >
                             <Ionicons
-                              name={
-                                isSelected
-                                  ? "radio-button-on"
-                                  : "radio-button-off"
-                              }
+                              name={iconName}
                               size={20}
                               color={
                                 isSelected ? "#EA580C" : "rgba(255,255,255,0.4)"
@@ -413,6 +465,7 @@ export default function ChatScreen() {
                           </TouchableOpacity>
                         );
                       })}
+
                       {selectedOptions.length > 0 && (
                         <TouchableOpacity
                           onPress={submitOption}
@@ -435,7 +488,7 @@ export default function ChatScreen() {
                   {isBot && isLastMessage && showNextButton && (
                     <View className="mt-6 ml-12 self-start">
                       <TouchableOpacity
-                        onPress={() => router.back()}
+                        onPress={() => router.back()} // Or your next question logic
                         className="bg-[#F97316] py-3 px-6 rounded-xl shadow-lg border border-white/20"
                       >
                         <Text className="text-white font-bold text-[15px]">
