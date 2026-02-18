@@ -348,15 +348,14 @@ export default function ChatScreen() {
             messages.map((msg, index) => {
               const isBot = msg.sender === "bot";
 
-              // Logic: Show options ONLY for the latest bot message that has buttons
+              // 🟢 UPDATE: Removed 'index === messages.length - 1'
+              // This allows options to stay visible even for old messages.
               const showOptions =
-                isBot &&
-                index === messages.length - 1 &&
-                msg.payload?.buttons &&
-                msg.payload.buttons.length > 0;
+                isBot && msg.payload?.buttons && msg.payload.buttons.length > 0;
+
               const isLastMessage = index === messages.length - 1;
 
-              // 🟢 NEW: Check hint type
+              // Check hint type
               const isCheckbox = msg.payload?.hint_type === "checkbox";
 
               // Helper: Determine if we need space for the icon (Status)
@@ -428,17 +427,16 @@ export default function ChatScreen() {
                     )}
                   </View>
 
-                  {/* 🟢 UPDATED: Options Area (Checkbox vs Radio) */}
+                  {/* 🟢 UPDATED OPTIONS AREA */}
                   {showOptions && msg.payload?.buttons && (
-                    <View className="mt-6 ml-12 w-[80%]">
+                    <View className="mt-3 ml-12 w-[80%]">
                       <Text className="text-white/60 text-xs mb-2 uppercase tracking-widest font-bold">
                         {isCheckbox
-                          ? "Select the options that apply:"
+                          ? "Select all that apply:"
                           : "Select an option:"}
                       </Text>
 
                       {msg.payload.buttons.map((btn: any, i: number) => {
-                        // Data extraction
                         let val = "";
                         let displayLabel = "";
                         if (typeof btn === "object" && btn !== null) {
@@ -453,7 +451,7 @@ export default function ChatScreen() {
 
                         const isSelected = selectedOptions.includes(val);
 
-                        // 🟢 Determine Icon based on Type
+                        // Icon Logic
                         let iconName: any = "radio-button-off";
                         if (isCheckbox) {
                           iconName = isSelected ? "checkbox" : "square-outline";
@@ -466,7 +464,8 @@ export default function ChatScreen() {
                         return (
                           <TouchableOpacity
                             key={i}
-                            // Pass the hint_type to the handler
+                            // 🟢 Disable pressing if it's an old message
+                            disabled={!isLastMessage}
                             onPress={() =>
                               handleOptionSelect(
                                 val,
@@ -474,7 +473,11 @@ export default function ChatScreen() {
                               )
                             }
                             activeOpacity={0.7}
-                            className={`flex-row items-center p-3 mb-2 rounded-xl border ${isSelected ? "bg-[#EA580C]/20 border-[#EA580C]" : "bg-white/5 border-white/10"}`}
+                            className={`flex-row items-center p-3 mb-2 rounded-xl border ${
+                              isSelected
+                                ? "bg-[#EA580C]/20 border-[#EA580C]"
+                                : "bg-white/5 border-white/10"
+                            } ${!isLastMessage ? "opacity-50" : ""}`} // 🟢 Dim old options
                           >
                             <Ionicons
                               name={iconName}
@@ -493,7 +496,8 @@ export default function ChatScreen() {
                         );
                       })}
 
-                      {selectedOptions.length > 0 && (
+                      {/* 🟢 Submit Button - Only show for the LATEST message */}
+                      {selectedOptions.length > 0 && isLastMessage && (
                         <TouchableOpacity
                           onPress={submitOption}
                           className="flex-row items-center justify-center p-3 mt-2 rounded-xl bg-[#EA580C]"
@@ -515,7 +519,7 @@ export default function ChatScreen() {
                   {isBot && isLastMessage && showNextButton && (
                     <View className="mt-6 ml-12 self-start">
                       <TouchableOpacity
-                        onPress={() => router.back()} // Or your next question logic
+                        onPress={() => router.back()}
                         className="bg-[#F97316] py-3 px-6 rounded-xl shadow-lg border border-white/20"
                       >
                         <Text className="text-white font-bold text-[15px]">
