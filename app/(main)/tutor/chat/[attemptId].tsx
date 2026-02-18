@@ -241,10 +241,11 @@ export default function ChatScreen() {
             // If we find a Bot message with a decision...
             if (msg.sender === "bot" && msg.payload?.decision) {
               const decision = msg.payload.decision;
-              const isCorrect =
-                decision === "correct" || decision === "repeat_with_correction";
+              const isCorrect = decision === "correct";
               const isError =
-                decision === "Need Study" || decision === "Improvements";
+                decision === "Need Study" ||
+                decision === "Improvements" ||
+                decision === "repeat_with_correction";
 
               // ...Apply that status to the PREVIOUS message (if it was from the user)
               if (i > 0 && history[i - 1].sender === "user") {
@@ -262,7 +263,7 @@ export default function ChatScreen() {
             lastMsg.payload?.decision
           ) {
             const d = lastMsg.payload.decision;
-            if (d === "correct" || d === "repeat_with_correction") {
+            if (d === "correct") {
               setShowNextButton(true);
             }
           }
