@@ -141,10 +141,11 @@ export default function ChatScreen() {
       const decision = data?.payload?.decision;
 
       // 🟢 Determine Status
-      const isAnswerCorrect =
-        decision === "correct" || decision === "repeat_with_correction";
+      const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
-        decision === "Need Study" || decision === "Improvements";
+        decision === "Need Study" ||
+        decision === "Improvements" ||
+        decision === "repeat_with_correction";
 
       // 🟢 Show Next Button if answer is correct
       if (isAnswerCorrect) {
@@ -219,29 +220,57 @@ export default function ChatScreen() {
           Array.isArray(data.messages) &&
           data.messages.length > 0
         ) {
-          const history: Message[] = data.messages.map((msg: any) => ({
+          // 1. First Pass: Map raw data to Message objects
+          let history: Message[] = data.messages.map((msg: any) => ({
             id: msg.sequence.toString(),
             text:
               msg.role === "assistant"
                 ? msg.payload?.message || msg.text
                 : msg.text,
             sender: msg.role === "assistant" ? "bot" : "user",
-            isError:
-              msg.payload?.decision === "Need Study" ||
-              msg.payload?.decision === "Improvements",
-            isCorrect:
-              msg.payload?.decision === "correct" ||
-              msg.payload?.decision === "repeat_with_correction",
+            // We initialize these as false, then fix them in the loop below
+            isError: false,
+            isCorrect: false,
             payload: msg.payload,
           }));
 
-          // 🟢 FIX: Ensure the Initial Question is always at the top
-          // If the API history doesn't start with the question (or starts with a user reply), we prepend it.
+          // 2. Second Pass: "Look Back" to apply Bot decisions to User messages
+          for (let i = 0; i < history.length; i++) {
+            const msg = history[i];
+
+            // If we find a Bot message with a decision...
+            if (msg.sender === "bot" && msg.payload?.decision) {
+              const decision = msg.payload.decision;
+              const isCorrect =
+                decision === "correct" || decision === "repeat_with_correction";
+              const isError =
+                decision === "Need Study" || decision === "Improvements";
+
+              // ...Apply that status to the PREVIOUS message (if it was from the user)
+              if (i > 0 && history[i - 1].sender === "user") {
+                history[i - 1].isCorrect = isCorrect;
+                history[i - 1].isError = isError;
+              }
+            }
+          }
+
+          // 3. Check if we should restore the "Next Question" button
+          const lastMsg = history[history.length - 1];
+          if (
+            lastMsg &&
+            lastMsg.sender === "bot" &&
+            lastMsg.payload?.decision
+          ) {
+            const d = lastMsg.payload.decision;
+            if (d === "correct" || d === "repeat_with_correction") {
+              setShowNextButton(true);
+            }
+          }
+
+          // 4. Prepend Initial Question if missing
           if (initialQuestion) {
             const firstMsg = history[0];
-
-            // Check if the first message text matches the initial question.
-            // If they are different, it means the API didn't return the prompt message.
+            // Check if history already starts with the question
             const isQuestionMissing =
               !firstMsg || firstMsg.text.trim() !== initialQuestion.trim();
 
@@ -251,10 +280,8 @@ export default function ChatScreen() {
                 text: initialQuestion,
                 sender: "bot",
               };
-              // Prepend the question to the history
               setMessages([questionMsg, ...history]);
             } else {
-              // Question is already in history, just set it
               setMessages(history);
             }
           } else {
