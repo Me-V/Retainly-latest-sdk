@@ -30,11 +30,15 @@ type Message = {
   sender: "user" | "bot";
   isError?: boolean;
   isCorrect?: boolean;
+  userSelected?: string[];
   payload?: {
     buttons?: { label: string; value: string }[];
-    hint_type?: "radio" | "checkbox"; // Though you mentioned radio only, keeping flexibility
+    hint_type?: "radio" | "checkbox";
     decision?: string;
     message?: string;
+    // 🟢 NEW: Added score properties to fix the TypeScript error
+    progress_score?: number;
+    penalty_score?: number;
   };
 };
 
@@ -60,18 +64,24 @@ export default function ChatScreen() {
   const [isRecording, setIsRecording] = useState(false);
   const [sending, setSending] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
-  // 🟢 NEW: State to control "Next Question" button visibility
   const [showNextButton, setShowNextButton] = useState(false);
+
+  const [progressScore, setProgressScore] = useState(0);
+  const [penaltyScore, setPenaltyScore] = useState(0);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const transcriptRef = useRef("");
 
+  const isSendingRef = useRef(false);
+
   // --- VOICE LOGIC ---
   useSpeechRecognitionEvent("start", () => setIsRecording(true));
   useSpeechRecognitionEvent("end", () => setIsRecording(false));
   useSpeechRecognitionEvent("result", (event) => {
+    if (isSendingRef.current) return;
+
     const text = event.results[0]?.transcript || "";
     if (event.isFinal) {
       transcriptRef.current += text + " ";
@@ -126,7 +136,13 @@ export default function ChatScreen() {
     setMessages((prev) => [...prev, userMsg]);
 
     // Reset UI states
-    if (isRecording) ExpoSpeechRecognitionModule.stop();
+    if (isRecording) {
+      if (typeof ExpoSpeechRecognitionModule.abort === "function") {
+        ExpoSpeechRecognitionModule.abort();
+      } else {
+        ExpoSpeechRecognitionModule.stop();
+      }
+    }
     setInputText("");
     transcriptRef.current = "";
     setSelectedOptions([]);
@@ -140,12 +156,21 @@ export default function ChatScreen() {
       const botText = data?.payload?.message || data?.message || data?.response;
       const decision = data?.payload?.decision;
 
+      //Update Scores if provided by API
+      if (data?.payload?.progress_score !== undefined) {
+        setProgressScore(data.payload.progress_score);
+      }
+      if (data?.payload?.penalty_score !== undefined) {
+        setPenaltyScore(data.payload.penalty_score);
+      }
+
       // 🟢 Determine Status
       const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
         decision === "Need Study" ||
         decision === "Improvements" ||
-        decision === "repeat_with_correction";
+        decision === "repeat_with_correction" ||
+        decision === "Penalty";
 
       // 🟢 Show Next Button if answer is correct
       if (isAnswerCorrect) {
@@ -175,13 +200,21 @@ export default function ChatScreen() {
       Alert.alert("Error", "Failed to send message.");
     } finally {
       setSending(false);
+      isSendingRef.current = false;
     }
   };
 
   const handleClear = () => {
     setInputText("");
     transcriptRef.current = "";
-    if (isRecording) ExpoSpeechRecognitionModule.stop();
+    // 🟢 STRICTLY KILL MIC ON CLEAR AS WELL
+    if (isRecording) {
+      if (typeof ExpoSpeechRecognitionModule.abort === "function") {
+        ExpoSpeechRecognitionModule.abort();
+      } else {
+        ExpoSpeechRecognitionModule.stop();
+      }
+    }
   };
 
   const handleOptionSelect = (value: string, type: string = "radio") => {
@@ -245,7 +278,8 @@ export default function ChatScreen() {
               const isError =
                 decision === "Need Study" ||
                 decision === "Improvements" ||
-                decision === "repeat_with_correction";
+                decision === "repeat_with_correction" ||
+                decision === "Penalty";
 
               // ...Apply that status to the PREVIOUS message (if it was from the user)
               if (i > 0 && history[i - 1].sender === "user") {
@@ -288,6 +322,18 @@ export default function ChatScreen() {
           } else {
             setMessages(history);
           }
+
+          const lastBotMsgWithScores = [...history]
+            .reverse()
+            .find(
+              (m) =>
+                m.sender === "bot" && m.payload?.progress_score !== undefined,
+            );
+
+          if (lastBotMsgWithScores && lastBotMsgWithScores.payload) {
+            setProgressScore(lastBotMsgWithScores.payload.progress_score || 0);
+            setPenaltyScore(lastBotMsgWithScores.payload.penalty_score || 0);
+          }
         }
       } catch (error) {
         console.error("History Error", error);
@@ -312,15 +358,38 @@ export default function ChatScreen() {
     <LinearGradient colors={["#240b36", "#1a0b2e"]} className="flex-1">
       <SafeAreaView className="flex-1">
         {/* --- HEADER --- */}
+        {/* --- HEADER --- */}
         <View className="px-5 pt-4 pb-2 w-full">
           <View className="flex-row justify-end mb-2">
             <Text className="text-white font-bold text-[16px]">
-              Score: 1/20
+              Score: {progressScore}/100
             </Text>
           </View>
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
-            <View className="h-full bg-[#EA580C] rounded-full w-[5%]" />
-            <View className="absolute top-[-2px] left-[5%] w-4 h-4 rounded-full bg-[#EA580C] border-2 border-white shadow-sm" />
+            {/* 🟢 Progress Bar (Fills from Left) */}
+            <View
+              className="absolute left-0 top-0 bottom-0 bg-[#EA580C] rounded-full"
+              style={{ width: `${progressScore}%`, zIndex: 1 }}
+            />
+
+            {/* 🟢 Penalty Bar (Fills from Right) */}
+            {penaltyScore > 0 && (
+              <View
+                className="absolute right-0 top-0 bottom-0 bg-red-600 rounded-full"
+                style={{ width: `${penaltyScore}%`, zIndex: 1 }}
+              />
+            )}
+
+            {/* 🟢 Dot Indicator */}
+            {/* Left offset matches progressScore, negative translation keeps it centered on the boundary */}
+            <View
+              className="absolute top-[-2px] w-4 h-4 rounded-full bg-[#EA580C] border-2 border-white shadow-sm"
+              style={{
+                left: `${progressScore}%`,
+                transform: [{ translateX: -8 }],
+                zIndex: 2,
+              }}
+            />
           </View>
         </View>
         {!inputText && !isRecording && !hasUserMessage && (
