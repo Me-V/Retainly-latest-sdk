@@ -358,10 +358,9 @@ export default function ChatScreen() {
     <LinearGradient colors={["#240b36", "#1a0b2e"]} className="flex-1">
       <SafeAreaView className="flex-1">
         {/* --- HEADER --- */}
-        {/* --- HEADER --- */}
-        <View className="px-5 pt-4 pb-2 w-full">
+        <View className="px-5 pb-2 w-full">
           <View className="flex-row justify-end mb-2">
-            <Text className="text-white font-bold text-[16px]">
+            <Text className="text-white font-bold text-[16px] mb-2">
               Score: {progressScore}/100
             </Text>
           </View>
