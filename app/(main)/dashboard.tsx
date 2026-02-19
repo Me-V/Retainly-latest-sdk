@@ -76,7 +76,6 @@ const HomeDashboard: React.FC = () => {
     if (key === "practice") router.push("/practice/chooseSubject");
     if (key === "olympics") router.push("/olympics/quizes");
     if (key === "tutorials") router.push("/tutor/chat");
-    console.log("Quick Action Pressed:", key);
   };
 
   useEffect(() => {

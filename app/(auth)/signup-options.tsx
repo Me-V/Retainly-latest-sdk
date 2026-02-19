@@ -59,10 +59,10 @@ export default function SignInScreen() {
           if (firebaseToken) {
             const backendResponse = await loginWithGoogle(
               firebaseToken,
-              googleUser.email
+              googleUser.email,
             );
 
-            console.log("#######backendResponse", backendResponse);
+            // console.log("#######backendResponse", backendResponse);
 
             if (backendResponse.consent_required === true) {
               router.push({
@@ -79,7 +79,7 @@ export default function SignInScreen() {
                 setUser({
                   token: backendResponse.token,
                   userInfo: backendResponse.user,
-                })
+                }),
               );
             } else {
               Alert.alert("Login failed", "Unexpected server response.");
