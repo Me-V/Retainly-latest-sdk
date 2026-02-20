@@ -361,7 +361,7 @@ export default function ChatScreen() {
         <View className="px-5 pb-2 w-full">
           <View className="flex-row justify-end mb-2">
             <Text className="text-white font-bold text-[16px] mb-2">
-              Score: {progressScore}/100
+              Score: {progressScore}%
             </Text>
           </View>
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
@@ -374,7 +374,7 @@ export default function ChatScreen() {
             {/* 🟢 Penalty Bar (Fills from Right) */}
             {penaltyScore > 0 && (
               <View
-                className="absolute right-0 top-0 bottom-0 bg-red-600 rounded-full"
+                className="absolute right-0 top-0 bottom-0 bg-red-600 rounded-r-full"
                 style={{ width: `${penaltyScore}%`, zIndex: 1 }}
               />
             )}

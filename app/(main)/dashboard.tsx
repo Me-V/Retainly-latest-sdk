@@ -173,7 +173,6 @@ const HomeDashboard: React.FC = () => {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      {/* 🟢 SOLUTION 2: Disable Gestures (Swipe Back) & Remove Header */}
       <Stack.Screen
         options={{
           headerShown: false, // Hides the header (and its back button)
@@ -235,10 +234,8 @@ const HomeDashboard: React.FC = () => {
           {/* Daily Practice Goal Card */}
           <GlowCard className="flex-row items-center px-5 py-10 h-32">
             <View className="relative w-24 h-24 items-center justify-center mr-5">
-              {/* 🟢 Background SVG Wrapper (pinned to all edges) */}
               <View className="absolute inset-0 items-center justify-center">
                 <Svg width="96" height="96">
-                  {/* Background Track Circle */}
                   <Circle
                     stroke="rgba(255, 255, 255, 0.1)"
                     fill="none"
@@ -262,9 +259,9 @@ const HomeDashboard: React.FC = () => {
                 </Svg>
               </View>
 
-              {/* 🟢 Centered Percentage Text (z-10 ensures it's above the SVG) */}
               <Text className="text-white font-bold text-[20px] z-10">
-                {Math.round(analyticsData.overall_average)}%
+                {/* Number(toFixed(1)) keeps 1 decimal if needed, but drops it if it's .0 */}
+                {Number(analyticsData.overall_average.toFixed(1))}%
               </Text>
             </View>
 
