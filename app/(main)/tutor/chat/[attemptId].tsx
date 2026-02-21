@@ -428,7 +428,7 @@ export default function ChatScreen() {
         <ScrollView
           ref={scrollViewRef}
           style={{ flex: 1, paddingHorizontal: 16, marginTop: 16 }}
-          contentContainerStyle={{ paddingBottom: 240 }}
+          contentContainerStyle={{ paddingBottom: 350 }}
           onContentSizeChange={() =>
             scrollViewRef.current?.scrollToEnd({ animated: true })
           }
