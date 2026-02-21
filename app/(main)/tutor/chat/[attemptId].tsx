@@ -26,6 +26,7 @@ import {
 } from "expo-speech-recognition";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BotIcon } from "@/assets/logo2";
+import { Fontisto } from "@expo/vector-icons";
 
 type Message = {
   id: string;
@@ -730,8 +731,10 @@ export default function ChatScreen() {
               /* ---------------------------------------------------- */
               /* 🟢 MIC MODE                                          */
               /* ---------------------------------------------------- */
+              /* ---------------------------------------------------- */
+              /* MIC MODE                                             */
+              /* ---------------------------------------------------- */
               <>
-                {/* 1. STAGING AREA */}
                 {(inputText.length > 0 || isRecording) && (
                   <View
                     style={{
@@ -744,7 +747,7 @@ export default function ChatScreen() {
                     <View
                       style={{
                         width: "100%",
-                        backgroundColor: "rgba(0,0,0,0.4)",
+                        backgroundColor: "rgba(0,0,0,0.8)",
                         borderColor: "rgba(217, 119, 6, 0.5)",
                         borderWidth: 1,
                         borderRadius: 16,
@@ -773,27 +776,20 @@ export default function ChatScreen() {
                     alignItems: "center",
                     justifyContent: "center",
                     width: "100%",
-                    paddingHorizontal: 40,
+                    paddingHorizontal: 24,
+                    minHeight: 80, // 🟢 Prevents layout jumping when side buttons appear
                   }}
                 >
-                  {/* LEFT: Clear Button OR Keyboard Toggle */}
-                  <View
-                    style={{
-                      width: 56,
-                      height: 56,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 24,
-                    }}
-                  >
-                    {inputText.length > 0 || isRecording ? (
+                  {/* LEFT: Clear Button (Absolutely positioned so center stays centered) */}
+                  <View style={{ position: "absolute", left: 24, zIndex: 10 }}>
+                    {(inputText.length > 0 || isRecording) && (
                       <TouchableOpacity
                         onPress={handleClear}
                         style={{
                           width: 48,
                           height: 48,
                           borderRadius: 24,
-                          backgroundColor: "rgba(255,255,255,0.1)",
+                          backgroundColor: "rgba(255,255,255,0.5)",
                           alignItems: "center",
                           justifyContent: "center",
                           borderWidth: 1,
@@ -802,74 +798,113 @@ export default function ChatScreen() {
                       >
                         <Ionicons name="close" size={24} color="white" />
                       </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() => setIsKeyboardMode(true)}
+                    )}
+                  </View>
+
+                  {/* CENTER: Figma Pill Design (Speak & Type) */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: "#291442",
+                      borderColor: "rgba(255,255,255,0.1)",
+                      borderWidth: 1,
+                      borderRadius: 40,
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                    }}
+                  >
+                    {/* Speak Button */}
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      disabled={isMicDisabled}
+                      onPress={handleToggleMic}
+                      style={{ alignItems: "center", width: 64 }}
+                    >
+                      <View
                         style={{
                           width: 48,
                           height: 48,
                           borderRadius: 24,
-                          backgroundColor: "rgba(255,255,255,0.1)",
+                          backgroundColor: isMicDisabled
+                            ? "rgba(75, 85, 99, 0.5)"
+                            : isRecording
+                              ? "#EF4444"
+                              : "#EA580C",
                           alignItems: "center",
                           justifyContent: "center",
-                          borderWidth: 1,
-                          borderColor: "rgba(255,255,255,0.1)",
+                          shadowColor: isMicDisabled ? "#000" : "#EA580C",
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.4,
+                          shadowRadius: 6,
+                          elevation: 5,
                         }}
                       >
-                        <Ionicons name="keypad" size={22} color="white" />
-                      </TouchableOpacity>
-                    )}
+                        <Ionicons
+                          name={
+                            isRecording
+                              ? "stop"
+                              : isMicDisabled
+                                ? "mic-off"
+                                : "mic"
+                          }
+                          size={24}
+                          color={isMicDisabled ? "#ccc" : "white"}
+                        />
+                      </View>
+                      <Text
+                        style={{
+                          color: "rgba(255,255,255,0.7)",
+                          fontSize: 13,
+                          marginTop: 6,
+                          fontWeight: "500",
+                        }}
+                      >
+                        Speak
+                      </Text>
+                    </TouchableOpacity>
+
+                    {/* Divider Line */}
+                    <View
+                      style={{
+                        width: 1,
+                        height: 48,
+                        backgroundColor: "rgba(255,255,255,0.15)",
+                        marginHorizontal: 12,
+                      }}
+                    />
+
+                    {/* Type Button */}
+                    <TouchableOpacity
+                      onPress={() => setIsKeyboardMode(true)}
+                      style={{ alignItems: "center", width: 64 }}
+                    >
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Fontisto name="keyboard" size={24} color="#EA580C" />
+                      </View>
+                      <Text
+                        style={{
+                          color: "rgba(255,255,255,0.7)",
+                          fontSize: 13,
+                          marginTop: 6,
+                          fontWeight: "500",
+                        }}
+                      >
+                        Type
+                      </Text>
+                    </TouchableOpacity>
                   </View>
 
-                  {/* CENTER: Mic Button */}
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    disabled={isMicDisabled}
-                    onPress={handleToggleMic}
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 40,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      backgroundColor: isMicDisabled
-                        ? "rgba(75, 85, 99, 0.5)"
-                        : isRecording
-                          ? "#EF4444"
-                          : "#EA580C",
-                      borderWidth: 4,
-                      borderColor: isMicDisabled
-                        ? "#6B7280"
-                        : isRecording
-                          ? "#FCA5A5"
-                          : "#F97316",
-                      elevation: 10,
-                      shadowColor: isMicDisabled ? "#000" : "#EA580C",
-                      shadowOffset: { width: 0, height: 8 },
-                      shadowOpacity: 0.4,
-                      shadowRadius: 8,
-                      marginBottom: 10,
-                    }}
-                  >
-                    <Ionicons
-                      name={
-                        isRecording ? "stop" : isMicDisabled ? "mic-off" : "mic"
-                      }
-                      size={40}
-                      color={isMicDisabled ? "#ccc" : "white"}
-                    />
-                  </TouchableOpacity>
-
-                  {/* RIGHT: Send Button */}
-                  <View
-                    style={{
-                      width: 56,
-                      height: 56,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginLeft: 24,
-                    }}
-                  >
+                  {/* RIGHT: Send Button (Absolutely positioned so center stays centered) */}
+                  <View style={{ position: "absolute", right: 24, zIndex: 10 }}>
                     {inputText.length > 0 && (
                       <TouchableOpacity
                         onPress={() => handleSend()}
