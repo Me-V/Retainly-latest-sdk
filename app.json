@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "Retainly",
-    "slug": "expo-project",
-    "owner": "hello_kitty19",
+    "slug": "Retainly",
+    "owner": "hello_kitty24",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/AppLogo.png",
@@ -10,7 +10,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow $(PRODUCT_NAME) to use speech recognition.",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use the microphone."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +22,11 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.education.retainlyapp",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +47,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow $(PRODUCT_NAME) to use the microphone."
+        }
       ]
     ],
     "experiments": {
@@ -47,7 +61,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "6d8536a0-65d0-4756-947f-f3124269791a"
+        "projectId": "caa1d179-b2ea-4991-b830-96e44efb2a73"
       }
     }
   }

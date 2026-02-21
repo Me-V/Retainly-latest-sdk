@@ -11,6 +11,7 @@ import {
   NativeSyntheticEvent,
   useWindowDimensions,
   Image,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -19,50 +20,14 @@ import type { RootState } from "@/store";
 import { getQuestions } from "@/services/api.edu";
 import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { GlassyListBtn } from "@/components/GlassyListBtn";
+import { startAttempt } from "@/services/api.chat";
+import { Octicons } from "@expo/vector-icons";
 
 // --- TYPES ---
 type Question = { id?: string; name?: string; title?: string; text?: string };
 const getId = (q: Question) => String(q.id || "");
 const getName = (q: Question) => q.title || q.text || "Unnamed Question";
-
-// --- SOLID PURPLE GLASSY BUTTON COMPONENT ---
-const QuestionBtn = ({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) => (
-  <TouchableOpacity
-    activeOpacity={0.8}
-    onPress={onPress}
-    className="w-full mb-4"
-    style={{
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 6,
-    }}
-  >
-    <LinearGradient
-      // Subtle white gradient: Lighter at top (12%), Darker at bottom (4%)
-      colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.04)"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="rounded-xl py-4 items-center justify-center border border-white/10"
-      style={{ borderRadius: 16 }}
-    >
-      <Text
-        numberOfLines={3}
-        ellipsizeMode="tail"
-        className="text-white font-semibold text-[15px] leading-snug text-center px-3"
-      >
-        {label}
-      </Text>
-    </LinearGradient>
-  </TouchableOpacity>
-);
 
 export default function SubTopicQuestions() {
   const router = useRouter();
@@ -81,6 +46,8 @@ export default function SubTopicQuestions() {
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const [startingAttempt, setStartingAttempt] = useState(false);
 
   // Inner scroll state
   const [containerH, setContainerH] = useState(0);
@@ -108,17 +75,39 @@ export default function SubTopicQuestions() {
     load();
   }, [token, subTopicId]);
 
-  const handleOpenQuestion = (q: Question) => {
+  const handleOpenQuestion = async (q: Question) => {
+    console.log("Question:", q);
+
     const questionId = getId(q);
-    if (!questionId) return;
-    // router.push({ pathname: "/practice/[questionId]/attempt", params: { questionId } } as const);
-    console.log("Open question:", questionId, getName(q));
+    if (!questionId || !token) return;
+
+    setStartingAttempt(true);
+    try {
+      // 1. Call API to start attempt
+      const response = await startAttempt(token, questionId);
+
+      // 2. Navigate to Chat Screen with attempt_id
+      if (response?.attempt_id) {
+        router.push({
+          pathname: "/tutor/chat/[attemptId]",
+          params: {
+            attemptId: response.attempt_id,
+            initialQuestion: q.text || q.title || "Practice Question",
+          },
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Error", "Could not start practice session.");
+    } finally {
+      setStartingAttempt(false);
+    }
   };
 
   // --- SCROLL LOGIC ---
   const canScroll = useMemo(
     () => contentH > containerH + 10,
-    [contentH, containerH]
+    [contentH, containerH],
   );
   const maxScroll = Math.max(0, contentH - containerH);
   const atBottom = canScroll && scrollY >= maxScroll - 20;
@@ -140,8 +129,16 @@ export default function SubTopicQuestions() {
       <ScrollView className="flex-1" contentContainerClassName="pb-6 flex-grow">
         {/* Header */}
         <View className="px-6 flex-row justify-between items-center z-10">
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-            <BackIcon color="white" />
+          <TouchableOpacity
+            onPress={() => router.push("/(main)/dashboard")}
+            activeOpacity={0.8}
+          >
+            <Octicons
+              name="home-fill"
+              size={28}
+              color="#FFA629"
+              className="ml-2.5"
+            />
           </TouchableOpacity>
           <Image
             source={require("@/assets/AppLogo.png")}
@@ -267,10 +264,11 @@ export default function SubTopicQuestions() {
                       </Text>
                     ) : (
                       questions.map((q) => (
-                        <QuestionBtn
+                        <GlassyListBtn
                           key={getId(q)}
                           label={getName(q)}
                           onPress={() => handleOpenQuestion(q)}
+                          numberOfLines={3} // 🟢 Questions get 3 lines
                         />
                       ))
                     )}

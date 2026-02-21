@@ -11,11 +11,12 @@ import { getLiveQuizzes, OlympicQuiz } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { getSubjects } from "@/services/api.edu";
+import { getSubjects, getClassboardAnalytics } from "@/services/api.edu";
 import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
 import { Ionicons } from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
+import Svg, { Circle } from "react-native-svg";
 
 // ... [Keep your ProgressBar, SubjectRow, Types, and mockSubjects exactly as they are] ...
 
@@ -49,9 +50,12 @@ const HomeDashboard: React.FC = () => {
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [quizzes, setQuizzes] = useState<OlympicQuiz[]>([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    overall_average: 0,
+    attempted_question_count: 0,
+    total_question_count: 0,
+  });
 
-  // 🟢 SOLUTION 1: Handle Android Hardware Back Button
-  // Using 'useFocusEffect' ensures this only runs when the Dashboard is the active screen.
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -63,19 +67,49 @@ const HomeDashboard: React.FC = () => {
       // Add the listener and keep the subscription
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        onBackPress
+        onBackPress,
       );
 
       // Remove the listener using the subscription object (Fixes the deprecation error)
       return () => subscription.remove();
-    }, [])
+    }, []),
   );
+
+  const radius = 36;
+  const strokeWidth = 6;
+  const circumference = 2 * Math.PI * radius;
+  const progressOffset =
+    circumference - (analyticsData.overall_average / 100) * circumference;
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!token || !boardId || !classId) return;
+      try {
+        const data = await getClassboardAnalytics(token, {
+          boardId,
+          classId,
+          ...(includeStream ? { streamId } : {}),
+        });
+
+        console.log("---------------->>>>>>>>>>>", data);
+
+        setAnalyticsData({
+          overall_average: data.overall_average || 0,
+          attempted_question_count: data.attempted_question_count || 0,
+          total_question_count: data.total_question_count || 0,
+        });
+      } catch (error) {
+        console.error("Failed to load analytics", error);
+      }
+    };
+    fetchAnalytics();
+  }, [token, boardId, classId, streamId, includeStream]);
 
   // ... [Keep handleQuickAction and useEffects for data loading exactly as is] ...
   const handleQuickAction = (key: string) => {
     if (key === "practice") router.push("/practice/chooseSubject");
     if (key === "olympics") router.push("/olympics/quizes");
-    console.log("Quick Action Pressed:", key);
+    if (key === "tutorials") router.push("/tutor/chat");
   };
 
   useEffect(() => {
@@ -119,7 +153,7 @@ const HomeDashboard: React.FC = () => {
       name: s.name || s.title || `Subject ${i + 1}`,
       value: Math.max(
         0,
-        Math.min(100, Number(s.progress ?? s.percentage ?? s.completion ?? 0))
+        Math.min(100, Number(s.progress ?? s.percentage ?? s.completion ?? 0)),
       ),
       fill: palette[i % palette.length],
     }));
@@ -128,7 +162,7 @@ const HomeDashboard: React.FC = () => {
   const displaySubjects = allFromApi.length > 0 ? allFromApi : mockSubjects;
   const sortedSubjects = useMemo(
     () => [...displaySubjects].sort((a, b) => b.value - a.value),
-    [displaySubjects]
+    [displaySubjects],
   );
   const moreThanFour = sortedSubjects.length > 4;
 
@@ -139,7 +173,6 @@ const HomeDashboard: React.FC = () => {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      {/* 🟢 SOLUTION 2: Disable Gestures (Swipe Back) & Remove Header */}
       <Stack.Screen
         options={{
           headerShown: false, // Hides the header (and its back button)
@@ -200,15 +233,45 @@ const HomeDashboard: React.FC = () => {
 
           {/* Daily Practice Goal Card */}
           <GlowCard className="flex-row items-center px-5 py-10 h-32">
-            <View className="w-24 h-24 rounded-full border-4 border-[#F59E51] items-center justify-center mr-5">
-              <Text className="text-white font-bold text-[20px]">80%</Text>
+            <View className="relative w-24 h-24 items-center justify-center mr-5">
+              <View className="absolute inset-0 items-center justify-center">
+                <Svg width="96" height="96">
+                  <Circle
+                    stroke="rgba(255, 255, 255, 0.1)"
+                    fill="none"
+                    cx="48"
+                    cy="48"
+                    r={radius}
+                    strokeWidth={strokeWidth}
+                  />
+                  {/* Filled Progress Circle */}
+                  <Circle
+                    stroke="#F59E51"
+                    fill="none"
+                    cx="48"
+                    cy="48"
+                    r={radius}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={progressOffset}
+                    strokeLinecap="round"
+                  />
+                </Svg>
+              </View>
+
+              <Text className="text-white font-bold text-[20px] z-10">
+                {/* Number(toFixed(1)) keeps 1 decimal if needed, but drops it if it's .0 */}
+                {Number(analyticsData.overall_average.toFixed(1))}%
+              </Text>
             </View>
+
             <View className="flex-1">
               <Text className="text-white text-[20px] font-bold mb-1">
                 Daily Practice Goal
               </Text>
               <Text className="text-white/70 text-[16px] leading-5 mt-1">
-                You've completed 20/50 questions today.
+                You've completed {analyticsData.attempted_question_count}/
+                {analyticsData.total_question_count} questions today.
               </Text>
             </View>
           </GlowCard>
@@ -228,10 +291,7 @@ const HomeDashboard: React.FC = () => {
               <Ionicons name="chevron-forward" size={20} color="white" />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => handleQuickAction("mock")}
-              className="flex-row items-center p-5 active:bg-white/5"
-            >
+            <TouchableOpacity className="flex-row items-center p-5 active:bg-white/5">
               <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
                 <Ionicons name="document-text" size={20} color="#FBC02D" />
               </View>

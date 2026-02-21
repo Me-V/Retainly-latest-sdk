@@ -60,7 +60,7 @@ export default function SignInScreen() {
               googleUser.email
             );
 
-            console.log("#######backendResponse", backendResponse);
+            // console.log("#######backendResponse", backendResponse);
 
             if (backendResponse.consent_required === true) {
               router.push({

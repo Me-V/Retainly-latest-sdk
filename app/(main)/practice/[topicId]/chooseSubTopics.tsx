@@ -19,6 +19,8 @@ import type { RootState } from "@/store";
 import { getSubTopics } from "@/services/api.edu";
 import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { GlassyListBtn } from "@/components/GlassyListBtn";
+import { Octicons } from "@expo/vector-icons";
 
 // --- TYPES ---
 type SubTopic = { id?: string; uuid?: string; name?: string; title?: string };
@@ -38,47 +40,6 @@ const dummyData: SubTopic[] = [
   { id: "9", name: "Conservation of Energy" },
   { id: "10", name: "Collisions in 1D" },
 ];
-
-// --- SOLID PURPLE GLASSY BUTTON COMPONENT (Consistent Design) ---
-const SubTopicBtn = ({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) => (
-  <TouchableOpacity
-    activeOpacity={0.8}
-    onPress={onPress}
-    className="w-full mb-4"
-    style={{
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 6,
-    }}
-  >
-    <LinearGradient
-      // Subtle white gradient: Lighter at top (12%), Darker at bottom (4%)
-      colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.04)"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      className="rounded-xl py-4 items-center justify-center border border-white/10"
-      style={{ borderRadius: 16 }}
-    >
-      <Text
-        className="text-white font-semibold text-[16px] tracking-wide text-center px-4"
-        adjustsFontSizeToFit={true}
-        minimumFontScale={0.85}
-        numberOfLines={2}
-        ellipsizeMode="tail"
-      >
-        {label}
-      </Text>
-    </LinearGradient>
-  </TouchableOpacity>
-);
 
 export default function ChooseSubTopics() {
   const router = useRouter();
@@ -137,7 +98,7 @@ export default function ChooseSubTopics() {
   // --- SCROLL LOGIC ---
   const canScroll = useMemo(
     () => contentH > containerH + 10,
-    [contentH, containerH]
+    [contentH, containerH],
   );
 
   const maxScroll = Math.max(0, contentH - containerH);
@@ -160,8 +121,16 @@ export default function ChooseSubTopics() {
       <ScrollView className="flex-1" contentContainerClassName="pb-6 flex-grow">
         {/* Header */}
         <View className="px-6 flex-row justify-between items-center z-10">
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-            <BackIcon color="white" />
+          <TouchableOpacity
+            onPress={() => router.push("/(main)/dashboard")}
+            activeOpacity={0.8}
+          >
+            <Octicons
+              name="home-fill"
+              size={28}
+              color="#FFA629"
+              className="ml-2.5"
+            />
           </TouchableOpacity>
           <Image
             source={require("@/assets/AppLogo.png")}
@@ -288,10 +257,11 @@ export default function ChooseSubTopics() {
                       </Text>
                     ) : (
                       renderList.map((item) => (
-                        <SubTopicBtn
-                          key={getId(item)}
-                          label={getName(item)}
+                        <GlassyListBtn
+                          key={getId(item)} // Changed to use getId for safer key extraction
+                          label={getName(item)} // 🟢 FIX: Use getName(item) instead of item.title || "Chapter"
                           onPress={() => handleSelect(item)}
+                          numberOfLines={2}
                         />
                       ))
                     )}
