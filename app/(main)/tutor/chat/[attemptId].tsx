@@ -354,6 +354,14 @@ export default function ChatScreen() {
 
   const hasUserMessage = messages.some((msg) => msg.sender === "user");
 
+  const getProgressBarColor = (score: number) => {
+    if (score < 50) return "#FF0000";
+    if (score > 80) return "#62E362";
+    return "#FF7724";
+  };
+
+  const progressColor = getProgressBarColor(progressScore);
+
   return (
     <LinearGradient colors={["#240b36", "#1a0b2e"]} className="flex-1">
       <SafeAreaView className="flex-1">
@@ -367,8 +375,12 @@ export default function ChatScreen() {
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
             {/* 🟢 Progress Bar (Fills from Left) */}
             <View
-              className="absolute left-0 top-0 bottom-0 bg-[#EA580C] rounded-full"
-              style={{ width: `${progressScore}%`, zIndex: 1 }}
+              className="absolute left-0 top-0 bottom-0 rounded-full"
+              style={{
+                width: `${progressScore}%`,
+                backgroundColor: progressColor, // 🟢 Applied dynamic color
+                zIndex: 1,
+              }}
             />
 
             {/* 🟢 Penalty Bar (Fills from Right) */}
@@ -385,6 +397,7 @@ export default function ChatScreen() {
               className="absolute top-[-2px] w-4 h-4 rounded-full bg-[#EA580C] border-2 border-white shadow-sm"
               style={{
                 left: `${progressScore}%`,
+                backgroundColor: progressColor,
                 transform: [{ translateX: -8 }],
                 zIndex: 2,
               }}

@@ -22,6 +22,7 @@ import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { GlassyListBtn } from "@/components/GlassyListBtn";
 import { startAttempt } from "@/services/api.chat";
+import { Octicons } from "@expo/vector-icons";
 
 // --- TYPES ---
 type Question = { id?: string; name?: string; title?: string; text?: string };
@@ -128,8 +129,16 @@ export default function SubTopicQuestions() {
       <ScrollView className="flex-1" contentContainerClassName="pb-6 flex-grow">
         {/* Header */}
         <View className="px-6 flex-row justify-between items-center z-10">
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-            <BackIcon color="white" />
+          <TouchableOpacity
+            onPress={() => router.push("/(main)/dashboard")}
+            activeOpacity={0.8}
+          >
+            <Octicons
+              name="home-fill"
+              size={28}
+              color="#FFA629"
+              className="ml-2.5"
+            />
           </TouchableOpacity>
           <Image
             source={require("@/assets/AppLogo.png")}

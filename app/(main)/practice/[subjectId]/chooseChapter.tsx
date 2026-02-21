@@ -19,6 +19,7 @@ import { getTopics } from "@/services/api.edu";
 import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { GlassyListBtn } from "@/components/GlassyListBtn";
+import { Octicons } from "@expo/vector-icons";
 
 // --- TYPES ---
 type Topic = {
@@ -76,7 +77,7 @@ export default function SubjectTopics() {
           (res || []).map((t: any) => ({
             id: String(t.id),
             title: String(t.name ?? t.title ?? ""),
-          }))
+          })),
         );
       } finally {
         setLoading(false);
@@ -98,7 +99,7 @@ export default function SubjectTopics() {
   // --- SCROLL LOGIC ---
   const canScroll = useMemo(
     () => contentH > containerH + 10,
-    [contentH, containerH]
+    [contentH, containerH],
   );
 
   const maxScroll = Math.max(0, contentH - containerH);
@@ -125,8 +126,16 @@ export default function SubjectTopics() {
       <ScrollView className="flex-1" contentContainerClassName="pb-6 flex-grow">
         {/* Header */}
         <View className="px-6 flex-row justify-between items-center z-10">
-          <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-            <BackIcon color="white" />
+          <TouchableOpacity
+            onPress={() => router.push("/(main)/dashboard")}
+            activeOpacity={0.8}
+          >
+            <Octicons
+              name="home-fill"
+              size={28}
+              color="#FFA629"
+              className="ml-2.5"
+            />
           </TouchableOpacity>
           <Image
             source={require("@/assets/AppLogo.png")}
@@ -256,7 +265,7 @@ export default function SubjectTopics() {
                           key={item.id}
                           label={item.title || "Chapter"}
                           onPress={() => handleOpenTopic(item)}
-                          numberOfLines={2} 
+                          numberOfLines={2}
                         />
                       ))
                     )}
