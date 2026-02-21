@@ -6,6 +6,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -69,6 +72,8 @@ export default function ChatScreen() {
   const [progressScore, setProgressScore] = useState(0);
   const [penaltyScore, setPenaltyScore] = useState(0);
 
+  const [isKeyboardMode, setIsKeyboardMode] = useState(false);
+
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -92,6 +97,8 @@ export default function ChatScreen() {
   });
 
   const handleToggleMic = async () => {
+    setIsKeyboardMode(false);
+
     if (isRecording) {
       ExpoSpeechRecognitionModule.stop();
     } else {
@@ -122,6 +129,9 @@ export default function ChatScreen() {
   const handleSend = async (manualText?: string) => {
     const textToSend = manualText || inputText.trim();
     if (!textToSend) return;
+
+    isSendingRef.current = true;
+    setIsKeyboardMode(false);
 
     const userMsgId = Date.now().toString();
 
@@ -207,7 +217,8 @@ export default function ChatScreen() {
   const handleClear = () => {
     setInputText("");
     transcriptRef.current = "";
-    // 🟢 STRICTLY KILL MIC ON CLEAR AS WELL
+    setIsKeyboardMode(false);
+
     if (isRecording) {
       if (typeof ExpoSpeechRecognitionModule.abort === "function") {
         ExpoSpeechRecognitionModule.abort();
@@ -363,8 +374,10 @@ export default function ChatScreen() {
   const progressColor = getProgressBarColor(progressScore);
 
   return (
-    <LinearGradient colors={["#240b36", "#1a0b2e"]} className="flex-1">
-      <SafeAreaView className="flex-1">
+    // 🟢 FIX 1: Removed className from LinearGradient, using style instead
+    <LinearGradient colors={["#240b36", "#1a0b2e"]} style={{ flex: 1 }}>
+      {/* 🟢 FIX 2: Removed className from SafeAreaView, using style instead */}
+      <SafeAreaView style={{ flex: 1 }}>
         {/* --- HEADER --- */}
         <View className="px-5 pb-2 w-full">
           <View className="flex-row justify-end mb-2">
@@ -373,37 +386,32 @@ export default function ChatScreen() {
             </Text>
           </View>
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
-            {/* 🟢 Progress Bar (Fills from Left) */}
             <View
               className="absolute left-0 top-0 bottom-0 rounded-full"
               style={{
                 width: `${progressScore}%`,
-                backgroundColor: progressColor, // 🟢 Applied dynamic color
+                backgroundColor: progressColor,
                 zIndex: 1,
               }}
             />
-
-            {/* 🟢 Penalty Bar (Fills from Right) */}
             {penaltyScore > 0 && (
               <View
                 className="absolute right-0 top-0 bottom-0 bg-red-600 rounded-r-full"
                 style={{ width: `${penaltyScore}%`, zIndex: 1 }}
               />
             )}
-
-            {/* 🟢 Dot Indicator */}
-            {/* Left offset matches progressScore, negative translation keeps it centered on the boundary */}
             <View
-              className="absolute top-[-2px] w-4 h-4 rounded-full bg-[#EA580C] border-2 border-white shadow-sm"
+              className="absolute top-[-2px] w-4 h-4 rounded-full border-2 border-white shadow-sm"
               style={{
                 left: `${progressScore}%`,
                 backgroundColor: progressColor,
-                transform: [{ translateX: -8 }],
+                transform: [{ translateX: -16 * (progressScore / 100) }],
                 zIndex: 2,
               }}
             />
           </View>
         </View>
+
         {!inputText && !isRecording && !hasUserMessage && (
           <View
             className="absolute inset-0 justify-center items-center z-0"
@@ -414,49 +422,43 @@ export default function ChatScreen() {
             </Text>
           </View>
         )}
+
         {/* --- CHAT AREA --- */}
+        {/* 🟢 FIX 3: Removed className from ScrollView, using style instead */}
         <ScrollView
           ref={scrollViewRef}
-          className="flex-1 px-4 mt-4"
-          contentContainerClassName="pb-60"
+          style={{ flex: 1, paddingHorizontal: 16, marginTop: 16 }}
+          contentContainerStyle={{ paddingBottom: 240 }}
           onContentSizeChange={() =>
             scrollViewRef.current?.scrollToEnd({ animated: true })
           }
         >
           {loadingHistory && messages.length <= 1 ? (
-            <ActivityIndicator size="large" color="#EA580C" className="mt-10" />
+            <ActivityIndicator
+              size="large"
+              color="#EA580C"
+              style={{ marginTop: 40 }}
+            />
           ) : (
-            // 🟢 FIX: Directly map the array. Do NOT wrap in { messages: ... }
             messages.map((msg, index) => {
               const isBot = msg.sender === "bot";
-
-              // 🟢 UPDATE: Removed 'index === messages.length - 1'
-              // This allows options to stay visible even for old messages.
               const showOptions =
                 isBot && msg.payload?.buttons && msg.payload.buttons.length > 0;
-
               const isLastMessage = index === messages.length - 1;
-
-              // Check hint type
               const isCheckbox = msg.payload?.hint_type === "checkbox";
-
-              // Helper: Determine if we need space for the icon (Status)
               const hasStatus = msg.isCorrect || msg.isError;
 
               return (
                 <View key={msg.id} className="w-full mb-6">
-                  {/* --- Message Bubble Row --- */}
                   <View
                     className={`flex-row items-start w-full ${isBot ? "justify-start" : "justify-end"}`}
                   >
-                    {/* Bot Avatar */}
                     {isBot && (
                       <View className="w-10 h-10 rounded-full bg-[#F97316] items-center justify-center mr-2 mt-1">
                         <BotIcon />
                       </View>
                     )}
 
-                    {/* Bubble */}
                     <View
                       className={`max-w-[80%] rounded-2xl relative ${
                         isBot
@@ -476,7 +478,6 @@ export default function ChatScreen() {
                         {msg.text}
                       </Text>
 
-                      {/* Status Icons (Bottom-Left) */}
                       {!isBot && (
                         <View className="absolute bottom-3 left-3">
                           {msg.isCorrect ? (
@@ -501,7 +502,6 @@ export default function ChatScreen() {
                       )}
                     </View>
 
-                    {/* User Avatar */}
                     {!isBot && (
                       <View className="w-10 h-10 rounded-full bg-[#EA580C] items-center justify-center border-2 border-white ml-2 mt-1">
                         <Ionicons name="person" size={20} color="white" />
@@ -509,7 +509,6 @@ export default function ChatScreen() {
                     )}
                   </View>
 
-                  {/* 🟢 UPDATED OPTIONS AREA */}
                   {showOptions && msg.payload?.buttons && (
                     <View className="mt-3 ml-12 w-[80%]">
                       <Text className="text-white/60 text-xs mb-2 uppercase tracking-widest font-bold">
@@ -533,7 +532,6 @@ export default function ChatScreen() {
 
                         const isSelected = selectedOptions.includes(val);
 
-                        // Icon Logic
                         let iconName: any = "radio-button-off";
                         if (isCheckbox) {
                           iconName = isSelected ? "checkbox" : "square-outline";
@@ -546,7 +544,6 @@ export default function ChatScreen() {
                         return (
                           <TouchableOpacity
                             key={i}
-                            // 🟢 Disable pressing if it's an old message
                             disabled={!isLastMessage}
                             onPress={() =>
                               handleOptionSelect(
@@ -559,7 +556,7 @@ export default function ChatScreen() {
                               isSelected
                                 ? "bg-[#EA580C]/20 border-[#EA580C]"
                                 : "bg-white/5 border-white/10"
-                            } ${!isLastMessage ? "opacity-50" : ""}`} // 🟢 Dim old options
+                            } ${!isLastMessage ? "opacity-50" : ""}`}
                           >
                             <Ionicons
                               name={iconName}
@@ -578,7 +575,6 @@ export default function ChatScreen() {
                         );
                       })}
 
-                      {/* 🟢 Submit Button - Only show for the LATEST message */}
                       {selectedOptions.length > 0 && isLastMessage && (
                         <TouchableOpacity
                           onPress={submitOption}
@@ -597,7 +593,6 @@ export default function ChatScreen() {
                     </View>
                   )}
 
-                  {/* Next Question Button */}
                   {isBot && isLastMessage && showNextButton && (
                     <View className="mt-6 ml-12 self-start">
                       <TouchableOpacity
@@ -615,7 +610,6 @@ export default function ChatScreen() {
             })
           )}
 
-          {/* Thinking Bubble */}
           {sending && (
             <View className="flex-row items-start justify-start mb-6 w-full">
               <View className="w-10 h-10 rounded-full bg-[#F97316] items-center justify-center mr-2 mt-1">
@@ -629,75 +623,276 @@ export default function ChatScreen() {
         </ScrollView>
 
         {/* --- FOOTER (STAGING & CONTROLS) --- */}
-        <View className="absolute bottom-0 w-full pb-8 pt-4 z-50 bg-transparent">
-          {/* 1. STAGING AREA (The "Draft" Bubble) */}
-          {/* Visible if there is text OR if recording */}
-          {(inputText.length > 0 || isRecording) && (
-            <View className="w-full items-center mb-6 px-6">
-              <View className="w-full bg-black/40 border border-[#d97706]/50 rounded-2xl p-4 shadow-lg backdrop-blur-md">
-                <Text className="text-[#fdba74] text-[16px] text-center italic leading-6">
-                  {inputText || "Listening..."}
-                </Text>
+        <KeyboardAvoidingView
+          // 🟢 FIX 1: Enforce "padding" behavior on both platforms
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
+          // 🟢 FIX 2: Increased vertical offset to push it higher over the keyboard
+          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 40}
+          style={{
+            position: "absolute",
+            bottom: 0,
+            width: "100%",
+            zIndex: 50,
+            backgroundColor: "transparent",
+          }}
+        >
+          {/* 🟢 FIX 3: Dynamic paddingBottom to make it float slightly above the keyboard when typing */}
+          <View
+            style={{
+              width: "100%",
+              paddingBottom: isKeyboardMode
+                ? Platform.OS === "ios"
+                  ? 40
+                  : 24
+                : 32,
+              paddingTop: 16,
+            }}
+          >
+            {isKeyboardMode ? (
+              /* ---------------------------------------------------- */
+              /* 🟢 KEYBOARD MODE                                     */
+              /* ---------------------------------------------------- */
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "flex-end",
+                  paddingHorizontal: 24,
+                  width: "100%",
+                }}
+              >
+                {/* Text Field */}
+                <View
+                  style={{
+                    flex: 1,
+                    backgroundColor: "white", // Darkened slightly for better contrast
+                    borderColor: "rgba(217, 119, 6, 0.5)",
+                    borderWidth: 1,
+                    borderRadius: 24,
+                    paddingTop: 12,
+                    paddingBottom: 12,
+                    paddingHorizontal: 20,
+                    maxHeight: 120,
+                    marginRight: 12,
+                  }}
+                >
+                  <TextInput
+                    value={inputText}
+                    onChangeText={(text) => {
+                      setInputText(text);
+                      transcriptRef.current = text;
+                    }}
+                    placeholder="Type your answer..."
+                    placeholderTextColor="black"
+                    style={{
+                      color: "black",
+                      fontSize: 16,
+                      lineHeight: 24,
+                      padding: 0,
+                      margin: 0,
+                    }}
+                    autoFocus={true}
+                    multiline={true}
+                  />
+                </View>
+
+                {/* Send Button */}
+                <View style={{ paddingBottom: 4 }}>
+                  <TouchableOpacity
+                    onPress={() => handleSend()}
+                    disabled={!inputText.trim() || sending}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: 2,
+                      borderColor: "rgba(255,255,255,0.2)",
+                      backgroundColor:
+                        inputText.trim() && !sending
+                          ? "#EA580C"
+                          : "rgba(75, 85, 99, 0.5)",
+                    }}
+                  >
+                    <Ionicons
+                      name="arrow-up"
+                      size={26}
+                      color={
+                        inputText.trim() && !sending
+                          ? "white"
+                          : "rgba(255,255,255,0.4)"
+                      }
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          )}
+            ) : (
+              /* ---------------------------------------------------- */
+              /* 🟢 MIC MODE                                          */
+              /* ---------------------------------------------------- */
+              <>
+                {/* 1. STAGING AREA */}
+                {(inputText.length > 0 || isRecording) && (
+                  <View
+                    style={{
+                      width: "100%",
+                      alignItems: "center",
+                      marginBottom: 24,
+                      paddingHorizontal: 24,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: "100%",
+                        backgroundColor: "rgba(0,0,0,0.4)",
+                        borderColor: "rgba(217, 119, 6, 0.5)",
+                        borderWidth: 1,
+                        borderRadius: 16,
+                        padding: 16,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#fdba74",
+                          fontSize: 16,
+                          textAlign: "center",
+                          fontStyle: "italic",
+                          lineHeight: 24,
+                        }}
+                      >
+                        {inputText || "Listening..."}
+                      </Text>
+                    </View>
+                  </View>
+                )}
 
-          {/* 2. CONTROLS ROW */}
-          <View className="flex-row items-center justify-center w-full px-10 gap-x-6">
-            {/* LEFT: Clear Button (Visible if text exists) */}
-            <View className="w-14 h-14 items-center justify-center">
-              {inputText.length > 0 && (
-                <TouchableOpacity
-                  onPress={handleClear}
-                  className="w-12 h-12 rounded-full bg-white/10 items-center justify-center border border-white/10"
+                {/* 2. CONTROLS ROW */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "100%",
+                    paddingHorizontal: 40,
+                  }}
                 >
-                  <Ionicons name="close" size={24} color="white" />
-                </TouchableOpacity>
-              )}
-            </View>
+                  {/* LEFT: Clear Button OR Keyboard Toggle */}
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 24,
+                    }}
+                  >
+                    {inputText.length > 0 || isRecording ? (
+                      <TouchableOpacity
+                        onPress={handleClear}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: "rgba(255,255,255,0.1)",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderWidth: 1,
+                          borderColor: "rgba(255,255,255,0.1)",
+                        }}
+                      >
+                        <Ionicons name="close" size={24} color="white" />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => setIsKeyboardMode(true)}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: "rgba(255,255,255,0.1)",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderWidth: 1,
+                          borderColor: "rgba(255,255,255,0.1)",
+                        }}
+                      >
+                        <Ionicons name="keypad" size={22} color="white" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
 
-            {/* CENTER: Mic Button */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              // 🟢 Disable interaction based on logic
-              disabled={isMicDisabled}
-              onPress={handleToggleMic}
-              className={`w-20 h-20 rounded-full items-center justify-center shadow-xl ${
-                isMicDisabled
-                  ? "bg-gray-600 border-4 border-gray-500 opacity-50" // 🟢 Grayed out style
-                  : isRecording
-                    ? "bg-red-500 border-4 border-red-300 scale-110"
-                    : "bg-[#EA580C] border-4 border-[#F97316]"
-              }`}
-              style={{
-                elevation: 10,
-                shadowColor: isMicDisabled ? "#000" : "#EA580C",
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.4,
-                shadowRadius: 8,
-                marginBottom: 10,
-              }}
-            >
-              <Ionicons
-                name={isRecording ? "stop" : isMicDisabled ? "mic-off" : "mic"} // 🟢 Optional: Change icon to mic-off
-                size={40}
-                color={isMicDisabled ? "#ccc" : "white"}
-              />
-            </TouchableOpacity>
+                  {/* CENTER: Mic Button */}
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    disabled={isMicDisabled}
+                    onPress={handleToggleMic}
+                    style={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 40,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: isMicDisabled
+                        ? "rgba(75, 85, 99, 0.5)"
+                        : isRecording
+                          ? "#EF4444"
+                          : "#EA580C",
+                      borderWidth: 4,
+                      borderColor: isMicDisabled
+                        ? "#6B7280"
+                        : isRecording
+                          ? "#FCA5A5"
+                          : "#F97316",
+                      elevation: 10,
+                      shadowColor: isMicDisabled ? "#000" : "#EA580C",
+                      shadowOffset: { width: 0, height: 8 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 8,
+                      marginBottom: 10,
+                    }}
+                  >
+                    <Ionicons
+                      name={
+                        isRecording ? "stop" : isMicDisabled ? "mic-off" : "mic"
+                      }
+                      size={40}
+                      color={isMicDisabled ? "#ccc" : "white"}
+                    />
+                  </TouchableOpacity>
 
-            {/* RIGHT: Send Button (Visible if text exists) */}
-            <View className="w-14 h-14 items-center justify-center">
-              {inputText.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => handleSend()}
-                  className="w-12 h-12 rounded-full bg-[#EA580C] items-center justify-center shadow-lg border-2 border-white/20"
-                >
-                  <Ionicons name="arrow-up" size={28} color="white" />
-                </TouchableOpacity>
-              )}
-            </View>
+                  {/* RIGHT: Send Button */}
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginLeft: 24,
+                    }}
+                  >
+                    {inputText.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() => handleSend()}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 24,
+                          backgroundColor: "#EA580C",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderWidth: 2,
+                          borderColor: "rgba(255,255,255,0.2)",
+                        }}
+                      >
+                        <Ionicons name="arrow-up" size={28} color="white" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
   );
