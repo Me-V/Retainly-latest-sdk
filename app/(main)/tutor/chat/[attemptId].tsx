@@ -26,7 +26,7 @@ import {
 } from "expo-speech-recognition";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BotIcon } from "@/assets/logo2";
-import { Fontisto } from "@expo/vector-icons";
+import { Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
 
 type Message = {
   id: string;
@@ -877,6 +877,7 @@ export default function ChatScreen() {
                     {/* Type Button */}
                     <TouchableOpacity
                       onPress={() => setIsKeyboardMode(true)}
+                      disabled={isMicDisabled} // 🟢 Disable while sending
                       style={{ alignItems: "center", width: 64 }}
                     >
                       <View
@@ -888,11 +889,25 @@ export default function ChatScreen() {
                           justifyContent: "center",
                         }}
                       >
-                        <Fontisto name="keyboard" size={24} color="#EA580C" />
+                        {!isMicDisabled ? (
+                          <Fontisto
+                            name="keyboard"
+                            size={24}
+                            color="#EA580C" // 🟢 Gray out if disabled
+                          />
+                        ) : (
+                          <MaterialCommunityIcons
+                            name="keyboard-off"
+                            size={40}
+                            color="#8A7C7C"
+                          />
+                        )}
                       </View>
                       <Text
                         style={{
-                          color: "rgba(255,255,255,0.7)",
+                          color: isMicDisabled
+                            ? "rgba(255,255,255,0.3)"
+                            : "rgba(255,255,255,0.7)", // 🟢 Dim text if disabled
                           fontSize: 13,
                           marginTop: 6,
                           fontWeight: "500",
