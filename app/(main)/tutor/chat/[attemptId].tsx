@@ -26,7 +26,7 @@ import {
 } from "expo-speech-recognition";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BotIcon } from "@/assets/logo2";
-import { Fontisto, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Fontisto, MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 
 type Message = {
   id: string;
@@ -380,12 +380,29 @@ export default function ChatScreen() {
       {/* 🟢 FIX 2: Removed className from SafeAreaView, using style instead */}
       <SafeAreaView style={{ flex: 1 }}>
         {/* --- HEADER --- */}
-        <View className="px-5 pb-2 w-full">
-          <View className="flex-row justify-end mb-2">
-            <Text className="text-white font-bold text-[16px] mb-2">
+        <View className="px-5 pb-2 pt-2 w-full">
+          <View className="flex-row justify-between items-center mb-4">
+            {/* 🟢 Home Button (Top Left) */}
+            <TouchableOpacity
+              onPress={() => router.push("/(main)/dashboard")}
+              activeOpacity={0.8}
+            >
+              <View>
+                <Octicons
+                  name="home-fill"
+                  size={28}
+                  color="#FFA629"
+                  className="ml-2.5"
+                />
+              </View>
+            </TouchableOpacity>
+
+            {/* Score Text (Top Right) */}
+            <Text className="text-white font-bold text-[16px]">
               Score: {progressScore}%
             </Text>
           </View>
+
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
             <View
               className="absolute left-0 top-0 bottom-0 rounded-full"
@@ -811,7 +828,7 @@ export default function ChatScreen() {
                       borderWidth: 1,
                       borderRadius: 40,
                       paddingVertical: 12,
-                      paddingHorizontal: 16,
+                      paddingHorizontal: 8,
                     }}
                   >
                     {/* Speak Button */}
@@ -852,16 +869,6 @@ export default function ChatScreen() {
                           color={isMicDisabled ? "#ccc" : "white"}
                         />
                       </View>
-                      <Text
-                        style={{
-                          color: "rgba(255,255,255,0.7)",
-                          fontSize: 13,
-                          marginTop: 6,
-                          fontWeight: "500",
-                        }}
-                      >
-                        Speak
-                      </Text>
                     </TouchableOpacity>
 
                     {/* Divider Line */}
@@ -870,7 +877,7 @@ export default function ChatScreen() {
                         width: 1,
                         height: 48,
                         backgroundColor: "rgba(255,255,255,0.15)",
-                        marginHorizontal: 12,
+                        marginHorizontal: 6,
                       }}
                     />
 
@@ -903,18 +910,6 @@ export default function ChatScreen() {
                           />
                         )}
                       </View>
-                      <Text
-                        style={{
-                          color: isMicDisabled
-                            ? "rgba(255,255,255,0.3)"
-                            : "rgba(255,255,255,0.7)", // 🟢 Dim text if disabled
-                          fontSize: 13,
-                          marginTop: 6,
-                          fontWeight: "500",
-                        }}
-                      >
-                        Type
-                      </Text>
                     </TouchableOpacity>
                   </View>
 
