@@ -28,6 +28,10 @@ const mockSubjects = Array.from({ length: 10 }, (_, i) => ({
   fill: palette[Math.floor(Math.random() * palette.length)],
 }));
 
+// Mock data for Leaderboard
+const allTimeLeaders = ["Nikky", "Mikasa", "Lost Penguin", "Light"];
+const todayLeaders = ["Punch", "Timmy", "Modi Ji", "Nikky"];
+
 const HomeDashboard: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);
   const userInfo = useSelector((s: RootState) => s.auth.userInfo as any);
@@ -205,29 +209,80 @@ const HomeDashboard: React.FC = () => {
         </View>
 
         {/* Welcome Text */}
-        <View className="px-8 mb-8">
+        <View className="px-8 mb-8 flex-row">
           <Text className="text-[28px] font-bold text-white leading-tight">
-            Welcome Back, Champion
+            Welcome back, {""}
           </Text>
-          <Text className="text-[28px] font-bold text-white leading-tight">
+          <Text className="text-[28px] font-bold text-[#FF8D28] leading-tight">
             {displayName || "Username"}
           </Text>
         </View>
 
         {/* ... [Rest of your UI: GlowCards, Floating Nav, etc.] ... */}
         <View className="px-6 space-y-5 gap-5">
-          {/* Ask AI Tutor Card */}
-          <GlowCard className="flex-row items-center p-5 py-6">
-            <View className="mr-4">
-              <Ionicons name="bulb" size={96} color="#FBC02D" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-white text-[24px] font-bold mb-1">
-                Ask Your AI Tutor
-              </Text>
-              <Text className="text-white/70 text-[16px] leading-5">
-                Solve doubts. Get instant explanations.
-              </Text>
+          {/* Leaderboard Card */}
+          <GlowCard className="p-4 py-5">
+            <View className="flex-row items-start">
+              {/* Left Side: All time */}
+              <View className="flex-1 pr-3">
+                <Text className="text-white font-semibold text-[15px] text-center mb-3">
+                  Leaderboard <Text className="text-[#FF8D28]">All time</Text>
+                </Text>
+                <View className="space-y-3 gap-y-3">
+                  {allTimeLeaders.map((name, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        backgroundColor: "rgba(255, 255, 255, 0.05)", // Matches #FFFFFF12
+                        borderColor: "rgba(255, 255, 255, 0.08)", // Matches #FFFFFF14
+                        borderWidth: 1,
+                        // 🟢 Simulating the 0px 2px #FFFFFF40 inset shadow using a brighter top border
+                        borderTopWidth: 1.5,
+                        borderRadius: 12,
+                        paddingVertical: 14,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text className="text-white text-[14px] font-medium">
+                        {name}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {/* Vertical Divider */}
+              <View className="w-[1px] h-full bg-white/10 self-stretch rounded-full mx-1" />
+
+              {/* Right Side: Today */}
+              <View className="flex-1 pl-3">
+                <Text className="text-white font-semibold text-[15px] text-center mb-3">
+                  Leaderboard <Text className="text-[#FF8D28]">Today</Text>
+                </Text>
+                <View className="space-y-3 gap-y-3">
+                  {todayLeaders.map((name, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        backgroundColor: "rgba(255, 255, 255, 0.05)", // Matches #FFFFFF12
+                        borderColor: "rgba(255, 255, 255, 0.08)", // Matches #FFFFFF14
+                        borderWidth: 1,
+                        // 🟢 Simulating the 0px 2px #FFFFFF40 inset shadow using a brighter top border
+                        borderTopWidth: 1.5,
+                        borderRadius: 12,
+                        paddingVertical: 14,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text className="text-white text-[14px] font-medium">
+                        {name}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
             </View>
           </GlowCard>
 

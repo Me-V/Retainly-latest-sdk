@@ -73,6 +73,8 @@ export default function ChatScreen() {
   const [progressScore, setProgressScore] = useState(0);
   const [penaltyScore, setPenaltyScore] = useState(0);
 
+  const [healthPoints, setHealthPoints] = useState<number | null>(null);
+
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -175,6 +177,11 @@ export default function ChatScreen() {
         setPenaltyScore(data.payload.penalty_score);
       }
 
+      //Health Points from API response
+      if (data?.health_balance !== undefined) {
+        setHealthPoints(data.health_balance);
+      }
+
       // 🟢 Determine Status
       const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
@@ -259,6 +266,10 @@ export default function ChatScreen() {
       if (!attemptId || !token) return;
       try {
         const data = await getChatHistory(token, attemptId);
+
+        if (data?.health_balance !== undefined) {
+          setHealthPoints(data.health_balance);
+        }
 
         if (
           data?.messages &&
@@ -397,12 +408,20 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Score Text (Top Right) */}
-            <Text className="text-white font-bold text-[16px]">
-              Score: {progressScore}%
-            </Text>
+            {/* 🟢 NEW: Health Points (Top Right) */}
+            <View className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+              <MaterialCommunityIcons
+                name="heart-pulse"
+                size={20}
+                color="#EF4444"
+              />
+              <Text className="text-white font-bold text-[15px] ml-1.5">
+                {healthPoints !== null ? healthPoints : "--"} HP
+              </Text>
+            </View>
           </View>
 
+          {/* Progress Bar (Kept intact below the new header) */}
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
             <View
               className="absolute left-0 top-0 bottom-0 rounded-full"
