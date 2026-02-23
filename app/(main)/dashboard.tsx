@@ -191,11 +191,15 @@ const HomeDashboard: React.FC = () => {
       >
         {/* Header */}
         <View className="pt-2 pb-4 flex-row items-center justify-between mb-2">
-          <Image
-            source={require("@/assets/AppLogo.png")}
-            className="w-[100px] h-[100px]"
-            resizeMode="contain"
-          />
+          {/* Welcome Text */}
+          <View className="pl-6 pt-5 flex-row">
+            <Text className="text-[28px] font-bold text-white leading-tight">
+              Hello,{" "}
+            </Text>
+            <Text className="text-[28px] font-bold text-[#FF8D28] leading-tight">
+              {displayName || "Username"}
+            </Text>
+          </View>
           <View className="flex-row items-center space-x-4 gap-4 mr-10">
             <TouchableOpacity>
               <Ionicons name="notifications" size={24} color="white" />
@@ -206,16 +210,6 @@ const HomeDashboard: React.FC = () => {
               </View>
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Welcome Text */}
-        <View className="px-8 mb-8 flex-row">
-          <Text className="text-[28px] font-bold text-white leading-tight">
-            Welcome back, {""}
-          </Text>
-          <Text className="text-[28px] font-bold text-[#FF8D28] leading-tight">
-            {displayName || "Username"}
-          </Text>
         </View>
 
         {/* ... [Rest of your UI: GlowCards, Floating Nav, etc.] ... */}
