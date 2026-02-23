@@ -11,7 +11,11 @@ import { getLiveQuizzes, OlympicQuiz } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import { getSubjects, getClassboardAnalytics } from "@/services/api.edu";
+import {
+  getSubjects,
+  getClassboardAnalytics,
+  getLeaderboard,
+} from "@/services/api.edu";
 import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
 import { Ionicons } from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
@@ -28,9 +32,13 @@ const mockSubjects = Array.from({ length: 10 }, (_, i) => ({
   fill: palette[Math.floor(Math.random() * palette.length)],
 }));
 
-// Mock data for Leaderboard
-const allTimeLeaders = ["Nikky", "Mikasa", "Lost Penguin", "Light"];
-const todayLeaders = ["Punch", "Timmy", "Modi Ji", "Nikky"];
+// Helper function to get medal colors
+const getMedalStyles = (rank: number) => {
+  if (rank === 1) return { bg: "#FACC15", text: "#A16207", ribbon: "#EF4444" }; // Gold / Red
+  if (rank === 2) return { bg: "#E5E7EB", text: "#4B5563", ribbon: "#22C55E" }; // Silver / Green
+  if (rank === 3) return { bg: "#D97706", text: "#78350F", ribbon: "#3B82F6" }; // Bronze / Blue
+  return { bg: "#4B5563", text: "#E5E7EB", ribbon: "#374151" }; // Star / Grey
+};
 
 const HomeDashboard: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);
@@ -58,6 +66,34 @@ const HomeDashboard: React.FC = () => {
     overall_average: 0,
     attempted_question_count: 0,
     total_question_count: 0,
+  });
+
+  // 🟢 NEW: Leaderboard State & Helpers
+  type LeaderboardUser = {
+    rank: number | null;
+    name: string;
+    score: number | string;
+  };
+  type LeaderboardData = { top: LeaderboardUser[]; me: LeaderboardUser | null };
+
+  const getMedalStyles = (rank: number | null) => {
+    if (rank === 1)
+      return { bg: "#FACC15", text: "#A16207", ribbon: "#EF4444" }; // Gold / Red
+    if (rank === 2)
+      return { bg: "#E5E7EB", text: "#4B5563", ribbon: "#22C55E" }; // Silver / Green
+    if (rank === 3)
+      return { bg: "#D97706", text: "#78350F", ribbon: "#3B82F6" }; // Bronze / Blue
+    return { bg: "#4B5563", text: "#E5E7EB", ribbon: "#374151" }; // Star / Grey
+  };
+
+  const [todayLeaders, setTodayLeaders] = useState<LeaderboardData>({
+    top: [],
+    me: null,
+  });
+
+  const [allTimeLeaders, setAllTimeLeaders] = useState<LeaderboardData>({
+    top: [],
+    me: null,
   });
 
   useFocusEffect(
@@ -108,6 +144,79 @@ const HomeDashboard: React.FC = () => {
     };
     fetchAnalytics();
   }, [token, boardId, classId, streamId, includeStream]);
+
+  // 🟢 NEW: Fetch Both Leaderboards Simultaneously
+  useEffect(() => {
+    const fetchLeaderboards = async () => {
+      if (!token || !boardId || !classId) return;
+      try {
+        // Fetch Today and All-Time simultaneously using Promise.all for speed
+        const [todayData, allTimeData] = await Promise.all([
+          getLeaderboard(token, {
+            boardId,
+            classId,
+            streamId: includeStream && streamId ? streamId : undefined,
+            mode: "attempts",
+            timeframe: "today",
+          }),
+          getLeaderboard(token, {
+            boardId,
+            classId,
+            streamId: includeStream && streamId ? streamId : undefined,
+            mode: "attempts",
+            timeframe: "all-time",
+          }),
+        ]);
+
+        // Helper function to process leaderboard data to prevent duplicating logic
+        const processLeaderboard = (data: any) => {
+          // 1. Map the top 3 users
+          const top3 = (data.top || []).slice(0, 3).map((u: any) => {
+            const isMe =
+              u.user_id === userInfo?.id || u.user_id === data.my_rank?.user_id;
+            return {
+              rank: u.rank,
+              name: isMe ? displayName || "Me" : u.name || "User",
+              score: u.score ?? u.questions_completed ?? 0,
+            };
+          });
+
+          // 2. Map your own rank ONLY if you are not already in the top 3
+          let myRankData = null;
+          if (
+            data.my_rank &&
+            data.my_rank.rank !== null &&
+            data.my_rank.rank > 3
+          ) {
+            myRankData = {
+              rank: data.my_rank.rank,
+              name: displayName || "Me",
+              score:
+                data.my_rank.score ?? data.my_rank.questions_completed ?? 0,
+            };
+          }
+
+          return { top: top3, me: myRankData };
+        };
+
+        // Set state for both!
+        setTodayLeaders(processLeaderboard(todayData));
+        setAllTimeLeaders(processLeaderboard(allTimeData));
+      } catch (error) {
+        console.error("Failed to load leaderboards:", error);
+      }
+    };
+
+    fetchLeaderboards();
+  }, [
+    token,
+    boardId,
+    classId,
+    streamId,
+    includeStream,
+    displayName,
+    userInfo?.id,
+  ]);
 
   // ... [Keep handleQuickAction and useEffects for data loading exactly as is] ...
   const handleQuickAction = (key: string) => {
@@ -217,66 +326,153 @@ const HomeDashboard: React.FC = () => {
           {/* Leaderboard Card */}
           <GlowCard className="p-4 py-5">
             <View className="flex-row items-start">
-              {/* Left Side: All time */}
-              <View className="flex-1 pr-3">
-                <Text className="text-white font-semibold text-[15px] text-center mb-3">
-                  All-time <Text className="text-[#FF8D28]">Leaders</Text>
-                </Text>
-                <View className="space-y-3 gap-y-3">
-                  {allTimeLeaders.map((name, index) => (
+              {/* --- Reusable Render Function for Leaderboard Items --- */}
+              {(() => {
+                const renderItem = (item: LeaderboardUser, key: string) => {
+                  const styles = getMedalStyles(item.rank);
+                  return (
                     <View
-                      key={index}
+                      key={key}
                       style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.05)", // Matches #FFFFFF12
-                        borderColor: "rgba(255, 255, 255, 0.08)", // Matches #FFFFFF14
-                        borderWidth: 1,
-                        // 🟢 Simulating the 0px 2px #FFFFFF40 inset shadow using a brighter top border
-                        borderTopWidth: 1.5,
-                        borderRadius: 12,
-                        paddingVertical: 14,
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
+                        justifyContent: "space-between",
+                        backgroundColor: "rgba(255, 255, 255, 0.04)",
+                        borderColor: "rgba(255, 255, 255, 0.08)",
+                        borderWidth: 1,
+                        borderRadius: 14,
+                        paddingVertical: 10,
+                        paddingHorizontal: 10,
+                        shadowColor: "rgba(255, 255, 255, 0.9)",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 18,
                       }}
                     >
-                      <Text className="text-white text-[14px] font-medium">
-                        {name}
+                      <View className="flex-row items-center flex-1 pr-2 overflow-hidden">
+                        {/* Medal Icon Composition */}
+                        <View className="relative w-5 h-[22px] items-center justify-start mr-2.5 flex-shrink-0">
+                          <View className="absolute bottom-0 flex-row w-[12px] justify-between">
+                            <View
+                              style={{
+                                width: 4,
+                                height: 8,
+                                backgroundColor: styles.ribbon,
+                                transform: [{ rotate: "25deg" }],
+                              }}
+                            />
+                            <View
+                              style={{
+                                width: 4,
+                                height: 8,
+                                backgroundColor: styles.ribbon,
+                                transform: [{ rotate: "-25deg" }],
+                              }}
+                            />
+                          </View>
+                          <View
+                            style={{
+                              width: 16,
+                              height: 16,
+                              borderRadius: 8,
+                              backgroundColor: styles.bg,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              zIndex: 10,
+                            }}
+                          >
+                            {item.rank === null || item.rank > 3 ? (
+                              <Ionicons
+                                name="star"
+                                size={8}
+                                color={styles.text}
+                                style={{ marginLeft: 0.5, marginTop: 0.5 }}
+                              />
+                            ) : (
+                              <Text
+                                style={{
+                                  fontSize: 9,
+                                  fontWeight: "bold",
+                                  color: styles.text,
+                                }}
+                              >
+                                {item.rank}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
+                        <Text
+                          className="text-white text-[13px] font-medium flex-1"
+                          numberOfLines={1}
+                          ellipsizeMode="tail"
+                        >
+                          {item.name}
+                        </Text>
+                      </View>
+                      <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
+                        {item.score}
                       </Text>
                     </View>
-                  ))}
-                </View>
-              </View>
+                  );
+                };
 
-              {/* Vertical Divider */}
-              <View className="w-[1px] h-full bg-white/10 self-stretch rounded-full mx-1" />
-
-              {/* Right Side: Today */}
-              <View className="flex-1 pl-3">
-                <Text className="text-white font-semibold text-[15px] text-center mb-3">
-                  Today's <Text className="text-[#FF8D28]">Leaders</Text>
-                </Text>
-                <View className="space-y-3 gap-y-3">
-                  {todayLeaders.map((name, index) => (
-                    <View
-                      key={index}
-                      style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.05)", // Matches #FFFFFF12
-                        borderColor: "rgba(255, 255, 255, 0.08)", // Matches #FFFFFF14
-                        borderWidth: 1,
-                        // 🟢 Simulating the 0px 2px #FFFFFF40 inset shadow using a brighter top border
-                        borderTopWidth: 1.5,
-                        borderRadius: 12,
-                        paddingVertical: 14,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Text className="text-white text-[14px] font-medium">
-                        {name}
+                return (
+                  <>
+                    {/* Left Side: All time */}
+                    <View className="flex-1 pr-2">
+                      <Text className="text-white font-semibold text-[14px] text-center mb-3">
+                        All-time <Text className="text-[#FF8D28]">Leaders</Text>
                       </Text>
+                      <View className="gap-y-1.5">
+                        {allTimeLeaders.top.map((item, index) =>
+                          renderItem(item, `alltime-top-${index}`),
+                        )}
+
+                        {allTimeLeaders.top.length > 0 && allTimeLeaders.me && (
+                          <View className="flex-row justify-center gap-1.5 my-1">
+                            {[1, 2, 3, 4].map((dot) => (
+                              <View
+                                key={dot}
+                                className="w-[3px] h-[3px] rounded-full bg-white/30"
+                              />
+                            ))}
+                          </View>
+                        )}
+                        {allTimeLeaders.me &&
+                          renderItem(allTimeLeaders.me, "alltime-me")}
+                      </View>
                     </View>
-                  ))}
-                </View>
-              </View>
+
+                    {/* Vertical Divider */}
+                    <View className="w-[1px] h-[95%] bg-white/10 self-center rounded-full mx-1" />
+
+                    {/* Right Side: Today */}
+                    <View className="flex-1 pl-2">
+                      <Text className="text-white font-semibold text-[14px] text-center mb-3">
+                        Today's <Text className="text-[#FF8D28]">Leaders</Text>
+                      </Text>
+                      <View className="gap-y-1.5">
+                        {todayLeaders.top.map((item, index) =>
+                          renderItem(item, `today-top-${index}`),
+                        )}
+
+                        {todayLeaders.top.length > 0 && todayLeaders.me && (
+                          <View className="flex-row justify-center gap-1.5 my-1">
+                            {[1, 2, 3, 4].map((dot) => (
+                              <View
+                                key={dot}
+                                className="w-[3px] h-[3px] rounded-full bg-white/30"
+                              />
+                            ))}
+                          </View>
+                        )}
+                        {todayLeaders.me &&
+                          renderItem(todayLeaders.me, "today-me")}
+                      </View>
+                    </View>
+                  </>
+                );
+              })()}
             </View>
           </GlowCard>
 
@@ -326,9 +522,9 @@ const HomeDashboard: React.FC = () => {
           </GlowCard>
 
           {/* Main Actions & Goal Row (Side by Side) */}
-          <View className="flex-row gap-4 mb-3 items-stretch">
+          <View className="flex-row gap-4 mb-6 items-stretch">
             {/* Left Column: Quick Actions */}
-            <View className="flex-1 flex-col justify-between">
+            <View className="flex-1 flex-col justify-evenly">
               {/* Start Practice */}
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -432,7 +628,7 @@ const HomeDashboard: React.FC = () => {
                         cx="44"
                         cy="44"
                         r="36"
-                        strokeWidth="6"
+                        strokeWidth="3"
                       />
                       {/* Filled Progress Circle */}
                       <Circle
@@ -441,7 +637,7 @@ const HomeDashboard: React.FC = () => {
                         cx="44"
                         cy="44"
                         r="36"
-                        strokeWidth="6"
+                        strokeWidth="3"
                         strokeDasharray={2 * Math.PI * 36}
                         strokeDashoffset={
                           2 * Math.PI * 36 -

@@ -23,6 +23,21 @@ export type ClassboardAnalyticsItem = {
   completion_percentage: number;
   is_complete: boolean;
 };
+export type LeaderboardUserItem = {
+  rank: number | null;
+  user_id?: string;
+  name?: string;
+  questions_completed?: number;
+  score?: number;
+};
+
+export type LeaderboardResponse = {
+  date?: string;
+  class_board_id?: string;
+  mode: string;
+  top: LeaderboardUserItem[];
+  my_rank: LeaderboardUserItem | null;
+};
 
 export async function getClasses(token: string): Promise<ClassItem[]> {
   try {
@@ -133,7 +148,6 @@ export async function getSubTopics(
     throw err;
   }
 }
-
 export async function getQuestions(
   token: string,
   opts: { subTopicId: string },
@@ -177,6 +191,41 @@ export async function getClassboardAnalytics(
   } catch (err: any) {
     console.error(
       "Analytics fetch error:",
+      err?.response?.data || err?.message,
+    );
+    throw err;
+  }
+}
+export async function getLeaderboard(
+  token: string,
+  opts: {
+    boardId: string;
+    classId: string;
+    streamId?: string;
+    mode?: "attempts" | "marks";
+    timeframe: "today" | "all-time"; // 🟢 NEW: Add timeframe parameter
+  },
+): Promise<LeaderboardResponse> {
+  const { boardId, classId, streamId, mode = "attempts", timeframe } = opts;
+
+  try {
+    const res = await axios.get(
+      // 🟢 NEW: Dynamically insert the timeframe into the URL
+      `${API_BASE}/backend/api/analytics/leaderboard/${timeframe}/`,
+      {
+        headers: { Authorization: `Token ${token}` },
+        params: {
+          board_id: boardId,
+          class_id: classId,
+          mode: mode,
+          ...(streamId ? { stream_id: streamId } : {}),
+        },
+      },
+    );
+    return res.data as LeaderboardResponse;
+  } catch (err: any) {
+    console.error(
+      "Leaderboard fetch error:",
       err?.response?.data || err?.message,
     );
     throw err;
