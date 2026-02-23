@@ -220,7 +220,7 @@ const HomeDashboard: React.FC = () => {
               {/* Left Side: All time */}
               <View className="flex-1 pr-3">
                 <Text className="text-white font-semibold text-[15px] text-center mb-3">
-                  Leaderboard <Text className="text-[#FF8D28]">All time</Text>
+                  All-time <Text className="text-[#FF8D28]">Leaders</Text>
                 </Text>
                 <View className="space-y-3 gap-y-3">
                   {allTimeLeaders.map((name, index) => (
@@ -252,7 +252,7 @@ const HomeDashboard: React.FC = () => {
               {/* Right Side: Today */}
               <View className="flex-1 pl-3">
                 <Text className="text-white font-semibold text-[15px] text-center mb-3">
-                  Leaderboard <Text className="text-[#FF8D28]">Today</Text>
+                  Today's <Text className="text-[#FF8D28]">Leaders</Text>
                 </Text>
                 <View className="space-y-3 gap-y-3">
                   {todayLeaders.map((name, index) => (
@@ -325,53 +325,151 @@ const HomeDashboard: React.FC = () => {
             </View>
           </GlowCard>
 
-          {/* Quick Actions List */}
-          <GlowCard className="p-0">
-            <TouchableOpacity
-              onPress={() => handleQuickAction("practice")}
-              className="flex-row items-center p-5 active:bg-white/5"
-            >
-              <View className="w-10 h-10 rounded-full bg-[#C65D3B]/40 items-center justify-center mr-4">
-                <Ionicons name="play" size={20} color="#F59E51" />
-              </View>
-              <Text className="flex-1 text-white text-[20px] font-semibold">
-                Start Practice
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity className="flex-row items-center p-5 active:bg-white/5">
-              <View className="w-10 h-10 rounded-full bg-[#C99C33]/40 items-center justify-center mr-4">
-                <Ionicons name="document-text" size={20} color="#FBC02D" />
-              </View>
-              <Text className="flex-1 text-white text-[20px] font-semibold">
-                Mock Test
-              </Text>
-              <Ionicons name="chevron-forward" size={20} color="white" />
-            </TouchableOpacity>
-
-            {quizzes.length > 0 && (
+          {/* Main Actions & Goal Row (Side by Side) */}
+          <View className="flex-row gap-4 mb-3 items-stretch">
+            {/* Left Column: Quick Actions */}
+            <View className="flex-1 flex-col justify-between">
+              {/* Start Practice */}
               <TouchableOpacity
-                onPress={() => handleQuickAction("olympics")}
-                className="flex-row items-center p-5 active:bg-white/5"
+                activeOpacity={0.8}
+                onPress={() => handleQuickAction("practice")}
               >
-                <Image
-                  source={require("@/assets/olympiadLogo.png")}
-                  className="w-[30px] h-[30px] mr-4"
-                  resizeMode="contain"
-                />
-                <View className="flex-1 justify-center">
-                  <View className="flex-row items-center self-start">
-                    <Text className="text-white text-[20px] font-semibold">
-                      Maths Olympics
+                <LinearGradient
+                  colors={["#8E2622", "#D64536"]} // Dark to lighter red
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 12,
+                    paddingVertical: 16,
+                    borderRadius: 16,
+                  }}
+                >
+                  <View className="w-8 h-8 rounded-full bg-black/20 items-center justify-center mr-3">
+                    <Ionicons name="play" size={16} color="#FF7A00" />
+                  </View>
+                  <Text className="flex-1 text-white text-[12px] font-semibold">
+                    Start Practice
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color="white" />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Mock Test */}
+              <TouchableOpacity activeOpacity={0.8}>
+                <LinearGradient
+                  colors={["#875014", "#CA802E"]} // Dark to lighter brown/orange
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 12,
+                    paddingVertical: 16,
+                    borderRadius: 16,
+                  }}
+                >
+                  <View className="w-8 h-8 rounded-xl bg-black/20 items-center justify-center mr-3">
+                    <Ionicons name="book" size={16} color="#FFB300" />
+                  </View>
+                  <Text className="flex-1 text-white text-[12px] font-semibold">
+                    Mock Test
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color="white" />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Math Olympics */}
+              {quizzes.length > 0 && (
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => handleQuickAction("olympics")}
+                  className="relative"
+                >
+                  <LinearGradient
+                    colors={["#1B521E", "#3A863D"]} // Dark to lighter green
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      paddingHorizontal: 12,
+                      paddingVertical: 16,
+                      borderRadius: 16,
+                    }}
+                  >
+                    <View className="w-8 h-8 bg-black/20 rounded-xl items-center justify-center mr-3">
+                      <Image
+                        source={require("@/assets/olympiadLogo.png")}
+                        className="w-5 h-5"
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <Text className="flex-1 text-white text-[12px] font-semibold">
+                      Math Olympics
                     </Text>
+                    <Ionicons name="chevron-forward" size={18} color="white" />
+                  </LinearGradient>
+
+                  {/* Live Badge (Absolutely Positioned) */}
+                  <View className="absolute top-3 right-1 z-10">
                     <LiveBadge />
                   </View>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Right Column: Daily Practice Goal */}
+            <View className="flex-1">
+              <GlowCard className="p-4 items-center justify-center flex-1 py-4">
+                <View className="relative w-[88px] h-[88px] items-center justify-center mb-4">
+                  <View className="absolute inset-0 items-center justify-center">
+                    <Svg width="88" height="88">
+                      <Circle
+                        stroke="rgba(255, 255, 255, 0.1)"
+                        fill="none"
+                        cx="44"
+                        cy="44"
+                        r="36"
+                        strokeWidth="6"
+                      />
+                      {/* Filled Progress Circle */}
+                      <Circle
+                        stroke="#FF8D28"
+                        fill="none"
+                        cx="44"
+                        cy="44"
+                        r="36"
+                        strokeWidth="6"
+                        strokeDasharray={2 * Math.PI * 36}
+                        strokeDashoffset={
+                          2 * Math.PI * 36 -
+                          (analyticsData.overall_average / 100) *
+                            (2 * Math.PI * 36)
+                        }
+                        strokeLinecap="round"
+                        transform="rotate(-90 44 44)" // Rotates so the stroke starts from the top
+                      />
+                    </Svg>
+                  </View>
+
+                  <Text className="text-white font-bold text-[22px] z-10">
+                    {Number(analyticsData.overall_average.toFixed(1))}%
+                  </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="white" />
-              </TouchableOpacity>
-            )}
-          </GlowCard>
+
+                <Text className="text-white text-[15px] font-bold text-center mb-1">
+                  Daily Practice Goal
+                </Text>
+                <Text className="text-white/60 text-[12px] text-center leading-[18px] mt-1 px-2">
+                  You've completed{"\n"}
+                  {analyticsData.attempted_question_count}/
+                  {analyticsData.total_question_count} questions today.
+                </Text>
+              </GlowCard>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
