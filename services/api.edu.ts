@@ -30,7 +30,6 @@ export type LeaderboardUserItem = {
   questions_completed?: number;
   score?: number;
 };
-
 export type LeaderboardResponse = {
   date?: string;
   class_board_id?: string;
@@ -38,7 +37,19 @@ export type LeaderboardResponse = {
   top: LeaderboardUserItem[];
   my_rank: LeaderboardUserItem | null;
 };
-
+export type LastNDaysAnalyticsResponse = {
+  user_id: string;
+  n: number;
+  start_date: string;
+  end_date: string;
+  questions_completed: number;
+  score: number;
+  daily: Array<{
+    date: string;
+    questions_completed: number;
+    score: number;
+  }>;
+};
 export async function getClasses(token: string): Promise<ClassItem[]> {
   try {
     const res = await axios.get(`${API_BASE}/backend/api/content/classes/`, {
@@ -82,7 +93,6 @@ export async function getStreams(
     throw err;
   }
 }
-
 export async function getSubjects(
   token: string,
   opts: { boardId: string; classId: string; streamId?: string },
@@ -226,6 +236,28 @@ export async function getLeaderboard(
   } catch (err: any) {
     console.error(
       "Leaderboard fetch error:",
+      err?.response?.data || err?.message,
+    );
+    throw err;
+  }
+}
+export async function getLastNDaysAnalytics(
+  token: string,
+  opts: { n?: number } = {},
+): Promise<LastNDaysAnalyticsResponse> {
+  const { n = 7 } = opts;
+  try {
+    const res = await axios.get(
+      `${API_BASE}/backend/api/analytics/me/last-n-days/`,
+      {
+        headers: { Authorization: `Token ${token}` },
+        params: { n },
+      },
+    );
+    return res.data as LastNDaysAnalyticsResponse;
+  } catch (err: any) {
+    console.error(
+      "Last N Days Analytics fetch error:",
       err?.response?.data || err?.message,
     );
     throw err;

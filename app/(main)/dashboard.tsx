@@ -15,6 +15,7 @@ import {
   getSubjects,
   getClassboardAnalytics,
   getLeaderboard,
+  getLastNDaysAnalytics,
 } from "@/services/api.edu";
 import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
 import { Ionicons } from "@expo/vector-icons";
@@ -96,6 +97,10 @@ const HomeDashboard: React.FC = () => {
     me: null,
   });
 
+  // Weekly Graph State
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
+  const [weeklyTotal, setWeeklyTotal] = useState(0);
+
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => {
@@ -145,7 +150,7 @@ const HomeDashboard: React.FC = () => {
     fetchAnalytics();
   }, [token, boardId, classId, streamId, includeStream]);
 
-  // 🟢 NEW: Fetch Both Leaderboards Simultaneously
+  // Fetch Both Leaderboards Simultaneously
   useEffect(() => {
     const fetchLeaderboards = async () => {
       if (!token || !boardId || !classId) return;
@@ -217,6 +222,54 @@ const HomeDashboard: React.FC = () => {
     displayName,
     userInfo?.id,
   ]);
+
+  // Fetch Last 7 Days Graph Data
+  useEffect(() => {
+    const fetchWeeklyStats = async () => {
+      if (!token) return;
+      try {
+        const data = await getLastNDaysAnalytics(token, { n: 7 });
+
+        setWeeklyTotal(data.questions_completed || 0);
+
+        const today = new Date();
+
+        // Calculate the date of Monday for the current week
+        const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+        const daysSinceMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+        const mondayDate = new Date(today);
+        mondayDate.setDate(today.getDate() - daysSinceMonday);
+
+        const currentWeekDays = [];
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        // Loop to generate Monday through Sunday for the current week
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(mondayDate);
+          d.setDate(mondayDate.getDate() + i);
+
+          // Format date to strictly match API's 'YYYY-MM-DD'
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          const dayName = dayNames[d.getDay()];
+
+          const dayData = (data.daily || []).find(
+            (item: any) => item.date === dateStr,
+          );
+
+          currentWeekDays.push({
+            day: dayName,
+            value: dayData ? dayData.questions_completed : 0,
+            isToday: d.toDateString() === today.toDateString(),
+          });
+        }
+        setWeeklyData(currentWeekDays);
+      } catch (err) {
+        console.error("Failed to load weekly stats:", err);
+      }
+    };
+    fetchWeeklyStats();
+  }, [token]);
 
   // ... [Keep handleQuickAction and useEffects for data loading exactly as is] ...
   const handleQuickAction = (key: string) => {
@@ -299,23 +352,33 @@ const HomeDashboard: React.FC = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View className="pt-2 pb-4 flex-row items-center justify-between mb-2">
-          {/* Welcome Text */}
-          <View className="pl-6 pt-5 flex-row">
-            <Text className="text-[28px] font-bold text-white leading-tight">
-              Hello,{" "}
-            </Text>
-            <Text className="text-[28px] font-bold text-[#FF8D28] leading-tight">
-              {displayName || "Username"}
-            </Text>
+        <View className="pt-2 pb-4 flex-row items-center justify-between my-2 px-6">
+          {/* Left Side: Health Points Placeholder & Greeting */}
+          <View className="flex-row items-center flex-1 ml-2">
+            {/* Health Points Indicator */}
+            <View className="flex-row items-center">
+              <Ionicons name="heart" size={20} color="#EF4444" />
+              <Text className="text-white font-bold text-[16px] ml-1.5">
+                232
+              </Text>
+            </View>
           </View>
-          <View className="flex-row items-center space-x-4 gap-4 mr-10">
+
+          {/* Right Side: Notifications & Profile */}
+          <View className="flex-row items-center space-x-4 gap-4">
+            {/* Greeting */}
+            <Text className="text-[14px] font-bold text-white">
+              Hello,{" "}
+              <Text className="text-[#FF8D28]">
+                {displayName || "Username"}
+              </Text>
+            </Text>
             <TouchableOpacity>
-              <Ionicons name="notifications" size={24} color="white" />
+              <Ionicons name="notifications" size={22} color="white" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
-              <View className="w-10 h-10 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
-                <Ionicons name="person" size={20} color="white" />
+              <View className="w-9 h-9 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
+                <Ionicons name="person" size={18} color="white" />
               </View>
             </TouchableOpacity>
           </View>
@@ -476,50 +539,92 @@ const HomeDashboard: React.FC = () => {
             </View>
           </GlowCard>
 
-          {/* Daily Practice Goal Card */}
-          <GlowCard className="flex-row items-center px-5 py-10 h-32">
-            <View className="relative w-24 h-24 items-center justify-center mr-5">
-              <View className="absolute inset-0 items-center justify-center">
-                <Svg width="96" height="96">
-                  <Circle
-                    stroke="rgba(255, 255, 255, 0.1)"
-                    fill="none"
-                    cx="48"
-                    cy="48"
-                    r={radius}
-                    strokeWidth={strokeWidth}
-                  />
-                  {/* Filled Progress Circle */}
-                  <Circle
-                    stroke="#F59E51"
-                    fill="none"
-                    cx="48"
-                    cy="48"
-                    r={radius}
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={progressOffset}
-                    strokeLinecap="round"
-                  />
-                </Svg>
+          {/* Graph Section */}
+          <View className="mt-1 mb-2">
+            <GlowCard className="p-4 pt-3">
+              <Text className="text-[#FF8D28] text-[16px] font-bold mb-8 text-center">
+                Last 7 Days Usage
+              </Text>
+              {/* Chart Container */}
+              <View className="flex-row items-stretch h-[80px] w-full">
+                {/* Y-Axis Label */}
+                <View className="justify-center items-center w-6 mr-1">
+                  <Text
+                    className="text-white/60 text-[9px] text-center w-[140px]"
+                    style={{ transform: [{ rotate: "-90deg" }] }}
+                  >
+                    Questions Answered
+                  </Text>
+                </View>
+
+                {/* Bars & Axes Area */}
+                <View className="flex-1 border-l border-b border-white/20 flex-row items-end justify-between px-2 relative pb-0">
+                  {weeklyData.map((item, index) => {
+                    const maxChartValue =
+                      Math.max(...weeklyData.map((d) => d.value)) || 1;
+
+                    // Height calculation (give it a tiny minimum height so 0 isn't completely invisible if desired, but 0 is standard)
+                    const barHeight = `${(item.value / maxChartValue) * 100}%`;
+
+                    // Example: Green if they answered more than 20 questions, otherwise Orange
+                    let barColor = "";
+                    if (item.value >= 10) {
+                      barColor = "#4F9C55"; // Green for great performance
+                    } else if (item.value >= 7) {
+                      barColor = "#D4A03A"; // Yellow/Gold for okay performance
+                    } else {
+                      barColor = "#C16131"; // Burnt Orange for low performance
+                    }
+
+                    return (
+                      <View key={index} className="items-center flex-1">
+                        {/* Value above the bar */}
+                        <Text className="text-white/80 text-[11px] mb-1.5 font-medium">
+                          {item.value > 0 ? item.value : ""}
+                        </Text>
+
+                        {/* The Solid Bar */}
+                        <View
+                          style={{
+                            height: item.value > 0 ? barHeight : 0,
+                            width: "60%",
+                            maxWidth: 22,
+                            backgroundColor: barColor,
+                            borderTopLeftRadius: 2,
+                            borderTopRightRadius: 2,
+                          }}
+                        />
+
+                        {/* X-Axis Day Label */}
+                        <Text
+                          className={`text-[11px] absolute -bottom-6 ${
+                            item.isToday
+                              ? "text-[#EF4444] font-bold"
+                              : "text-white/60"
+                          }`}
+                        >
+                          {item.day}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
               </View>
 
-              <Text className="text-white font-bold text-[20px] z-10">
-                {/* Number(toFixed(1)) keeps 1 decimal if needed, but drops it if it's .0 */}
-                {Number(analyticsData.overall_average.toFixed(1))}%
-              </Text>
-            </View>
+              {/* Spacer for the X-axis labels */}
+              <View className="h-8" />
 
-            <View className="flex-1">
-              <Text className="text-white text-[20px] font-bold mb-1">
-                Daily Practice Goal
-              </Text>
-              <Text className="text-white/70 text-[16px] leading-5 mt-1">
-                You've completed {analyticsData.attempted_question_count}/
-                {analyticsData.total_question_count} questions today.
-              </Text>
-            </View>
-          </GlowCard>
+              {/* Footer Stat */}
+              <View className="flex-row justify-center items-center mt-2">
+                <Text className="text-white/70 text-[13px]">
+                  <Text className="text-[#FF8D28] font-bold">
+                    {weeklyTotal}
+                  </Text>{" "}
+                  Questions Last 7 Days
+                </Text>
+              </View>
+            </GlowCard>
+          </View>
 
           {/* Main Actions & Goal Row (Side by Side) */}
           <View className="flex-row gap-4 mb-6 items-stretch">
@@ -538,7 +643,7 @@ const HomeDashboard: React.FC = () => {
                     flexDirection: "row",
                     alignItems: "center",
                     paddingHorizontal: 12,
-                    paddingVertical: 16,
+                    paddingVertical: 12,
                     borderRadius: 16,
                   }}
                 >
@@ -562,7 +667,7 @@ const HomeDashboard: React.FC = () => {
                     flexDirection: "row",
                     alignItems: "center",
                     paddingHorizontal: 12,
-                    paddingVertical: 16,
+                    paddingVertical: 12,
                     borderRadius: 16,
                   }}
                 >
@@ -591,7 +696,7 @@ const HomeDashboard: React.FC = () => {
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 12,
-                      paddingVertical: 16,
+                      paddingVertical: 12,
                       borderRadius: 16,
                     }}
                   >
@@ -619,7 +724,7 @@ const HomeDashboard: React.FC = () => {
             {/* Right Column: Daily Practice Goal */}
             <View className="flex-1">
               <GlowCard className="p-4 items-center justify-center flex-1 py-4">
-                <View className="relative w-[88px] h-[88px] items-center justify-center mb-4">
+                <View className="relative w-[88px] h-[88px] items-center justify-center">
                   <View className="absolute inset-0 items-center justify-center">
                     <Svg width="88" height="88">
                       <Circle
@@ -627,7 +732,7 @@ const HomeDashboard: React.FC = () => {
                         fill="none"
                         cx="44"
                         cy="44"
-                        r="36"
+                        r="30"
                         strokeWidth="3"
                       />
                       {/* Filled Progress Circle */}
@@ -636,7 +741,7 @@ const HomeDashboard: React.FC = () => {
                         fill="none"
                         cx="44"
                         cy="44"
-                        r="36"
+                        r="30"
                         strokeWidth="3"
                         strokeDasharray={2 * Math.PI * 36}
                         strokeDashoffset={
@@ -650,7 +755,7 @@ const HomeDashboard: React.FC = () => {
                     </Svg>
                   </View>
 
-                  <Text className="text-white font-bold text-[22px] z-10">
+                  <Text className="text-white font-bold text-[18px] z-10">
                     {Number(analyticsData.overall_average.toFixed(1))}%
                   </Text>
                 </View>
