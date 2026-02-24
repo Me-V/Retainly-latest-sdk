@@ -18,7 +18,7 @@ import {
   getLastNDaysAnalytics,
 } from "@/services/api.edu";
 import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
-import { Ionicons } from "@expo/vector-icons";
+import { Fontisto, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 import Svg, { Circle } from "react-native-svg";
@@ -783,16 +783,12 @@ const HomeDashboard: React.FC = () => {
           <Text className="text-[10px] text-white mt-1">Home</Text>
         </TouchableOpacity>
         <TouchableOpacity className="items-center justify-center opacity-60">
-          <Ionicons name="book" size={24} color="white" />
+          <MaterialIcons name="my-library-books" size={24} color="white" />
           <Text className="text-[10px] text-white mt-1">Subjects</Text>
         </TouchableOpacity>
         <TouchableOpacity className="items-center justify-center opacity-60">
-          <Ionicons name="stats-chart" size={24} color="white" />
+          <Fontisto name="heartbeat-alt" size={24} color="white" />
           <Text className="text-[10px] text-white mt-1">Progress</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center justify-center opacity-60">
-          <Ionicons name="calendar" size={24} color="white" />
-          <Text className="text-[10px] text-white mt-1">Planner</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>
