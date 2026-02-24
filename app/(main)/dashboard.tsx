@@ -171,11 +171,6 @@ const HomeDashboard: React.FC = () => {
           }),
         ]);
 
-        console.log(
-          "------------<><><><><><><><><><><><>",
-          JSON.stringify({ todayData, allTimeData }, null, 2),
-        );
-
         // Helper function to process leaderboard data to prevent duplicating logic
         const processLeaderboard = (data: any) => {
           // 1. Map the top 3 users
