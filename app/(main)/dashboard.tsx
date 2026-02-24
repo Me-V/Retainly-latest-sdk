@@ -136,8 +136,6 @@ const HomeDashboard: React.FC = () => {
           ...(includeStream ? { streamId } : {}),
         });
 
-        console.log("---------------->>>>>>>>>>>", data);
-
         setAnalyticsData({
           overall_average: data.overall_average || 0,
           attempted_question_count: data.attempted_question_count || 0,
@@ -173,6 +171,11 @@ const HomeDashboard: React.FC = () => {
           }),
         ]);
 
+        console.log(
+          "------------<><><><><><><><><><><><>",
+          JSON.stringify({ todayData, allTimeData }, null, 2),
+        );
+
         // Helper function to process leaderboard data to prevent duplicating logic
         const processLeaderboard = (data: any) => {
           // 1. Map the top 3 users
@@ -182,7 +185,7 @@ const HomeDashboard: React.FC = () => {
             return {
               rank: u.rank,
               name: isMe ? displayName || "Me" : u.name || "User",
-              score: u.score ?? u.questions_completed ?? 0,
+              score: u.questions_completed ?? 0,
             };
           });
 
@@ -196,8 +199,7 @@ const HomeDashboard: React.FC = () => {
             myRankData = {
               rank: data.my_rank.rank,
               name: displayName || "Me",
-              score:
-                data.my_rank.score ?? data.my_rank.questions_completed ?? 0,
+              score: data.my_rank.questions_completed ?? 0,
             };
           }
 
