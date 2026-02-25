@@ -18,7 +18,12 @@ import {
   getLastNDaysAnalytics,
 } from "@/services/api.edu";
 import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
-import { Fontisto, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  Fontisto,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 import Svg, { Circle } from "react-native-svg";
@@ -353,16 +358,7 @@ const HomeDashboard: React.FC = () => {
           {/* Left Side: Health Points Placeholder & Greeting */}
           <View className="flex-row items-center flex-1 ml-2">
             {/* Health Points Indicator */}
-            <View className="flex-row items-center">
-              <Ionicons name="heart" size={20} color="#EF4444" />
-              <Text className="text-white font-bold text-[16px] ml-1.5">
-                232
-              </Text>
-            </View>
-          </View>
 
-          {/* Right Side: Notifications & Profile */}
-          <View className="flex-row items-center space-x-4 gap-4">
             {/* Greeting */}
             <Text className="text-[14px] font-bold text-white">
               Hello,{" "}
@@ -370,6 +366,20 @@ const HomeDashboard: React.FC = () => {
                 {displayName || "Username"}
               </Text>
             </Text>
+          </View>
+
+          {/* Right Side: Notifications & Profile */}
+          <View className="flex-row items-center space-x-4 gap-4">
+            <View className="flex-row items-center">
+              <MaterialCommunityIcons
+                name="heart-pulse"
+                size={20}
+                color="#EF4444"
+              />
+              <Text className="text-white font-bold text-[16px] ml-1.5">
+                232
+              </Text>
+            </View>
             <TouchableOpacity>
               <Ionicons name="notifications" size={22} color="white" />
             </TouchableOpacity>
@@ -657,7 +667,8 @@ const HomeDashboard: React.FC = () => {
               {/* Mock Test */}
               <TouchableOpacity activeOpacity={0.8}>
                 <LinearGradient
-                  colors={["#875014", "#CA802E"]} // Dark to lighter brown/orange
+                  // Dark to lighter brown/orange
+                  colors={["#1B521E", "#3A863D"]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
                   style={{
@@ -686,7 +697,7 @@ const HomeDashboard: React.FC = () => {
                   className="relative"
                 >
                   <LinearGradient
-                    colors={["#1B521E", "#3A863D"]} // Dark to lighter green
+                    colors={["#875014", "#CA802E"]} // Dark to lighter green
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
                     style={{
@@ -758,7 +769,7 @@ const HomeDashboard: React.FC = () => {
                 </View>
 
                 <Text className="text-white text-[15px] font-bold text-center mb-1">
-                  Daily Practice Goal
+                  Your Progress
                 </Text>
                 <Text className="text-white/60 text-[12px] text-center leading-[18px] mt-1 px-2">
                   You've completed{"\n"}

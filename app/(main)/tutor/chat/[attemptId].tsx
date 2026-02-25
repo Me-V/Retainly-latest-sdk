@@ -9,6 +9,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -74,6 +75,11 @@ export default function ChatScreen() {
   const [penaltyScore, setPenaltyScore] = useState(0);
 
   const [healthPoints, setHealthPoints] = useState<number | null>(null);
+
+  // Animation Refs for Health Points
+  const prevHealthRef = useRef<number | null>(null);
+  const healthScaleAnim = useRef(new Animated.Value(1)).current;
+  const healthColorAnim = useRef(new Animated.Value(0)).current;
 
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
@@ -160,7 +166,7 @@ export default function ChatScreen() {
     transcriptRef.current = "";
     setSelectedOptions([]);
     setSending(true);
-    setShowNextButton(false); // 🟢 Hide button while processing new answer
+    setShowNextButton(false);
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
@@ -367,6 +373,49 @@ export default function ChatScreen() {
     fetchHistory();
   }, [attemptId, token, initialQuestion]);
 
+  // Trigger Animation when Health Points change
+  useEffect(() => {
+    if (healthPoints !== null) {
+      if (
+        prevHealthRef.current !== null &&
+        prevHealthRef.current !== healthPoints
+      ) {
+        const isIncrease = healthPoints > prevHealthRef.current;
+
+        // Set initial color state (1 for green/increase, -1 for red/decrease)
+        healthColorAnim.setValue(isIncrease ? 1 : -1);
+
+        // Pop Animation (Scale)
+        Animated.sequence([
+          Animated.spring(healthScaleAnim, {
+            toValue: 1.3,
+            friction: 3,
+            useNativeDriver: true,
+          }),
+          Animated.spring(healthScaleAnim, {
+            toValue: 1,
+            friction: 5,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        // Color Fade Back to White
+        Animated.timing(healthColorAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: false, // Color interpolation doesn't support native driver
+        }).start();
+      }
+      prevHealthRef.current = healthPoints;
+    }
+  }, [healthPoints]);
+
+  // Interpolate the color value to actual colors
+  const healthTextColor = healthColorAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ["#EF4444", "#FFFFFF", "#4ADE80"], // Red (Decrease), White (Normal), Green (Increase)
+  });
+
   const lastMessage = messages[messages.length - 1];
   const isBotOptionsInteraction =
     lastMessage?.sender === "bot" &&
@@ -408,17 +457,23 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* 🟢 NEW: Health Points (Top Right) */}
-            <View className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/5">
+            {/* Animated Health Points (Top Right) */}
+            <Animated.View
+              style={{ transform: [{ scale: healthScaleAnim }] }}
+              className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/5"
+            >
               <MaterialCommunityIcons
                 name="heart-pulse"
                 size={20}
                 color="#EF4444"
               />
-              <Text className="text-white font-bold text-[15px] ml-1.5">
+              <Animated.Text
+                style={{ color: healthTextColor }}
+                className="font-bold text-[15px] ml-1.5"
+              >
                 {healthPoints !== null ? healthPoints : "--"} HP
-              </Text>
-            </View>
+              </Animated.Text>
+            </Animated.View>
           </View>
 
           {/* Progress Bar (Kept intact below the new header) */}
