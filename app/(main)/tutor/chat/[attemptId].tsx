@@ -81,6 +81,9 @@ export default function ChatScreen() {
   const healthScaleAnim = useRef(new Animated.Value(1)).current;
   const healthColorAnim = useRef(new Animated.Value(0)).current;
 
+  // Animation Ref for Progress Bar
+  const progressAnim = useRef(new Animated.Value(progressScore)).current;
+
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -410,6 +413,28 @@ export default function ChatScreen() {
     }
   }, [healthPoints]);
 
+  // Trigger slow movement when progressScore changes
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressScore,
+      duration: 800, // 800ms for a nice, slow, smooth slide
+      useNativeDriver: false, // Must be false for width/left layout properties
+    }).start();
+  }, [progressScore]);
+
+  // Interpolate Animated Value into Percentages and Pixels
+  const animatedProgressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+    extrapolate: "clamp",
+  });
+
+  const animatedDotTranslateX = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, -16], // Maps to the -16 offset
+    extrapolate: "clamp",
+  });
+
   // Interpolate the color value to actual colors
   const healthTextColor = healthColorAnim.interpolate({
     inputRange: [-1, 0, 1],
@@ -476,28 +501,33 @@ export default function ChatScreen() {
             </Animated.View>
           </View>
 
-          {/* Progress Bar (Kept intact below the new header) */}
+          {/* Progress Bar */}
           <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
-            <View
+            {/* Animated Fill */}
+            <Animated.View
               className="absolute left-0 top-0 bottom-0 rounded-full"
               style={{
-                width: `${progressScore}%`,
+                width: animatedProgressWidth,
                 backgroundColor: progressColor,
                 zIndex: 1,
               }}
             />
+
+            {/* Penalty Fill (Stays on the right) */}
             {penaltyScore > 0 && (
               <View
                 className="absolute right-0 top-0 bottom-0 bg-red-600 rounded-r-full"
                 style={{ width: `${penaltyScore}%`, zIndex: 1 }}
               />
             )}
-            <View
+
+            {/* Animated Tracker Dot */}
+            <Animated.View
               className="absolute top-[-2px] w-4 h-4 rounded-full border-2 border-white shadow-sm"
               style={{
-                left: `${progressScore}%`,
+                left: animatedProgressWidth,
                 backgroundColor: progressColor,
-                transform: [{ translateX: -16 * (progressScore / 100) }],
+                transform: [{ translateX: animatedDotTranslateX }],
                 zIndex: 2,
               }}
             />
