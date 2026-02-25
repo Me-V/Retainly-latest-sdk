@@ -173,7 +173,7 @@ export default function ChatScreen() {
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
-      console.log("API Response:", JSON.stringify(data, null, 2));
+      // console.log("API Response:", JSON.stringify(data, null, 2));
 
       const botText = data?.payload?.message || data?.message || data?.response;
       const decision = data?.payload?.decision;
@@ -431,7 +431,7 @@ export default function ChatScreen() {
 
   const animatedDotTranslateX = progressAnim.interpolate({
     inputRange: [0, 100],
-    outputRange: [0, -16], // Maps to the -16 offset
+    outputRange: [0, -22], // 🟢 Matches the new 22px dot width perfectly
     extrapolate: "clamp",
   });
 
@@ -460,14 +460,11 @@ export default function ChatScreen() {
   const progressColor = getProgressBarColor(progressScore);
 
   return (
-    // 🟢 FIX 1: Removed className from LinearGradient, using style instead
     <LinearGradient colors={["#240b36", "#1a0b2e"]} style={{ flex: 1 }}>
-      {/* 🟢 FIX 2: Removed className from SafeAreaView, using style instead */}
       <SafeAreaView style={{ flex: 1 }}>
         {/* --- HEADER --- */}
-        <View className="px-5 pb-2 pt-2 w-full">
-          <View className="flex-row justify-between items-center mb-4">
-            {/* 🟢 Home Button (Top Left) */}
+        <View className="px-5 pb-2 w-full">
+          <View className="flex-row justify-between items-center mb-4 mt-1">
             <TouchableOpacity
               onPress={() => router.push("/(main)/dashboard")}
               activeOpacity={0.8}
@@ -502,7 +499,7 @@ export default function ChatScreen() {
           </View>
 
           {/* Progress Bar */}
-          <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
+          <View className="h-[18px] w-full bg-[#FFE4C4] rounded-full relative">
             {/* Animated Fill */}
             <Animated.View
               className="absolute left-0 top-0 bottom-0 rounded-full"
@@ -521,9 +518,27 @@ export default function ChatScreen() {
               />
             )}
 
-            {/* Animated Tracker Dot */}
+            {/* 🟢 Percentage Text Centered Inside */}
+            <View
+              className="absolute inset-0 items-center justify-center z-10"
+              pointerEvents="none"
+            >
+              <Text
+                className="font-bold text-[11px]"
+                style={{
+                  color: progressScore > 50 ? "#FFFFFF" : "#5A1C44",
+                  textShadowColor: "rgba(0,0,0,0.2)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              >
+                {progressScore}%
+              </Text>
+            </View>
+
+            {/* 🟢 Animated Tracker Dot (Sized proportionally to the 18px bar) */}
             <Animated.View
-              className="absolute top-[-2px] w-4 h-4 rounded-full border-2 border-white shadow-sm"
+              className="absolute top-[-2px] w-[22px] h-[22px] rounded-full border-[2.5px] border-white shadow-sm"
               style={{
                 left: animatedProgressWidth,
                 backgroundColor: progressColor,

@@ -27,6 +27,7 @@ import {
 import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 import Svg, { Circle } from "react-native-svg";
+import { getHealthPoints } from "@/services/api.auth";
 
 // ... [Keep your ProgressBar, SubjectRow, Types, and mockSubjects exactly as they are] ...
 
@@ -105,6 +106,9 @@ const HomeDashboard: React.FC = () => {
   // Weekly Graph State
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [weeklyTotal, setWeeklyTotal] = useState(0);
+
+  // Health Points State
+  const [healthBalance, setHealthBalance] = useState<number | string>("--");
 
   useFocusEffect(
     useCallback(() => {
@@ -316,6 +320,22 @@ const HomeDashboard: React.FC = () => {
     fetchQuizzes();
   }, [token]);
 
+  //Fetch Health Points
+  useEffect(() => {
+    const fetchHealth = async () => {
+      if (!token) return;
+      try {
+        const data = await getHealthPoints(token);
+        if (data && data.balance !== undefined) {
+          setHealthBalance(data.balance);
+        }
+      } catch (error) {
+        console.error("Failed to load health points:", error);
+      }
+    };
+    fetchHealth();
+  }, [token]);
+
   const allFromApi = useMemo(() => {
     return (list as any[]).map((s, i) => ({
       name: s.name || s.title || `Subject ${i + 1}`,
@@ -377,7 +397,7 @@ const HomeDashboard: React.FC = () => {
                 color="#EF4444"
               />
               <Text className="text-white font-bold text-[16px] ml-1.5">
-                232
+                {healthBalance}
               </Text>
             </View>
             <TouchableOpacity>
