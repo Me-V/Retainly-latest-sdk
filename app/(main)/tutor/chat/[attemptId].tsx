@@ -173,7 +173,7 @@ export default function ChatScreen() {
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
-      // console.log("API Response:", JSON.stringify(data, null, 2));
+      console.log("API Response:", JSON.stringify(data, null, 2));
 
       const botText = data?.payload?.message || data?.message || data?.response;
       const decision = data?.payload?.decision;

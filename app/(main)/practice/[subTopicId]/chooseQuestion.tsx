@@ -76,7 +76,7 @@ export default function SubTopicQuestions() {
   }, [token, subTopicId]);
 
   const handleOpenQuestion = async (q: Question) => {
-    console.log("Question:", q);
+    // console.log("Question:", q);
 
     const questionId = getId(q);
     if (!questionId || !token) return;

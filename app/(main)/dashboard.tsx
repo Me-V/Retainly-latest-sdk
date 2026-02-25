@@ -75,11 +75,12 @@ const HomeDashboard: React.FC = () => {
     total_question_count: 0,
   });
 
-  // 🟢 NEW: Leaderboard State & Helpers
+  // Leaderboard State & Helpers
   type LeaderboardUser = {
     rank: number | null;
     name: string;
     score: number | string;
+    isMe?: boolean;
   };
   type LeaderboardData = { top: LeaderboardUser[]; me: LeaderboardUser | null };
 
@@ -190,6 +191,7 @@ const HomeDashboard: React.FC = () => {
               rank: u.rank,
               name: isMe ? displayName || "Me" : u.name || "User",
               score: u.questions_completed ?? 0,
+              isMe,
             };
           });
 
@@ -204,6 +206,7 @@ const HomeDashboard: React.FC = () => {
               rank: data.my_rank.rank,
               name: displayName || "Me",
               score: data.my_rank.questions_completed ?? 0,
+              isMe: true,
             };
           }
 
@@ -492,12 +495,20 @@ const HomeDashboard: React.FC = () => {
                           </View>
                         </View>
                         <Text
-                          className="text-white text-[13px] font-medium flex-1"
+                          className="text-white text-[13px] font-medium flex-shrink"
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
                           {item.name}
                         </Text>
+                        {/*"You" Badge */}
+                        {item.isMe && (
+                          <View className="bg-[#FF8D28] px-[5px] py-[2px] rounded-[4px] ml-1.5 flex-shrink-0">
+                            <Text className="text-white text-[8px] font-bold uppercase tracking-wider">
+                              You
+                            </Text>
+                          </View>
+                        )}
                       </View>
                       <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
                         {item.score}
