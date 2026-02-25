@@ -380,7 +380,7 @@ const HomeDashboard: React.FC = () => {
             {/* Health Points Indicator */}
 
             {/* Greeting */}
-            <Text className="text-[14px] font-bold text-white">
+            <Text className="text-[18px] font-bold text-white">
               Hello,{" "}
               <Text className="text-[#FF8D28]">
                 {displayName || "Username"}
