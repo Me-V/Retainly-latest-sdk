@@ -181,6 +181,20 @@ export default function ChatScreen() {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
       console.log("API Response:", JSON.stringify(data, null, 2));
 
+      // Show modal ONLY if the API response contains the specific detail message
+      if (
+        data?.detail ===
+          "Insufficient health points. Please recharge to continue." ||
+        (data?.health_balance === 0 && !data?.payload)
+      ) {
+        setIsHealthPopupVisible(true);
+        // Remove the message the user just tried to send since it didn't go through
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+        setSending(false);
+        isSendingRef.current = false;
+        return; // Stop processing
+      }
+
       const botText = data?.payload?.message || data?.message || data?.response;
       const decision = data?.payload?.decision?.toLowerCase();
 
@@ -219,7 +233,7 @@ export default function ChatScreen() {
         ),
       );
 
-      // 3. Add Bot Message
+      // Add Bot Message
       if (botText) {
         const botMsg: Message = {
           id: (Date.now() + 1).toString(),
@@ -229,8 +243,18 @@ export default function ChatScreen() {
         };
         setMessages((prev) => [...prev, botMsg]);
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to send message.");
+    } catch (error: any) {
+      // If your API returns a 400 status error, the JSON will be caught here instead
+      const errorData = error?.response?.data;
+      if (
+        errorData?.detail ===
+        "Insufficient health points. Please recharge to continue."
+      ) {
+        setIsHealthPopupVisible(true);
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+      } else {
+        Alert.alert("Error", "Failed to send message.");
+      }
     } finally {
       setSending(false);
       isSendingRef.current = false;
@@ -432,13 +456,6 @@ export default function ChatScreen() {
         }).start();
       }
       prevHealthRef.current = healthPoints;
-    }
-  }, [healthPoints]);
-
-  // Trigger Popup reliably if health drops to or starts at <= 150
-  useEffect(() => {
-    if (healthPoints !== null && healthPoints <= 150) {
-      setIsHealthPopupVisible(true);
     }
   }, [healthPoints]);
 
@@ -1126,14 +1143,27 @@ export default function ChatScreen() {
           </View>
         </KeyboardAvoidingView>
 
-        {/* 🟢 UPDATED: Render the custom modal to match the screenshot */}
+        {/* 🟢 UPDATED: Render the custom modal to match the new screenshot */}
         <PopupModal
           isVisible={isHealthPopupVisible}
           onClose={() => setIsHealthPopupVisible(false)}
-          icon={<Text style={{ fontSize: 64, textAlign: "center" }}>💔</Text>}
-          heading={undefined} // Removed heading
-          content={"you do not have\nenough health points"}
-          primaryText="OK"
+          icon={
+            <Text
+              style={{ fontSize: 60, textAlign: "center", marginBottom: -5 }}
+            >
+              💔
+            </Text>
+          }
+          heading="You're out of Health Points"
+          content={"Buy more Health Points or answer\nquestions to continue."}
+          primaryText="Buy"
+          onPrimary={() => {
+            setIsHealthPopupVisible(false);
+            // 🟢 Handle navigation to Store / Payment here
+            // router.push("/store");
+          }}
+          secondaryText="Cancel"
+          onSecondary={() => setIsHealthPopupVisible(false)}
           theme="dark"
         />
       </SafeAreaView>
