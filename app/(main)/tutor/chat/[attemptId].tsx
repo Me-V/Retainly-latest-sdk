@@ -19,6 +19,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 // Services
 import { sendChatMessage, getChatHistory } from "@/services/api.chat";
+import { getHealthPoints } from "@/services/api.auth";
 
 // Voice Library
 import {
@@ -176,7 +177,7 @@ export default function ChatScreen() {
       console.log("API Response:", JSON.stringify(data, null, 2));
 
       const botText = data?.payload?.message || data?.message || data?.response;
-      const decision = data?.payload?.decision;
+      const decision = data?.payload?.decision?.toLowerCase();
 
       //Update Scores if provided by API
       if (data?.payload?.progress_score !== undefined) {
@@ -194,10 +195,10 @@ export default function ChatScreen() {
       // 🟢 Determine Status
       const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
-        decision === "Need Study" ||
-        decision === "Improvements" ||
+        decision === "need study" ||
+        decision === "improvements" ||
         decision === "repeat_with_correction" ||
-        decision === "Penalty";
+        decision === "penalty";
 
       // 🟢 Show Next Button if answer is correct
       if (isAnswerCorrect) {
@@ -305,13 +306,13 @@ export default function ChatScreen() {
 
             // If we find a Bot message with a decision...
             if (msg.sender === "bot" && msg.payload?.decision) {
-              const decision = msg.payload.decision;
+              const decision = msg.payload.decision.toLowerCase();
               const isCorrect = decision === "correct";
               const isError =
-                decision === "Need Study" ||
-                decision === "Improvements" ||
+                decision === "need study" ||
+                decision === "improvements" ||
                 decision === "repeat_with_correction" ||
-                decision === "Penalty";
+                decision === "penalty";
 
               // ...Apply that status to the PREVIOUS message (if it was from the user)
               if (i > 0 && history[i - 1].sender === "user") {
@@ -328,7 +329,7 @@ export default function ChatScreen() {
             lastMsg.sender === "bot" &&
             lastMsg.payload?.decision
           ) {
-            const d = lastMsg.payload.decision;
+            const d = lastMsg.payload.decision.toLowerCase();
             if (d === "correct") {
               setShowNextButton(true);
             }
@@ -375,6 +376,22 @@ export default function ChatScreen() {
     };
     fetchHistory();
   }, [attemptId, token, initialQuestion]);
+
+  //Fetch Initial Health Points on Load
+  useEffect(() => {
+    const fetchInitialHealth = async () => {
+      if (!token) return;
+      try {
+        const data = await getHealthPoints(token);
+        if (data && data.balance !== undefined) {
+          setHealthPoints(data.balance);
+        }
+      } catch (error) {
+        console.error("Failed to load initial health points:", error);
+      }
+    };
+    fetchInitialHealth();
+  }, [token]);
 
   // Trigger Animation when Health Points change
   useEffect(() => {
