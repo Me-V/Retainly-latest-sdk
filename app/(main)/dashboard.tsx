@@ -494,21 +494,17 @@ const HomeDashboard: React.FC = () => {
                             )}
                           </View>
                         </View>
+
+                        {/* 🟢 UPDATED: Name Color Conditional & Badge Removed */}
                         <Text
-                          className="text-white text-[13px] font-medium flex-shrink"
+                          className={`text-[13px] font-medium flex-shrink ${
+                            item.isMe ? "text-[#FF8D28]" : "text-white"
+                          }`}
                           numberOfLines={1}
                           ellipsizeMode="tail"
                         >
                           {item.name}
                         </Text>
-                        {/*"You" Badge */}
-                        {item.isMe && (
-                          <View className="bg-[#FF8D28] px-[5px] py-[2px] rounded-[4px] ml-1.5 flex-shrink-0">
-                            <Text className="text-white text-[8px] font-bold uppercase tracking-wider">
-                              You
-                            </Text>
-                          </View>
-                        )}
                       </View>
                       <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
                         {item.score}
