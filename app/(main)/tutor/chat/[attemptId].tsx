@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import PopupModal from "@/components/Popup-modal";
 
 // Services
 import { sendChatMessage, getChatHistory } from "@/services/api.chat";
@@ -91,6 +92,7 @@ export default function ChatScreen() {
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [isHealthPopupVisible, setIsHealthPopupVisible] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const transcriptRef = useRef("");
@@ -396,7 +398,7 @@ export default function ChatScreen() {
     fetchInitialHealth();
   }, [token]);
 
-  // Trigger Animation when Health Points change
+  //Trigger Animation ONLY when Health Points change
   useEffect(() => {
     if (healthPoints !== null) {
       if (
@@ -426,10 +428,17 @@ export default function ChatScreen() {
         Animated.timing(healthColorAnim, {
           toValue: 0,
           duration: 1000,
-          useNativeDriver: false, // Color interpolation doesn't support native driver
+          useNativeDriver: false,
         }).start();
       }
       prevHealthRef.current = healthPoints;
+    }
+  }, [healthPoints]);
+
+  // Trigger Popup reliably if health drops to or starts at <= 150
+  useEffect(() => {
+    if (healthPoints !== null && healthPoints <= 150) {
+      setIsHealthPopupVisible(true);
     }
   }, [healthPoints]);
 
@@ -1116,6 +1125,17 @@ export default function ChatScreen() {
             )}
           </View>
         </KeyboardAvoidingView>
+
+        {/* 🟢 UPDATED: Render the custom modal to match the screenshot */}
+        <PopupModal
+          isVisible={isHealthPopupVisible}
+          onClose={() => setIsHealthPopupVisible(false)}
+          icon={<Text style={{ fontSize: 64, textAlign: "center" }}>💔</Text>}
+          heading={undefined} // Removed heading
+          content={"you do not have\nenough health points"}
+          primaryText="OK"
+          theme="dark"
+        />
       </SafeAreaView>
     </LinearGradient>
   );
