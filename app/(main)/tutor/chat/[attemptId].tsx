@@ -85,6 +85,9 @@ export default function ChatScreen() {
   // Animation Ref for Progress Bar
   const progressAnim = useRef(new Animated.Value(progressScore)).current;
 
+  // Blinking Animation Ref for Low Health
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -439,6 +442,38 @@ export default function ChatScreen() {
     }).start();
   }, [progressScore]);
 
+  // Trigger Continuous Blinking when Health <= 150
+  useEffect(() => {
+    let animationLoop: Animated.CompositeAnimation | null = null;
+
+    if (healthPoints !== null && healthPoints <= 150) {
+      animationLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.3, // Fade out
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1, // Fade back in
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animationLoop.start();
+    } else {
+      // Reset if health goes above 150
+      blinkAnim.setValue(1);
+    }
+
+    return () => {
+      if (animationLoop) {
+        animationLoop.stop();
+      }
+    };
+  }, [healthPoints, blinkAnim]);
+
   // Interpolate Animated Value into Percentages and Pixels
   const animatedProgressWidth = progressAnim.interpolate({
     inputRange: [0, 100],
@@ -498,8 +533,15 @@ export default function ChatScreen() {
 
             {/* Animated Health Points (Top Right) */}
             <Animated.View
-              style={{ transform: [{ scale: healthScaleAnim }] }}
-              className="flex-row items-center bg-white/10 px-3 py-1.5 rounded-full border border-white/5"
+              style={{
+                transform: [{ scale: healthScaleAnim }],
+                opacity: blinkAnim, // 🟢 NEW: Added blinking opacity
+              }}
+              className={`flex-row items-center px-3 py-1.5 rounded-full border ${
+                healthPoints !== null && healthPoints <= 150
+                  ? "bg-red-500/20 border-red-500/50" // 🟢 NEW: Turn background red when low
+                  : "bg-white/10 border-white/5"
+              }`}
             >
               <MaterialCommunityIcons
                 name="heart-pulse"
