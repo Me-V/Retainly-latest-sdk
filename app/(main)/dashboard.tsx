@@ -239,6 +239,12 @@ const HomeDashboard: React.FC = () => {
       try {
         const data = await getLastNDaysAnalytics(token, { n: 7 });
 
+        console.log(
+          "-------------------->>>>>>>>>>>>>>>>Weekly Data",
+          data,
+          JSON.stringify(data),
+        );
+
         setWeeklyTotal(data.questions_completed || 0);
 
         const today = new Date();
@@ -593,6 +599,14 @@ const HomeDashboard: React.FC = () => {
 
                 {/* Bars & Axes Area */}
                 <View className="flex-1 border-l border-b border-white/20 flex-row items-end justify-between px-2 relative pb-0">
+                  {/* Check if there is NO data and show the placeholder text */}
+                  {weeklyTotal === 0 ? (
+                    <View className="absolute inset-0 items-center justify-center bottom-4">
+                      <Text className="text-white/60 text-[11px] text-center px-4">
+                        No Progress in last week. You are{"\n"}lagging behind!!
+                      </Text>
+                    </View>
+                  ) : null}
                   {weeklyData.map((item, index) => {
                     const maxChartValue =
                       Math.max(...weeklyData.map((d) => d.value)) || 1;
@@ -651,7 +665,8 @@ const HomeDashboard: React.FC = () => {
               {/* Footer Stat */}
               <View className="flex-row justify-center items-center mt-2">
                 <Text className="text-white/70 text-[13px]">
-                  <Text className="text-[#FF8D28] font-bold">
+                  <Text className="text-[#EF4444] font-bold">
+                    {" "}
                     {weeklyTotal}
                   </Text>{" "}
                   Questions Last 7 Days
