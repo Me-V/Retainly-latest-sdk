@@ -7,13 +7,13 @@ import {
   ScrollView,
 } from "react-native";
 import Modal from "react-native-modal";
-
 import { LinearGradient } from "expo-linear-gradient";
 
 interface PopupModalProps {
   isVisible: boolean;
   onClose: () => void;
-  heading?: string;
+  icon?: React.ReactNode; // 🟢 NEW: Allow passing an icon/image
+  heading?: string; // 🟢 Made optional (removed default "Alert")
   content?: string | React.ReactNode;
   cancelShow?: boolean;
   primaryText?: string;
@@ -21,16 +21,17 @@ interface PopupModalProps {
   secondaryText?: string;
   onSecondary?: () => void;
   dismissible?: boolean;
-  theme?: "light" | "dark"; // New prop for styling
+  theme?: "light" | "dark";
 }
 
 const PopupModal: React.FC<PopupModalProps> = ({
   isVisible,
   onClose,
-  heading = "Alert",
+  icon,
+  heading,
   content = "",
   cancelShow = false,
-  primaryText = "Ok",
+  primaryText = "OK",
   onPrimary,
   secondaryText,
   onSecondary,
@@ -66,69 +67,73 @@ const PopupModal: React.FC<PopupModalProps> = ({
         alignItems: "center",
       }}
     >
-      {/* Replaced View with LinearGradient */}
       <LinearGradient
-        // Apply the requested gradient for Dark Mode, White for Light Mode
-        colors={isDark ? ["#3B0A52", "#180323"] : ["#FFFFFF", "#FFFFFF"]}
-        start={{ x: 0, y: 0 }} // Top
-        end={{ x: 0, y: 1 }} // Bottom (180deg)
+        // 🟢 MATCHES SCREENSHOT: Deep dark purple gradient
+        colors={isDark ? ["#2A0845", "#160324"] : ["#FFFFFF", "#FFFFFF"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
         style={{
           borderRadius: 24,
-          width: width * 0.9,
-          maxWidth: 420,
+          width: width * 0.85,
+          maxWidth: 360,
           paddingHorizontal: 24,
-          paddingTop: 24,
+          paddingTop: 32,
           paddingBottom: 24,
           shadowColor: "#000",
-          shadowOpacity: 0.25,
-          shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 16,
+          shadowOpacity: 0.3,
+          shadowOffset: { width: 0, height: 10 },
+          shadowRadius: 20,
           elevation: 10,
+          alignItems: "center", // Center everything vertically
         }}
       >
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            color: isDark ? "white" : "#F98455",
-            textAlign: "center",
-            marginBottom: 12,
-          }}
-        >
-          {heading}
-        </Text>
+        {/* 🟢 Render Icon if provided */}
+        {icon && <View style={{ marginBottom: 16 }}>{icon}</View>}
 
-        {typeof content === "string" ? (
-          <ScrollView
-            style={{ maxHeight: 220 }}
-            showsVerticalScrollIndicator={false}
+        {/* 🟢 Render Heading ONLY if provided */}
+        {heading ? (
+          <Text
+            style={{
+              fontSize: 22,
+              fontWeight: "bold",
+              color: isDark ? "white" : "#F98455",
+              textAlign: "center",
+              marginBottom: 12,
+            }}
           >
-            <Text
-              style={{
-                color: isDark ? "#E5E7EB" : "#374151",
-                textAlign: "center",
-                lineHeight: 22,
-                fontSize: 16,
-              }}
-            >
-              {content}
-            </Text>
-          </ScrollView>
+            {heading}
+          </Text>
+        ) : null}
+
+        {/* Render Content */}
+        {typeof content === "string" ? (
+          <Text
+            style={{
+              color: isDark ? "white" : "#374151",
+              textAlign: "center",
+              lineHeight: 26,
+              fontSize: 18,
+              fontWeight: "600", // 🟢 Bolder text matching the screenshot
+              marginBottom: 24,
+            }}
+          >
+            {content}
+          </Text>
         ) : (
-          <View style={{ maxHeight: 260 }}>
+          <View style={{ maxHeight: 260, marginBottom: 24, width: "100%" }}>
             <ScrollView showsVerticalScrollIndicator={false}>
               {content}
             </ScrollView>
           </View>
         )}
 
+        {/* Buttons Container */}
         <View
           style={{
-            width: "100%",
-            marginTop: 24,
             flexDirection: "row",
-            justifyContent: "space-between",
+            justifyContent: "center",
             gap: 12,
+            width: "100%",
           }}
         >
           {secondaryText ? (
@@ -137,7 +142,7 @@ const PopupModal: React.FC<PopupModalProps> = ({
               activeOpacity={0.85}
               style={{
                 flex: 1,
-                paddingVertical: 14,
+                paddingVertical: 12,
                 borderRadius: 16,
                 backgroundColor: isDark ? "#804A8A" : "transparent",
                 borderWidth: isDark ? 0 : 1,
@@ -158,19 +163,29 @@ const PopupModal: React.FC<PopupModalProps> = ({
             </TouchableOpacity>
           ) : null}
 
+          {/* 🟢 Primary Button (Stops stretching if it's the only button) */}
           <TouchableOpacity
             onPress={handlePrimary}
             activeOpacity={0.85}
             style={{
-              flex: 1,
-              paddingVertical: 14,
-              borderRadius: 16,
+              flex: secondaryText ? 1 : undefined,
+              paddingVertical: 12,
+              paddingHorizontal: secondaryText ? 0 : 36, // Add side padding for standalone pill
+              borderRadius: 14,
               backgroundColor: "#FF8A33",
               alignItems: "center",
               justifyContent: "center",
+              minWidth: secondaryText ? undefined : 120,
             }}
           >
-            <Text style={{ color: "white", fontWeight: "600", fontSize: 15 }}>
+            <Text
+              style={{
+                color: "white",
+                fontWeight: "bold",
+                fontSize: 16,
+                textTransform: "uppercase",
+              }}
+            >
               {primaryText}
             </Text>
           </TouchableOpacity>

@@ -183,3 +183,19 @@ export async function logout(token: string) {
     throw err;
   }
 }
+
+//Get Health Points Balance
+export async function getHealthPoints(token: string) {
+  try {
+    const res = await axios.get(`${API_BASE}/backend/api/healthpoints/balance/`, {
+      headers: {
+        Authorization: `Token ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data; // { balance: 350, updated_at: "..." }
+  } catch (err: any) {
+    console.error("Health points fetch error:", err.response?.data || err.message);
+    throw err;
+  }
+}

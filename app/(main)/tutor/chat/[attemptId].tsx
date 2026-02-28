@@ -9,15 +9,18 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import PopupModal from "@/components/Popup-modal";
 
 // Services
 import { sendChatMessage, getChatHistory } from "@/services/api.chat";
+import { getHealthPoints } from "@/services/api.auth";
 
 // Voice Library
 import {
@@ -73,9 +76,23 @@ export default function ChatScreen() {
   const [progressScore, setProgressScore] = useState(0);
   const [penaltyScore, setPenaltyScore] = useState(0);
 
+  const [healthPoints, setHealthPoints] = useState<number | null>(null);
+
+  // Animation Refs for Health Points
+  const prevHealthRef = useRef<number | null>(null);
+  const healthScaleAnim = useRef(new Animated.Value(1)).current;
+  const healthColorAnim = useRef(new Animated.Value(0)).current;
+
+  // Animation Ref for Progress Bar
+  const progressAnim = useRef(new Animated.Value(progressScore)).current;
+
+  // Blinking Animation Ref for Low Health
+  const blinkAnim = useRef(new Animated.Value(1)).current;
+
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [isHealthPopupVisible, setIsHealthPopupVisible] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const transcriptRef = useRef("");
@@ -158,14 +175,28 @@ export default function ChatScreen() {
     transcriptRef.current = "";
     setSelectedOptions([]);
     setSending(true);
-    setShowNextButton(false); // 🟢 Hide button while processing new answer
+    setShowNextButton(false);
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
       console.log("API Response:", JSON.stringify(data, null, 2));
 
+      // Show modal ONLY if the API response contains the specific detail message
+      if (
+        data?.detail ===
+          "Insufficient health points. Please recharge to continue." ||
+        (data?.health_balance === 0 && !data?.payload)
+      ) {
+        setIsHealthPopupVisible(true);
+        // Remove the message the user just tried to send since it didn't go through
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+        setSending(false);
+        isSendingRef.current = false;
+        return; // Stop processing
+      }
+
       const botText = data?.payload?.message || data?.message || data?.response;
-      const decision = data?.payload?.decision;
+      const decision = data?.payload?.decision?.toLowerCase();
 
       //Update Scores if provided by API
       if (data?.payload?.progress_score !== undefined) {
@@ -175,13 +206,18 @@ export default function ChatScreen() {
         setPenaltyScore(data.payload.penalty_score);
       }
 
+      //Health Points from API response
+      if (data?.health_balance !== undefined) {
+        setHealthPoints(data.health_balance);
+      }
+
       // 🟢 Determine Status
       const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
-        decision === "Need Study" ||
-        decision === "Improvements" ||
+        decision === "need study" ||
+        decision === "improvements" ||
         decision === "repeat_with_correction" ||
-        decision === "Penalty";
+        decision === "penalty";
 
       // 🟢 Show Next Button if answer is correct
       if (isAnswerCorrect) {
@@ -197,7 +233,7 @@ export default function ChatScreen() {
         ),
       );
 
-      // 3. Add Bot Message
+      // Add Bot Message
       if (botText) {
         const botMsg: Message = {
           id: (Date.now() + 1).toString(),
@@ -207,8 +243,18 @@ export default function ChatScreen() {
         };
         setMessages((prev) => [...prev, botMsg]);
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to send message.");
+    } catch (error: any) {
+      // If your API returns a 400 status error, the JSON will be caught here instead
+      const errorData = error?.response?.data;
+      if (
+        errorData?.detail ===
+        "Insufficient health points. Please recharge to continue."
+      ) {
+        setIsHealthPopupVisible(true);
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+      } else {
+        Alert.alert("Error", "Failed to send message.");
+      }
     } finally {
       setSending(false);
       isSendingRef.current = false;
@@ -260,6 +306,10 @@ export default function ChatScreen() {
       try {
         const data = await getChatHistory(token, attemptId);
 
+        if (data?.health_balance !== undefined) {
+          setHealthPoints(data.health_balance);
+        }
+
         if (
           data?.messages &&
           Array.isArray(data.messages) &&
@@ -285,13 +335,13 @@ export default function ChatScreen() {
 
             // If we find a Bot message with a decision...
             if (msg.sender === "bot" && msg.payload?.decision) {
-              const decision = msg.payload.decision;
+              const decision = msg.payload.decision.toLowerCase();
               const isCorrect = decision === "correct";
               const isError =
-                decision === "Need Study" ||
-                decision === "Improvements" ||
+                decision === "need study" ||
+                decision === "improvements" ||
                 decision === "repeat_with_correction" ||
-                decision === "Penalty";
+                decision === "penalty";
 
               // ...Apply that status to the PREVIOUS message (if it was from the user)
               if (i > 0 && history[i - 1].sender === "user") {
@@ -308,7 +358,7 @@ export default function ChatScreen() {
             lastMsg.sender === "bot" &&
             lastMsg.payload?.decision
           ) {
-            const d = lastMsg.payload.decision;
+            const d = lastMsg.payload.decision.toLowerCase();
             if (d === "correct") {
               setShowNextButton(true);
             }
@@ -356,6 +406,119 @@ export default function ChatScreen() {
     fetchHistory();
   }, [attemptId, token, initialQuestion]);
 
+  //Fetch Initial Health Points on Load
+  useEffect(() => {
+    const fetchInitialHealth = async () => {
+      if (!token) return;
+      try {
+        const data = await getHealthPoints(token);
+        if (data && data.balance !== undefined) {
+          setHealthPoints(data.balance);
+        }
+      } catch (error) {
+        console.error("Failed to load initial health points:", error);
+      }
+    };
+    fetchInitialHealth();
+  }, [token]);
+
+  //Trigger Animation ONLY when Health Points change
+  useEffect(() => {
+    if (healthPoints !== null) {
+      if (
+        prevHealthRef.current !== null &&
+        prevHealthRef.current !== healthPoints
+      ) {
+        const isIncrease = healthPoints > prevHealthRef.current;
+
+        // Set initial color state (1 for green/increase, -1 for red/decrease)
+        healthColorAnim.setValue(isIncrease ? 1 : -1);
+
+        // Pop Animation (Scale)
+        Animated.sequence([
+          Animated.spring(healthScaleAnim, {
+            toValue: 1.3,
+            friction: 3,
+            useNativeDriver: true,
+          }),
+          Animated.spring(healthScaleAnim, {
+            toValue: 1,
+            friction: 5,
+            useNativeDriver: true,
+          }),
+        ]).start();
+
+        // Color Fade Back to White
+        Animated.timing(healthColorAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: false,
+        }).start();
+      }
+      prevHealthRef.current = healthPoints;
+    }
+  }, [healthPoints]);
+
+  // Trigger slow movement when progressScore changes
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progressScore,
+      duration: 800, // 800ms for a nice, slow, smooth slide
+      useNativeDriver: false, // Must be false for width/left layout properties
+    }).start();
+  }, [progressScore]);
+
+  // Trigger Continuous Blinking when Health <= 150
+  useEffect(() => {
+    let animationLoop: Animated.CompositeAnimation | null = null;
+
+    if (healthPoints !== null && healthPoints <= 150) {
+      animationLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(blinkAnim, {
+            toValue: 0.3, // Fade out
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(blinkAnim, {
+            toValue: 1, // Fade back in
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animationLoop.start();
+    } else {
+      // Reset if health goes above 150
+      blinkAnim.setValue(1);
+    }
+
+    return () => {
+      if (animationLoop) {
+        animationLoop.stop();
+      }
+    };
+  }, [healthPoints, blinkAnim]);
+
+  // Interpolate Animated Value into Percentages and Pixels
+  const animatedProgressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ["0%", "100%"],
+    extrapolate: "clamp",
+  });
+
+  const animatedDotTranslateX = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, -22], // 🟢 Matches the new 22px dot width perfectly
+    extrapolate: "clamp",
+  });
+
+  // Interpolate the color value to actual colors
+  const healthTextColor = healthColorAnim.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ["#EF4444", "#FFFFFF", "#4ADE80"], // Red (Decrease), White (Normal), Green (Increase)
+  });
+
   const lastMessage = messages[messages.length - 1];
   const isBotOptionsInteraction =
     lastMessage?.sender === "bot" &&
@@ -375,14 +538,11 @@ export default function ChatScreen() {
   const progressColor = getProgressBarColor(progressScore);
 
   return (
-    // 🟢 FIX 1: Removed className from LinearGradient, using style instead
     <LinearGradient colors={["#240b36", "#1a0b2e"]} style={{ flex: 1 }}>
-      {/* 🟢 FIX 2: Removed className from SafeAreaView, using style instead */}
       <SafeAreaView style={{ flex: 1 }}>
         {/* --- HEADER --- */}
-        <View className="px-5 pb-2 pt-2 w-full">
-          <View className="flex-row justify-between items-center mb-4">
-            {/* 🟢 Home Button (Top Left) */}
+        <View className="px-5 pb-2 w-full">
+          <View className="flex-row justify-between items-center mb-4 mt-1">
             <TouchableOpacity
               onPress={() => router.push("/(main)/dashboard")}
               activeOpacity={0.8}
@@ -397,33 +557,77 @@ export default function ChatScreen() {
               </View>
             </TouchableOpacity>
 
-            {/* Score Text (Top Right) */}
-            <Text className="text-white font-bold text-[16px]">
-              Score: {progressScore}%
-            </Text>
+            {/* Animated Health Points (Top Right) */}
+            <Animated.View
+              style={{
+                transform: [{ scale: healthScaleAnim }],
+                opacity: blinkAnim, // 🟢 NEW: Added blinking opacity
+              }}
+              className={`flex-row items-center px-3 py-1.5 rounded-full border ${
+                healthPoints !== null && healthPoints <= 150
+                  ? "bg-red-500/20 border-red-500/50" // 🟢 NEW: Turn background red when low
+                  : "bg-white/10 border-white/5"
+              }`}
+            >
+              <MaterialCommunityIcons
+                name="heart-pulse"
+                size={20}
+                color="#EF4444"
+              />
+              <Animated.Text
+                style={{ color: healthTextColor }}
+                className="font-bold text-[15px] ml-1.5"
+              >
+                {healthPoints !== null ? healthPoints : "--"} HP
+              </Animated.Text>
+            </Animated.View>
           </View>
 
-          <View className="h-[12px] w-full bg-[#FFE4C4] rounded-full relative">
-            <View
+          {/* Progress Bar */}
+          <View className="h-[18px] w-full bg-[#FFE4C4] rounded-full relative">
+            {/* Animated Fill */}
+            <Animated.View
               className="absolute left-0 top-0 bottom-0 rounded-full"
               style={{
-                width: `${progressScore}%`,
+                width: animatedProgressWidth,
                 backgroundColor: progressColor,
                 zIndex: 1,
               }}
             />
+
+            {/* Penalty Fill (Stays on the right) */}
             {penaltyScore > 0 && (
               <View
                 className="absolute right-0 top-0 bottom-0 bg-red-600 rounded-r-full"
                 style={{ width: `${penaltyScore}%`, zIndex: 1 }}
               />
             )}
+
+            {/* 🟢 Percentage Text Centered Inside */}
             <View
-              className="absolute top-[-2px] w-4 h-4 rounded-full border-2 border-white shadow-sm"
+              className="absolute inset-0 items-center justify-center z-10"
+              pointerEvents="none"
+            >
+              <Text
+                className="font-bold text-[11px]"
+                style={{
+                  color: progressScore > 50 ? "#FFFFFF" : "#5A1C44",
+                  textShadowColor: "rgba(0,0,0,0.2)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}
+              >
+                {progressScore}%
+              </Text>
+            </View>
+
+            {/* 🟢 Animated Tracker Dot (Sized proportionally to the 18px bar) */}
+            <Animated.View
+              className="absolute top-[-2px] w-[22px] h-[22px] rounded-full border-[2.5px] border-white shadow-sm"
               style={{
-                left: `${progressScore}%`,
+                left: animatedProgressWidth,
                 backgroundColor: progressColor,
-                transform: [{ translateX: -16 * (progressScore / 100) }],
+                transform: [{ translateX: animatedDotTranslateX }],
                 zIndex: 2,
               }}
             />
@@ -938,6 +1142,30 @@ export default function ChatScreen() {
             )}
           </View>
         </KeyboardAvoidingView>
+
+        {/* 🟢 UPDATED: Render the custom modal to match the new screenshot */}
+        <PopupModal
+          isVisible={isHealthPopupVisible}
+          onClose={() => setIsHealthPopupVisible(false)}
+          icon={
+            <Text
+              style={{ fontSize: 60, textAlign: "center", marginBottom: -5 }}
+            >
+              💔
+            </Text>
+          }
+          heading="You're out of Health Points"
+          content={"Buy more Health Points or answer\nquestions to continue."}
+          primaryText="Buy"
+          onPrimary={() => {
+            setIsHealthPopupVisible(false);
+            // 🟢 Handle navigation to Store / Payment here
+            // router.push("/store");
+          }}
+          secondaryText="Cancel"
+          onSecondary={() => setIsHealthPopupVisible(false)}
+          theme="dark"
+        />
       </SafeAreaView>
     </LinearGradient>
   );
