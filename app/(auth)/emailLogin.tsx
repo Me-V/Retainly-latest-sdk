@@ -35,8 +35,8 @@ export default function EmailLoginScreen() {
   const dispatch = useDispatch();
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   const showModal = (
     heading: string,

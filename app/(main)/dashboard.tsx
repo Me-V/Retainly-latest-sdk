@@ -414,7 +414,6 @@ const HomeDashboard: React.FC = () => {
           </View>
         </View>
 
-        {/* ... [Rest of your UI: GlowCards, Floating Nav, etc.] ... */}
         <View className="px-6 space-y-5 gap-5">
           {/* Leaderboard Card */}
           <GlowCard className="p-4 py-5">

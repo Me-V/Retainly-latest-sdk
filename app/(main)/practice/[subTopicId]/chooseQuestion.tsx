@@ -55,8 +55,8 @@ export default function SubTopicQuestions() {
   const [scrollY, setScrollY] = useState(0);
 
   // --- DESIGN CONSTANTS ---
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.1)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   // --- API LOGIC ---
   useEffect(() => {

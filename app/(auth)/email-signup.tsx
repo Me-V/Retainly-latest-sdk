@@ -47,8 +47,8 @@ export default function EmailSignupScreen() {
   const [isConfirmPasswordHidden, setIsConfirmPasswordHidden] = useState(true);
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   const handleSignup = async () => {
     // 1. Validation Checks (Keep showing popup for errors)

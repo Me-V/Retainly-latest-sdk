@@ -51,8 +51,8 @@ export default function OtpScreen() {
   const dispatch = useDispatch();
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   React.useEffect(() => {
     if (countdown <= 0) return;
@@ -85,7 +85,7 @@ export default function OtpScreen() {
       // Build credential and confirm
       const credential = auth.PhoneAuthProvider.credential(
         verificationId,
-        code
+        code,
       );
       await auth().signInWithCredential(credential);
       const idToken = await auth().currentUser?.getIdToken(true);
@@ -100,7 +100,7 @@ export default function OtpScreen() {
         setUser({
           token: token!,
           userInfo: { fullNumber: String(phone) },
-        })
+        }),
       );
       router.replace("/(main)/animation");
     } catch (e: any) {
@@ -141,7 +141,7 @@ export default function OtpScreen() {
     try {
       const confirmation = await signInWithPhoneNumber(
         authforMobile,
-        formatE164(selectedCountry.dialCode, phone)
+        formatE164(selectedCountry.dialCode, phone),
       );
       setConfirm(confirmation);
       setCountdown(60); // Set countdown only after successful send

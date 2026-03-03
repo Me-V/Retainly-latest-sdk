@@ -61,8 +61,8 @@ export default function PracticeSubjects() {
   const [scrollY, setScrollY] = useState(0);
 
   // Glow Config
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.1)"; // Adjusted for purple theme
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 20;
 
   useEffect(() => {
     const load = async () => {

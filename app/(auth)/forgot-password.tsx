@@ -31,8 +31,8 @@ export default function CreateNewPasswordScreen() {
     }
     alert("Password successfully updated!");
   };
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
   return (
     <LinearGradient
       colors={["#3B0A52", "#180323"]}
