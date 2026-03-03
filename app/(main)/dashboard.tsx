@@ -403,7 +403,7 @@ const HomeDashboard: React.FC = () => {
                 {healthBalance}
               </Text>
             </View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/(billings)/payment-options")}>
               <Ionicons name="notifications" size={22} color="white" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
