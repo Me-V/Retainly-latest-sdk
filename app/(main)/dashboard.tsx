@@ -239,12 +239,6 @@ const HomeDashboard: React.FC = () => {
       try {
         const data = await getLastNDaysAnalytics(token, { n: 7 });
 
-        console.log(
-          "-------------------->>>>>>>>>>>>>>>>Weekly Data",
-          data,
-          JSON.stringify(data),
-        );
-
         setWeeklyTotal(data.questions_completed || 0);
 
         const today = new Date();

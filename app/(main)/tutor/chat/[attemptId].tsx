@@ -89,6 +89,9 @@ export default function ChatScreen() {
   // Blinking Animation Ref for Low Health
   const blinkAnim = useRef(new Animated.Value(1)).current;
 
+  // Ref to track the Y position of the last message's starting point
+  const lastMessageYRef = useRef<number>(0);
+
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -651,9 +654,18 @@ export default function ChatScreen() {
           ref={scrollViewRef}
           style={{ flex: 1, paddingHorizontal: 16, marginTop: 16 }}
           contentContainerStyle={{ paddingBottom: 350 }}
-          onContentSizeChange={() =>
-            scrollViewRef.current?.scrollToEnd({ animated: true })
-          }
+          onContentSizeChange={() => {
+            // 🟢 UPDATED: If the bot is typing, scroll to the bottom.
+            // Otherwise, scroll to the START (top) of the last message!
+            if (sending) {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            } else {
+              scrollViewRef.current?.scrollTo({
+                y: lastMessageYRef.current,
+                animated: true,
+              });
+            }
+          }}
         >
           {loadingHistory && messages.length <= 1 ? (
             <ActivityIndicator
@@ -671,7 +683,19 @@ export default function ChatScreen() {
               const hasStatus = msg.isCorrect || msg.isError;
 
               return (
-                <View key={msg.id} className="w-full mb-6">
+                <View
+                  key={msg.id}
+                  className="w-full mb-6"
+                  onLayout={(event) => {
+                    if (isLastMessage) {
+                      // Subtracting 20 gives a little breathing room at the top
+                      lastMessageYRef.current = Math.max(
+                        0,
+                        event.nativeEvent.layout.y - 20,
+                      );
+                    }
+                  }}
+                >
                   <View
                     className={`flex-row items-start w-full ${isBot ? "justify-start" : "justify-end"}`}
                   >
