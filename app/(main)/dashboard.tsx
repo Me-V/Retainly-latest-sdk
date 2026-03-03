@@ -393,7 +393,9 @@ const HomeDashboard: React.FC = () => {
 
           {/* Right Side: Notifications & Profile */}
           <View className="flex-row items-center space-x-4 gap-4">
-            <View className="flex-row items-center">
+            <TouchableOpacity
+              onPress={() => router.push("/(main)/healthpoint-history")}
+            >
               <MaterialCommunityIcons
                 name="heart-pulse"
                 size={20}
@@ -402,8 +404,10 @@ const HomeDashboard: React.FC = () => {
               <Text className="text-white font-bold text-[16px] ml-1.5">
                 {healthBalance}
               </Text>
-            </View>
-            <TouchableOpacity onPress={() => router.push("/(billings)/payment-options")}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(billings)/payment-options")}
+            >
               <Ionicons name="notifications" size={22} color="white" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push("/(main)/profile")}>

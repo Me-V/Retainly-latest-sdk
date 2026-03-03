@@ -17,7 +17,10 @@ export async function loginWithGoogle(idToken: string, email: string) {
   }
 }
 
-export async function acceptConsent(consentVersion: string, pendingAuth: string) {
+export async function acceptConsent(
+  consentVersion: string,
+  pendingAuth: string,
+) {
   try {
     const res = await axios.post(`${API_BASE}/backend/api/consent/accept/`, {
       consent_version: consentVersion,
@@ -25,7 +28,10 @@ export async function acceptConsent(consentVersion: string, pendingAuth: string)
     });
     return res.data; // Returns { token, detail, user, ... }
   } catch (err: any) {
-    console.error("Consent acceptance error:", err.response?.data || err.message);
+    console.error(
+      "Consent acceptance error:",
+      err.response?.data || err.message,
+    );
     throw err;
   }
 }
@@ -49,7 +55,7 @@ export async function signupWithPhoneOTP(phoneNumber: string, idToken: string) {
 export async function signupWithEmailPassword(
   email: string,
   password: string,
-  idToken: string
+  idToken: string,
 ) {
   try {
     const res = await axios.post(`${API_BASE}/backend/api/signup/`, {
@@ -89,7 +95,7 @@ export async function patchMe(
     board?: string;
     stream?: string;
     school?: string;
-  }
+  },
 ) {
   try {
     const res = await axios.patch(`${API_BASE}/backend/api/account/me/`, data, {
@@ -110,15 +116,19 @@ export async function patchEmail(
   data: {
     email?: string;
     email_token?: string;
-  }
+  },
 ) {
   try {
-    const res = await axios.patch(`${API_BASE}/backend/api/account/email/`, data, {
-      headers: {
-        Authorization: `Token ${token}`,
-        "Content-Type": "application/json",
+    const res = await axios.patch(
+      `${API_BASE}/backend/api/account/email/`,
+      data,
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     return res.data;
   } catch (err: any) {
     console.error("patchMe error:", err.response?.data || err.message);
@@ -131,15 +141,19 @@ export async function patchPhone(
   data: {
     phone_number?: string;
     phone_token?: string;
-  }
+  },
 ) {
   try {
-    const res = await axios.patch(`${API_BASE}/backend/api/account/phone/`, data, {
-      headers: {
-        Authorization: `Token ${token}`,
-        "Content-Type": "application/json",
+    const res = await axios.patch(
+      `${API_BASE}/backend/api/account/phone/`,
+      data,
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     return res.data;
   } catch (err: any) {
     console.error("patchMe error:", err.response?.data || err.message);
@@ -175,7 +189,7 @@ export async function logout(token: string) {
           "Content-Type": "application/json",
         },
         withCredentials: true,
-      }
+      },
     );
     return true;
   } catch (err: any) {
@@ -187,15 +201,47 @@ export async function logout(token: string) {
 //Get Health Points Balance
 export async function getHealthPoints(token: string) {
   try {
-    const res = await axios.get(`${API_BASE}/backend/api/healthpoints/balance/`, {
-      headers: {
-        Authorization: `Token ${token}`,
-        "Content-Type": "application/json",
+    const res = await axios.get(
+      `${API_BASE}/backend/api/healthpoints/balance/`,
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     return res.data; // { balance: 350, updated_at: "..." }
   } catch (err: any) {
-    console.error("Health points fetch error:", err.response?.data || err.message);
+    console.error(
+      "Health points fetch error:",
+      err.response?.data || err.message,
+    );
+    throw err;
+  }
+}
+
+// Get Health Points Transactions
+export async function getHealthPointsTransactions(
+  token: string,
+  page: number = 1,
+  pageSize: number = 100,
+) {
+  try {
+    const res = await axios.get(
+      `${API_BASE}/backend/api/healthpoints/transactions/?page=${page}&page_size=${pageSize}`,
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    return res.data; // { count, next, previous, results: [...] }
+  } catch (err: any) {
+    console.error(
+      "Health points transactions fetch error:",
+      err.response?.data || err.message,
+    );
     throw err;
   }
 }
