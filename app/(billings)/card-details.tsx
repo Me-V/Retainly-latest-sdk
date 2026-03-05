@@ -295,7 +295,7 @@ export default function AddCardScreen() {
               </View>
 
               {/* Input 4: Nickname for card */}
-              <View className="mb-8">
+              <View className="my-8">
                 <Text className="text-white/70 text-[13px] font-medium mb-3 ml-1 uppercase tracking-wider">
                   Save Card As
                 </Text>
@@ -323,9 +323,6 @@ export default function AddCardScreen() {
                     </TouchableOpacity>
                   ))}
                 </View>
-
-                {/* Bottom line under pills matching the screenshot */}
-                <View className="border-b border-white/10 mt-1" />
               </View>
 
               {/* --- MAKE PAYMENT BUTTON --- */}
