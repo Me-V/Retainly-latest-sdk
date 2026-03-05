@@ -144,7 +144,7 @@ export default function HealthActivityScreen() {
   return (
     <LinearGradient
       // Deep dark purple background matching the screenshot
-      colors={["#2E0C54", "#15022B"]}
+      colors={["#3B0A52", "#180323"]}
       style={{ flex: 1 }}
     >
       <SafeAreaView style={{ flex: 1 }}>

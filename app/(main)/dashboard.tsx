@@ -394,7 +394,7 @@ const HomeDashboard: React.FC = () => {
           {/* Right Side: Notifications & Profile */}
           <View className="flex-row items-center space-x-4 gap-4">
             <TouchableOpacity
-              onPress={() => router.push("/(main)/healthpoint-history")}
+              onPress={() => router.push("/(main)/healthpoint-history2")}
               className="flex-row items-center"
             >
               <MaterialCommunityIcons
