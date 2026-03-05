@@ -395,6 +395,7 @@ const HomeDashboard: React.FC = () => {
           <View className="flex-row items-center space-x-4 gap-4">
             <TouchableOpacity
               onPress={() => router.push("/(main)/healthpoint-history")}
+              className="flex-row items-center"
             >
               <MaterialCommunityIcons
                 name="heart-pulse"
