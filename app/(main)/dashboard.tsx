@@ -424,6 +424,7 @@ const HomeDashboard: React.FC = () => {
             activeOpacity={0.8}
             onPress={() => router.push("/(main)/LeaderboardScreen")}
           >
+            {/* Leaderboard Card */}
             <GlowCard className="p-4 py-5">
               <View className="flex-row items-start">
                 {/* --- Reusable Render Function for Leaderboard Items --- */}
@@ -450,7 +451,6 @@ const HomeDashboard: React.FC = () => {
                         }}
                       >
                         <View className="flex-row items-center flex-1 pr-2 overflow-hidden">
-                          {/* Medal Icon Composition */}
                           <View className="relative w-5 h-[22px] items-center justify-start mr-2.5 flex-shrink-0">
                             <View className="absolute bottom-0 flex-row w-[12px] justify-between">
                               <View
@@ -501,11 +501,8 @@ const HomeDashboard: React.FC = () => {
                               )}
                             </View>
                           </View>
-
                           <Text
-                            className={`text-[13px] font-medium flex-shrink ${
-                              item.isMe ? "text-[#FF8D28]" : "text-white"
-                            }`}
+                            className={`text-[13px] font-medium flex-shrink ${item.isMe ? "text-[#FF8D28]" : "text-white"}`}
                             numberOfLines={1}
                             ellipsizeMode="tail"
                           >
@@ -521,8 +518,17 @@ const HomeDashboard: React.FC = () => {
 
                   return (
                     <>
-                      {/* Left Side: All time */}
-                      <View className="flex-1 pr-2">
+                      {/* 🟢 Left Side: All time (Now Clickable independently) */}
+                      <TouchableOpacity
+                        className="flex-1 pr-2"
+                        activeOpacity={0.7}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/(main)/LeaderboardScreen",
+                            params: { type: "all-time" },
+                          })
+                        }
+                      >
                         <Text className="text-white font-semibold text-[14px] text-center mb-3">
                           All-time{" "}
                           <Text className="text-[#FF8D28]">Leaders</Text>
@@ -545,13 +551,22 @@ const HomeDashboard: React.FC = () => {
                           {allTimeLeaders.me &&
                             renderItem(allTimeLeaders.me, "alltime-me")}
                         </View>
-                      </View>
+                      </TouchableOpacity>
 
                       {/* Vertical Divider */}
                       <View className="w-[1px] h-[95%] bg-white/10 self-center rounded-full mx-1" />
 
-                      {/* Right Side: Today */}
-                      <View className="flex-1 pl-2">
+                      {/* 🟢 Right Side: Today (Now Clickable independently) */}
+                      <TouchableOpacity
+                        className="flex-1 pl-2"
+                        activeOpacity={0.7}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/(main)/LeaderboardScreen",
+                            params: { type: "today" },
+                          })
+                        }
+                      >
                         <Text className="text-white font-semibold text-[14px] text-center mb-3">
                           Today's{" "}
                           <Text className="text-[#FF8D28]">Leaders</Text>
@@ -573,7 +588,7 @@ const HomeDashboard: React.FC = () => {
                           {todayLeaders.me &&
                             renderItem(todayLeaders.me, "today-me")}
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     </>
                   );
                 })()}

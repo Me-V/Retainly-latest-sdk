@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -23,6 +23,70 @@ const GlowCard = ({ children, className, style, padding = "p-5" }: any) => {
     <LinearGradient
       colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.03)"]}
       className={`rounded-[28px] border border-white/10 overflow-hidden relative ${className}`}
+      style={style}
+    >
+      <LinearGradient
+        colors={[GLOW_COLOR, "transparent"]}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", GLOW_COLOR]}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={[GLOW_COLOR, "transparent"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: 0,
+          width: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <LinearGradient
+        colors={["transparent", GLOW_COLOR]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          right: 0,
+          width: GLOW_SIZE,
+        }}
+        pointerEvents="none"
+      />
+      <View className={padding}>{children}</View>
+    </LinearGradient>
+  );
+};
+
+// --- REUSABLE GLOW CARD COMPONENT 2 ---
+const GlowCard2 = ({ children, className, style, padding = "p-5" }: any) => {
+  const GLOW_COLOR = "rgba(205, 127, 50, 0.2)";
+  const GLOW_SIZE = 60;
+
+  return (
+    <LinearGradient
+      colors={["transparent", "transparent"]}
+      className={`rounded-[14px] border border-white/5 overflow-hidden relative ${className}`}
       style={style}
     >
       <LinearGradient
@@ -95,6 +159,10 @@ type LeaderboardUser = {
 
 export default function LeaderboardScreen() {
   const router = useRouter();
+
+  const { type } = useLocalSearchParams<{ type: string }>();
+  const isAllTime = type === "all-time";
+
   const token = useSelector((s: RootState) => s.auth.token);
   const userInfo = useSelector((s: RootState) => s.auth.userInfo as any);
 
@@ -110,31 +178,22 @@ export default function LeaderboardScreen() {
   };
   const displayName = getFirstWord(userInfo?.alias || userInfo?.name);
 
-  const [todayTop, setTodayTop] = useState<LeaderboardUser[]>([]);
-  const [allTimeTop, setAllTimeTop] = useState<LeaderboardUser[]>([]);
+  const [leaders, setLeaders] = useState<LeaderboardUser[]>([]);
   const [myStats, setMyStats] = useState<LeaderboardUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchLeaderboards = async () => {
+    const fetchLeaderboard = async () => {
       if (!token || !boardId || !classId) return;
+
       try {
-        const [todayData, allTimeData] = await Promise.all([
-          getLeaderboard(token, {
-            boardId,
-            classId,
-            streamId: includeStream ? streamId : undefined,
-            mode: "attempts",
-            timeframe: "today",
-          }),
-          getLeaderboard(token, {
-            boardId,
-            classId,
-            streamId: includeStream ? streamId : undefined,
-            mode: "attempts",
-            timeframe: "all-time",
-          }),
-        ]);
+        const data = await getLeaderboard(token, {
+          boardId,
+          classId,
+          streamId: includeStream ? streamId : undefined,
+          mode: "attempts",
+          timeframe: isAllTime ? "all-time" : "today",
+        });
 
         const processList = (data: any) => {
           return (data.top || []).map((u: any) => {
@@ -149,26 +208,24 @@ export default function LeaderboardScreen() {
           });
         };
 
-        setTodayTop(processList(todayData));
-        setAllTimeTop(processList(allTimeData));
+        setLeaders(processList(data));
 
-        // Use the all-time stats for the bottom sticky card
-        if (allTimeData.my_rank) {
+        if (data.my_rank) {
           setMyStats({
-            rank: allTimeData.my_rank.rank,
+            rank: data.my_rank.rank,
             name: displayName || "Me",
-            score: allTimeData.my_rank.questions_completed ?? 0,
+            score: data.my_rank.questions_completed ?? 0,
             isMe: true,
           });
         }
       } catch (error) {
-        console.error("Failed to load leaderboards:", error);
+        console.error("Failed to load leaderboard:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchLeaderboards();
+    fetchLeaderboard();
   }, [
     token,
     boardId,
@@ -177,31 +234,33 @@ export default function LeaderboardScreen() {
     includeStream,
     displayName,
     userInfo?.id,
+    isAllTime,
   ]);
 
   const renderItem = (item: LeaderboardUser, key: string) => {
     const styles = getMedalStyles(item.rank);
     return (
-      <View
+      <GlowCard2
         key={key}
-        className="flex-row items-center justify-between bg-white/5 border border-white/10 rounded-[14px] px-3 py-3 mb-2"
+        className="mb-3"
+        padding="flex-row items-center justify-between px-4 py-3.5"
       >
-        <View className="flex-row items-center flex-1 pr-2 overflow-hidden">
-          {/* Medal Icon */}
-          <View className="relative w-5 h-[22px] items-center justify-start mr-3 flex-shrink-0">
-            <View className="absolute bottom-0 flex-row w-[12px] justify-between">
+        {/* LEFT COLUMN: Medal (Fixed width ensures center column stays centered) */}
+        <View className="w-[60px] items-start justify-center">
+          <View className="relative w-6 h-[26px] items-center justify-start flex-shrink-0">
+            <View className="absolute bottom-0 flex-row w-[14px] justify-between">
               <View
                 style={{
-                  width: 4,
-                  height: 8,
+                  width: 5,
+                  height: 10,
                   backgroundColor: styles.ribbon,
                   transform: [{ rotate: "25deg" }],
                 }}
               />
               <View
                 style={{
-                  width: 4,
-                  height: 8,
+                  width: 5,
+                  height: 10,
                   backgroundColor: styles.ribbon,
                   transform: [{ rotate: "-25deg" }],
                 }}
@@ -209,9 +268,9 @@ export default function LeaderboardScreen() {
             </View>
             <View
               style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
+                width: 20,
+                height: 20,
+                borderRadius: 10,
                 backgroundColor: styles.bg,
                 alignItems: "center",
                 justifyContent: "center",
@@ -221,14 +280,14 @@ export default function LeaderboardScreen() {
               {item.rank === null || item.rank > 3 ? (
                 <Ionicons
                   name="star"
-                  size={8}
+                  size={10}
                   color={styles.text}
                   style={{ marginLeft: 0.5, marginTop: 0.5 }}
                 />
               ) : (
                 <Text
                   style={{
-                    fontSize: 9,
+                    fontSize: 11,
                     fontWeight: "bold",
                     color: styles.text,
                   }}
@@ -238,18 +297,25 @@ export default function LeaderboardScreen() {
               )}
             </View>
           </View>
+        </View>
 
+        {/* CENTER COLUMN: Username */}
+        <View className="flex-1 items-center justify-center">
           <Text
-            className={`text-[13px] font-medium flex-shrink ${item.isMe ? "text-[#FF8D28]" : "text-white"}`}
+            className={`text-[15px] font-medium text-center ${item.isMe ? "text-[#FF8D28]" : "text-white"}`}
             numberOfLines={1}
           >
             {item.name}
           </Text>
         </View>
-        <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
-          {item.score}
-        </Text>
-      </View>
+
+        {/* RIGHT COLUMN: Score */}
+        <View className="w-[60px] items-end justify-center">
+          <Text className="text-[#FF8D28] text-[15px] font-bold">
+            {item.score}
+          </Text>
+        </View>
+      </GlowCard2>
     );
   };
 
@@ -260,7 +326,7 @@ export default function LeaderboardScreen() {
       end={{ x: 0, y: 1 }}
       className="flex-1"
     >
-      <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
+      <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
         {/* --- HEADER --- */}
         <View className="flex-row items-center px-6 pt-4 pb-2 w-full relative">
           <TouchableOpacity
@@ -272,30 +338,21 @@ export default function LeaderboardScreen() {
           </TouchableOpacity>
           <View className="absolute inset-0 items-center justify-center pt-4 pointer-events-none">
             <Text className="text-white text-[20px] font-bold tracking-wide">
-              Leaderboard
+              {isAllTime ? "All-time Leaderboard" : "Today's Leaderboard"}{" "}
             </Text>
           </View>
         </View>
 
-        {/* --- DUAL COLUMN HEADERS --- */}
-        <View className="mx-6 mt-4 mb-2 bg-white/5 border border-white/10 rounded-[20px] p-3 flex-row shadow-sm">
-          <View className="flex-1 items-center border-r border-white/10 pr-2">
-            <Text className="text-white font-bold text-[14px]">
-              All-time <Text className="text-[#FF8D28]">Leaders</Text>
-            </Text>
-            <Text className="text-white/50 text-[10px] mt-0.5">
-              (Questions Answered)
-            </Text>
-          </View>
-          <View className="flex-1 items-center pl-2">
-            <Text className="text-white font-bold text-[14px]">
-              Today's <Text className="text-[#FF8D28]">Leaders</Text>
-            </Text>
-            <Text className="text-white/50 text-[10px] mt-0.5">
-              (Questions Answered)
-            </Text>
-          </View>
-        </View>
+        {/* --- SUB HEADER PILL --- */}
+        <GlowCard className="mx-6 mt-4 mb-5 bg-transparent border border-white/5 rounded-3xl items-center justify-center">
+          <Text className="text-white font-bold text-[16px]">
+            {isAllTime ? "All-time " : "Today's "}
+            <Text className="text-[#FF8D28]">Leaders</Text>
+          </Text>
+          <Text className="text-white/50 text-[12px] mt-0.5">
+            (Questions Answered)
+          </Text>
+        </GlowCard>
 
         {/* --- MAIN LIST SCROLLVIEW --- */}
         <ScrollView
@@ -303,27 +360,20 @@ export default function LeaderboardScreen() {
           contentContainerStyle={{ paddingBottom: 130 }}
           showsVerticalScrollIndicator={false}
         >
-          <GlowCard padding="p-3">
+          <GlowCard padding="p-4">
             {loading ? (
               <ActivityIndicator
                 size="large"
                 color="#FF8D28"
                 className="my-10"
               />
+            ) : leaders.length === 0 ? (
+              <Text className="text-white/60 text-center py-6">
+                No leaders yet.
+              </Text>
             ) : (
-              <View className="flex-row">
-                {/* Left Column: All Time */}
-                <View className="flex-1 pr-1.5">
-                  {allTimeTop.map((item, i) =>
-                    renderItem(item, `alltime-${i}`),
-                  )}
-                </View>
-                {/* Vertical Divider */}
-                <View className="w-[1px] bg-white/10 rounded-full mx-1 my-2" />
-                {/* Right Column: Today */}
-                <View className="flex-1 pl-1.5">
-                  {todayTop.map((item, i) => renderItem(item, `today-${i}`))}
-                </View>
+              <View>
+                {leaders.map((item, i) => renderItem(item, `leader-${i}`))}
               </View>
             )}
           </GlowCard>
@@ -337,7 +387,7 @@ export default function LeaderboardScreen() {
                 <Ionicons name="camera" size={24} color="white" />
               </View>
               <View className="flex-shrink pr-2">
-                <View className="flex-row items-end">
+                <View className="flex-col">
                   <Text className="text-white/60 font-bold text-[16px] mr-1.5">
                     #{myStats?.rank || "--"}
                   </Text>
