@@ -307,16 +307,73 @@ export default function SubTopicQuestions() {
       <PopupModal
         isVisible={isSuspendedPopupVisible}
         onClose={() => setIsSuspendedPopupVisible(false)}
+        // 1. Leave heading undefined to use custom inline layout inside the icon prop
         icon={
-          <Text style={{ fontSize: 60, textAlign: "center", marginBottom: -5 }}>
-            🚫
+          <View
+            style={{
+              width: Math.min(width * 0.85, 360),
+              alignItems: "center",
+              marginTop: -10,
+            }}
+          >
+            {/* Inline Icon & Title */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              {/* Red Exclamation Circle */}
+              <LinearGradient
+                colors={["#E53935", "#B71C1C"]}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Text
+                  style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+                >
+                  !
+                </Text>
+              </LinearGradient>
+
+              <Text
+                style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+              >
+                Account Suspended
+              </Text>
+            </View>
+
+            {/* Full-width Red Divider */}
+            <View
+              style={{ height: 2, backgroundColor: "#991B1B", width: "100%" }}
+            />
+          </View>
+        }
+        // 2. Custom text styling to match the screenshot's lighter font weight
+        content={
+          <Text
+            style={{
+              color: "white",
+              fontSize: 16,
+              textAlign: "center",
+              lineHeight: 20,
+              fontWeight: "500",
+              marginTop: 8,
+            }}
+          >
+            You are suspended from using the application due to a high number of
+            penalty messages.
           </Text>
         }
-        heading="Account Suspended"
-        content={
-          "You are temporarily suspended from answering\nquestions due to foul language."
-        }
-        primaryText="Understood"
+        primaryText="OK"
         onPrimary={() => {
           setIsSuspendedPopupVisible(false);
         }}
