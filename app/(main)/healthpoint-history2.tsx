@@ -107,11 +107,11 @@ export default function HealthActivityScreen() {
         // Fetch Transactions
         const txData = await getHealthPointsTransactions(token, 1, 100);
 
-        console.log(
-          "----------------------->>>>>>>>>>>>>>>>>>>>>>>Transactions data",
-          txData,
-          JSON.stringify(txData, null, 2),
-        );
+        // console.log(
+        //   "----------------------->>>>>>>>>>>>>>>>>>>>>>>Transactions data",
+        //   txData,
+        //   JSON.stringify(txData, null, 2),
+        // );
 
         if (txData && txData.results) {
           setTransactions(txData.results);

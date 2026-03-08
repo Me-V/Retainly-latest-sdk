@@ -97,6 +97,10 @@ export default function ChatScreen() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isHealthPopupVisible, setIsHealthPopupVisible] = useState(false);
 
+  // Suspension States
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [isSuspendedPopupVisible, setIsSuspendedPopupVisible] = useState(false);
+
   const scrollViewRef = useRef<ScrollView>(null);
   const transcriptRef = useRef("");
 
@@ -151,6 +155,14 @@ export default function ChatScreen() {
     const textToSend = manualText || inputText.trim();
     if (!textToSend) return;
 
+    // Prevent sending API call completely if we know user is suspended
+    if (isSuspended) {
+      setIsSuspendedPopupVisible(true);
+      setInputText("");
+      transcriptRef.current = "";
+      return;
+    }
+
     isSendingRef.current = true;
     setIsKeyboardMode(false);
 
@@ -184,6 +196,11 @@ export default function ChatScreen() {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
       console.log("API Response:", JSON.stringify(data, null, 2));
 
+      // Capture Suspension state from a successful request (like the 3rd API response)
+      if (data?.is_suspended !== undefined) {
+        setIsSuspended(data.is_suspended);
+      }
+
       // Show modal ONLY if the API response contains the specific detail message
       if (
         data?.detail ===
@@ -214,15 +231,16 @@ export default function ChatScreen() {
         setHealthPoints(data.health_balance);
       }
 
-      // 🟢 Determine Status
+      //  Determine Status
       const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
         decision === "need study" ||
         decision === "improvements" ||
         decision === "repeat_with_correction" ||
         decision === "penalty";
+      decision === "suspended"; // 'suspended' to trigger the red error styling
 
-      // 🟢 Show Next Button if answer is correct
+      // Show Next Button if answer is correct
       if (isAnswerCorrect) {
         setShowNextButton(true);
       }
@@ -254,6 +272,12 @@ export default function ChatScreen() {
         "Insufficient health points. Please recharge to continue."
       ) {
         setIsHealthPopupVisible(true);
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+      } // 🟢 NEW: Intercept 400 Bad Request error (happens on 4th attempt after suspension)
+      else if (error?.response?.status === 400) {
+        setIsSuspended(true);
+        setIsSuspendedPopupVisible(true);
+        // Remove the message the user just optimistically sent
         setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
       } else {
         Alert.alert("Error", "Failed to send message.");
@@ -313,6 +337,11 @@ export default function ChatScreen() {
           setHealthPoints(data.health_balance);
         }
 
+        // Track suspension from history on initial load
+        if (data?.is_suspended !== undefined) {
+          setIsSuspended(data.is_suspended);
+        }
+
         if (
           data?.messages &&
           Array.isArray(data.messages) &&
@@ -345,6 +374,7 @@ export default function ChatScreen() {
                 decision === "improvements" ||
                 decision === "repeat_with_correction" ||
                 decision === "penalty";
+              decision === "suspended";
 
               // ...Apply that status to the PREVIOUS message (if it was from the user)
               if (i > 0 && history[i - 1].sender === "user") {
@@ -528,6 +558,7 @@ export default function ChatScreen() {
     lastMessage?.payload?.buttons &&
     lastMessage.payload.buttons.length > 0;
 
+  // Add isSuspended so inputs stay greyed out
   const isMicDisabled = sending || isBotOptionsInteraction;
 
   const hasUserMessage = messages.some((msg) => msg.sender === "user");
@@ -1167,7 +1198,7 @@ export default function ChatScreen() {
           </View>
         </KeyboardAvoidingView>
 
-        {/* 🟢 UPDATED: Render the custom modal to match the new screenshot */}
+        {/* Render the custom modal to match the new screenshot */}
         <PopupModal
           isVisible={isHealthPopupVisible}
           onClose={() => setIsHealthPopupVisible(false)}
@@ -1190,6 +1221,28 @@ export default function ChatScreen() {
           onSecondary={() => setIsHealthPopupVisible(false)}
           theme="dark"
         />
+
+          {/* Account Suspended Modal */}
+          <PopupModal
+            isVisible={isSuspendedPopupVisible}
+            onClose={() => setIsSuspendedPopupVisible(false)}
+            icon={
+              <Text
+                style={{ fontSize: 60, textAlign: "center", marginBottom: -5 }}
+              >
+                🚫
+              </Text>
+            }
+            heading="Account Suspended"
+            content={
+              "You are temporarily suspended from answering\nthis question due to foul language."
+            }
+            primaryText="Understood"
+            onPrimary={() => {
+              setIsSuspendedPopupVisible(false);
+            }}
+            theme="dark"
+          />
       </SafeAreaView>
     </LinearGradient>
   );

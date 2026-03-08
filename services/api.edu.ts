@@ -30,6 +30,7 @@ export type LeaderboardUserItem = {
   questions_completed?: number;
   score?: number;
 };
+
 export type LeaderboardResponse = {
   date?: string;
   class_board_id?: string;
@@ -37,6 +38,7 @@ export type LeaderboardResponse = {
   top: LeaderboardUserItem[];
   my_rank: LeaderboardUserItem | null;
 };
+
 export type LastNDaysAnalyticsResponse = {
   user_id: string;
   n: number;
@@ -50,6 +52,11 @@ export type LastNDaysAnalyticsResponse = {
     score: number;
   }>;
 };
+
+
+//-------------------------API's -------------------------
+
+
 export async function getClasses(token: string): Promise<ClassItem[]> {
   try {
     const res = await axios.get(`${API_BASE}/backend/api/content/classes/`, {
@@ -63,6 +70,7 @@ export async function getClasses(token: string): Promise<ClassItem[]> {
     throw err;
   }
 }
+
 export async function getBoards(
   token: string,
   classId: string,
@@ -78,6 +86,7 @@ export async function getBoards(
     throw err;
   }
 }
+
 export async function getStreams(
   token: string,
   classId: string,
@@ -93,6 +102,7 @@ export async function getStreams(
     throw err;
   }
 }
+
 export async function getSubjects(
   token: string,
   opts: { boardId: string; classId: string; streamId?: string },
@@ -116,6 +126,7 @@ export async function getSubjects(
     throw err;
   }
 }
+
 export async function getTopics(
   token: string,
   opts: { subjectId: string },
@@ -137,6 +148,7 @@ export async function getTopics(
     throw err;
   }
 }
+
 export async function getSubTopics(
   token: string,
   opts: { topicId: string },
@@ -158,6 +170,7 @@ export async function getSubTopics(
     throw err;
   }
 }
+
 export async function getQuestions(
   token: string,
   opts: { subTopicId: string },
@@ -179,6 +192,7 @@ export async function getQuestions(
     throw err;
   }
 }
+
 export async function getClassboardAnalytics(
   token: string,
   opts: { boardId: string; classId: string; streamId?: string },
@@ -206,6 +220,7 @@ export async function getClassboardAnalytics(
     throw err;
   }
 }
+
 export async function getLeaderboard(
   token: string,
   opts: {
@@ -241,6 +256,7 @@ export async function getLeaderboard(
     throw err;
   }
 }
+
 export async function getLastNDaysAnalytics(
   token: string,
   opts: { n?: number } = {},

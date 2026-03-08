@@ -17,7 +17,7 @@ import {
   getLeaderboard,
   getLastNDaysAnalytics,
 } from "@/services/api.edu";
-import { router, Stack, useFocusEffect } from "expo-router"; // 🟢 Import Stack & useFocusEffect
+import { router, Stack, useFocusEffect } from "expo-router";
 import {
   Fontisto,
   Ionicons,
@@ -28,8 +28,6 @@ import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 import Svg, { Circle } from "react-native-svg";
 import { getHealthPoints } from "@/services/api.auth";
-
-// ... [Keep your ProgressBar, SubjectRow, Types, and mockSubjects exactly as they are] ...
 
 // Mock subjects (Ensure this block exists if you use it below)
 const palette = ["#FF8A33", "#F59E51", "#FFB74D", "#FFA726"];
@@ -421,161 +419,167 @@ const HomeDashboard: React.FC = () => {
 
         <View className="px-6 space-y-5 gap-5">
           {/* Leaderboard Card */}
-          <GlowCard className="p-4 py-5">
-            <View className="flex-row items-start">
-              {/* --- Reusable Render Function for Leaderboard Items --- */}
-              {(() => {
-                const renderItem = (item: LeaderboardUser, key: string) => {
-                  const styles = getMedalStyles(item.rank);
-                  return (
-                    <View
-                      key={key}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        backgroundColor: "rgba(255, 255, 255, 0.04)",
-                        borderColor: "rgba(255, 255, 255, 0.08)",
-                        borderWidth: 1,
-                        borderRadius: 14,
-                        paddingVertical: 10,
-                        paddingHorizontal: 10,
-                        shadowColor: "rgba(255, 255, 255, 0.9)",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 18,
-                      }}
-                    >
-                      <View className="flex-row items-center flex-1 pr-2 overflow-hidden">
-                        {/* Medal Icon Composition */}
-                        <View className="relative w-5 h-[22px] items-center justify-start mr-2.5 flex-shrink-0">
-                          <View className="absolute bottom-0 flex-row w-[12px] justify-between">
-                            <View
-                              style={{
-                                width: 4,
-                                height: 8,
-                                backgroundColor: styles.ribbon,
-                                transform: [{ rotate: "25deg" }],
-                              }}
-                            />
-                            <View
-                              style={{
-                                width: 4,
-                                height: 8,
-                                backgroundColor: styles.ribbon,
-                                transform: [{ rotate: "-25deg" }],
-                              }}
-                            />
-                          </View>
-                          <View
-                            style={{
-                              width: 16,
-                              height: 16,
-                              borderRadius: 8,
-                              backgroundColor: styles.bg,
-                              alignItems: "center",
-                              justifyContent: "center",
-                              zIndex: 10,
-                            }}
-                          >
-                            {item.rank === null || item.rank > 3 ? (
-                              <Ionicons
-                                name="star"
-                                size={8}
-                                color={styles.text}
-                                style={{ marginLeft: 0.5, marginTop: 0.5 }}
-                              />
-                            ) : (
-                              <Text
+          {/* 🟢 NEW: Wrapped in TouchableOpacity to make it clickable */}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push("/(main)/LeaderboardScreen")}
+          >
+            <GlowCard className="p-4 py-5">
+              <View className="flex-row items-start">
+                {/* --- Reusable Render Function for Leaderboard Items --- */}
+                {(() => {
+                  const renderItem = (item: LeaderboardUser, key: string) => {
+                    const styles = getMedalStyles(item.rank);
+                    return (
+                      <View
+                        key={key}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          backgroundColor: "rgba(255, 255, 255, 0.04)",
+                          borderColor: "rgba(255, 255, 255, 0.08)",
+                          borderWidth: 1,
+                          borderRadius: 14,
+                          paddingVertical: 10,
+                          paddingHorizontal: 10,
+                          shadowColor: "rgba(255, 255, 255, 0.9)",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.1,
+                          shadowRadius: 18,
+                        }}
+                      >
+                        <View className="flex-row items-center flex-1 pr-2 overflow-hidden">
+                          {/* Medal Icon Composition */}
+                          <View className="relative w-5 h-[22px] items-center justify-start mr-2.5 flex-shrink-0">
+                            <View className="absolute bottom-0 flex-row w-[12px] justify-between">
+                              <View
                                 style={{
-                                  fontSize: 9,
-                                  fontWeight: "bold",
-                                  color: styles.text,
+                                  width: 4,
+                                  height: 8,
+                                  backgroundColor: styles.ribbon,
+                                  transform: [{ rotate: "25deg" }],
                                 }}
-                              >
-                                {item.rank}
-                              </Text>
-                            )}
+                              />
+                              <View
+                                style={{
+                                  width: 4,
+                                  height: 8,
+                                  backgroundColor: styles.ribbon,
+                                  transform: [{ rotate: "-25deg" }],
+                                }}
+                              />
+                            </View>
+                            <View
+                              style={{
+                                width: 16,
+                                height: 16,
+                                borderRadius: 8,
+                                backgroundColor: styles.bg,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                zIndex: 10,
+                              }}
+                            >
+                              {item.rank === null || item.rank > 3 ? (
+                                <Ionicons
+                                  name="star"
+                                  size={8}
+                                  color={styles.text}
+                                  style={{ marginLeft: 0.5, marginTop: 0.5 }}
+                                />
+                              ) : (
+                                <Text
+                                  style={{
+                                    fontSize: 9,
+                                    fontWeight: "bold",
+                                    color: styles.text,
+                                  }}
+                                >
+                                  {item.rank}
+                                </Text>
+                              )}
+                            </View>
                           </View>
-                        </View>
 
-                        {/* 🟢 UPDATED: Name Color Conditional & Badge Removed */}
-                        <Text
-                          className={`text-[13px] font-medium flex-shrink ${
-                            item.isMe ? "text-[#FF8D28]" : "text-white"
-                          }`}
-                          numberOfLines={1}
-                          ellipsizeMode="tail"
-                        >
-                          {item.name}
+                          <Text
+                            className={`text-[13px] font-medium flex-shrink ${
+                              item.isMe ? "text-[#FF8D28]" : "text-white"
+                            }`}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
+                            {item.name}
+                          </Text>
+                        </View>
+                        <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
+                          {item.score}
                         </Text>
                       </View>
-                      <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
-                        {item.score}
-                      </Text>
-                    </View>
+                    );
+                  };
+
+                  return (
+                    <>
+                      {/* Left Side: All time */}
+                      <View className="flex-1 pr-2">
+                        <Text className="text-white font-semibold text-[14px] text-center mb-3">
+                          All-time{" "}
+                          <Text className="text-[#FF8D28]">Leaders</Text>
+                        </Text>
+                        <View className="gap-y-1.5">
+                          {allTimeLeaders.top.map((item, index) =>
+                            renderItem(item, `alltime-top-${index}`),
+                          )}
+                          {allTimeLeaders.top.length > 0 &&
+                            allTimeLeaders.me && (
+                              <View className="flex-row justify-center gap-1.5 my-1">
+                                {[1, 2, 3, 4].map((dot) => (
+                                  <View
+                                    key={dot}
+                                    className="w-[3px] h-[3px] rounded-full bg-white/30"
+                                  />
+                                ))}
+                              </View>
+                            )}
+                          {allTimeLeaders.me &&
+                            renderItem(allTimeLeaders.me, "alltime-me")}
+                        </View>
+                      </View>
+
+                      {/* Vertical Divider */}
+                      <View className="w-[1px] h-[95%] bg-white/10 self-center rounded-full mx-1" />
+
+                      {/* Right Side: Today */}
+                      <View className="flex-1 pl-2">
+                        <Text className="text-white font-semibold text-[14px] text-center mb-3">
+                          Today's{" "}
+                          <Text className="text-[#FF8D28]">Leaders</Text>
+                        </Text>
+                        <View className="gap-y-1.5">
+                          {todayLeaders.top.map((item, index) =>
+                            renderItem(item, `today-top-${index}`),
+                          )}
+                          {todayLeaders.top.length > 0 && todayLeaders.me && (
+                            <View className="flex-row justify-center gap-1.5 my-1">
+                              {[1, 2, 3, 4].map((dot) => (
+                                <View
+                                  key={dot}
+                                  className="w-[3px] h-[3px] rounded-full bg-white/30"
+                                />
+                              ))}
+                            </View>
+                          )}
+                          {todayLeaders.me &&
+                            renderItem(todayLeaders.me, "today-me")}
+                        </View>
+                      </View>
+                    </>
                   );
-                };
-
-                return (
-                  <>
-                    {/* Left Side: All time */}
-                    <View className="flex-1 pr-2">
-                      <Text className="text-white font-semibold text-[14px] text-center mb-3">
-                        All-time <Text className="text-[#FF8D28]">Leaders</Text>
-                      </Text>
-                      <View className="gap-y-1.5">
-                        {allTimeLeaders.top.map((item, index) =>
-                          renderItem(item, `alltime-top-${index}`),
-                        )}
-
-                        {allTimeLeaders.top.length > 0 && allTimeLeaders.me && (
-                          <View className="flex-row justify-center gap-1.5 my-1">
-                            {[1, 2, 3, 4].map((dot) => (
-                              <View
-                                key={dot}
-                                className="w-[3px] h-[3px] rounded-full bg-white/30"
-                              />
-                            ))}
-                          </View>
-                        )}
-                        {allTimeLeaders.me &&
-                          renderItem(allTimeLeaders.me, "alltime-me")}
-                      </View>
-                    </View>
-
-                    {/* Vertical Divider */}
-                    <View className="w-[1px] h-[95%] bg-white/10 self-center rounded-full mx-1" />
-
-                    {/* Right Side: Today */}
-                    <View className="flex-1 pl-2">
-                      <Text className="text-white font-semibold text-[14px] text-center mb-3">
-                        Today's <Text className="text-[#FF8D28]">Leaders</Text>
-                      </Text>
-                      <View className="gap-y-1.5">
-                        {todayLeaders.top.map((item, index) =>
-                          renderItem(item, `today-top-${index}`),
-                        )}
-
-                        {todayLeaders.top.length > 0 && todayLeaders.me && (
-                          <View className="flex-row justify-center gap-1.5 my-1">
-                            {[1, 2, 3, 4].map((dot) => (
-                              <View
-                                key={dot}
-                                className="w-[3px] h-[3px] rounded-full bg-white/30"
-                              />
-                            ))}
-                          </View>
-                        )}
-                        {todayLeaders.me &&
-                          renderItem(todayLeaders.me, "today-me")}
-                      </View>
-                    </View>
-                  </>
-                );
-              })()}
-            </View>
-          </GlowCard>
+                })()}
+              </View>
+            </GlowCard>
+          </TouchableOpacity>
 
           {/* Graph Section */}
           <View className="mt-1 mb-2">
