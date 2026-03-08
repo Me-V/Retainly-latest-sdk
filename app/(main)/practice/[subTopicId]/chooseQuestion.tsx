@@ -18,11 +18,11 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getQuestions } from "@/services/api.edu";
-import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { GlassyListBtn } from "@/components/GlassyListBtn";
 import { startAttempt } from "@/services/api.chat";
 import { Octicons } from "@expo/vector-icons";
+import PopupModal from "@/components/Popup-modal";
 
 // --- TYPES ---
 type Question = { id?: string; name?: string; title?: string; text?: string };
@@ -46,6 +46,9 @@ export default function SubTopicQuestions() {
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // State for the suspension popup
+  const [isSuspendedPopupVisible, setIsSuspendedPopupVisible] = useState(false);
 
   const [startingAttempt, setStartingAttempt] = useState(false);
 
@@ -96,9 +99,15 @@ export default function SubTopicQuestions() {
           },
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      Alert.alert("Error", "Could not start practice session.");
+
+      // Catch the 400 error to show the suspension modal
+      if (error?.response?.status === 400) {
+        setIsSuspendedPopupVisible(true);
+      } else {
+        Alert.alert("Error", "Could not start practice session.");
+      }
     } finally {
       setStartingAttempt(false);
     }
@@ -294,6 +303,25 @@ export default function SubTopicQuestions() {
           )}
         </View>
       </ScrollView>
+      {/* Account Suspended Modal */}
+      <PopupModal
+        isVisible={isSuspendedPopupVisible}
+        onClose={() => setIsSuspendedPopupVisible(false)}
+        icon={
+          <Text style={{ fontSize: 60, textAlign: "center", marginBottom: -5 }}>
+            🚫
+          </Text>
+        }
+        heading="Account Suspended"
+        content={
+          "You are temporarily suspended from answering\nquestions due to foul language."
+        }
+        primaryText="Understood"
+        onPrimary={() => {
+          setIsSuspendedPopupVisible(false);
+        }}
+        theme="dark"
+      />
     </LinearGradient>
   );
 }
