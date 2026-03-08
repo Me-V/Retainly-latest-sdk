@@ -25,7 +25,14 @@ import { Octicons } from "@expo/vector-icons";
 import PopupModal from "@/components/Popup-modal";
 
 // --- TYPES ---
-type Question = { id?: string; name?: string; title?: string; text?: string };
+type Question = {
+  id?: string;
+  name?: string;
+  title?: string;
+  text?: string;
+  is_completed?: boolean;
+  is_locked?: boolean;
+};
 const getId = (q: Question) => String(q.id || "");
 const getName = (q: Question) => q.title || q.text || "Unnamed Question";
 
@@ -272,14 +279,50 @@ export default function SubTopicQuestions() {
                         No questions found.
                       </Text>
                     ) : (
-                      questions.map((q) => (
-                        <GlassyListBtn
-                          key={getId(q)}
-                          label={getName(q)}
-                          onPress={() => handleOpenQuestion(q)}
-                          numberOfLines={3} // 🟢 Questions get 3 lines
-                        />
-                      ))
+                      questions.map((q) => {
+                        // 🟢 1. Pre-determine the icon based on status
+                        let statusIcon = null;
+                        if (q.is_locked) {
+                          statusIcon = (
+                            <Ionicons
+                              name="lock-closed"
+                              size={20}
+                              color="rgba(255,255,255,0.4)"
+                            />
+                          );
+                        } else if (q.is_completed) {
+                          statusIcon = (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={24}
+                              color="#4ADE80" // Green tick
+                            />
+                          );
+                        }
+
+                        return (
+                          // 🟢 2. Remove "relative" container, we don't need absolute positioning anymore
+                          <View key={getId(q)}>
+                            <GlassyListBtn
+                              label={getName(q)}
+                              onPress={() => {
+                                if (q.is_locked) {
+                                  Alert.alert(
+                                    "Locked",
+                                    "This question is locked.",
+                                  );
+                                } else {
+                                  handleOpenQuestion(q);
+                                }
+                              }}
+                              numberOfLines={3}
+                              // 🟢 3. Pass the icon into the component prop (assuming rightIcon exists)
+                              // This allows Flexbox inside GlassyListBtn to wrap the text correctly.
+                              rightIcon={statusIcon}
+                            />
+                          </View>
+                        );
+                      })
                     )}
                   </ScrollView>
                 </View>
