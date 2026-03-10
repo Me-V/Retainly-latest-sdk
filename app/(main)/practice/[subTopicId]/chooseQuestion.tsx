@@ -429,7 +429,7 @@ export default function SubTopicQuestions() {
           <Text
             style={{
               color: "white",
-              fontSize: 16,
+              fontSize: 14,
               textAlign: "center",
               lineHeight: 20,
               fontWeight: "500",
