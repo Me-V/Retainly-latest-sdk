@@ -1,5 +1,5 @@
 // app/(main)/practice/[subTopicId]/chooseQuestion.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getQuestions } from "@/services/api.edu";
@@ -59,6 +59,8 @@ export default function SubTopicQuestions() {
 
   const [startingAttempt, setStartingAttempt] = useState(false);
 
+  const [isLockedPopupVisible, setIsLockedPopupVisible] = useState(false);
+
   // Inner scroll state
   const [containerH, setContainerH] = useState(0);
   const [contentH, setContentH] = useState(0);
@@ -69,21 +71,46 @@ export default function SubTopicQuestions() {
   const GLOW_SIZE = 25;
 
   // --- API LOGIC ---
-  useEffect(() => {
-    const load = async () => {
-      if (!token || !subTopicId) return;
-      setLoading(true);
-      try {
-        const res = await getQuestions(token, {
-          subTopicId: String(subTopicId),
+  // Using useFocusEffect so it refreshes data instantly when returning from the Chat Screen
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchQuestionsList = async () => {
+        if (!token || !subTopicId) return;
+
+        // Only show the loading spinner if the list is completely empty (first load)
+        setQuestions((currentQuestions) => {
+          if (currentQuestions.length === 0 && isActive) {
+            setLoading(true);
+          }
+          return currentQuestions;
         });
-        setQuestions(Array.isArray(res) ? res : []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [token, subTopicId]);
+
+        try {
+          const res = await getQuestions(token, {
+            subTopicId: String(subTopicId),
+          });
+          if (isActive) {
+            setQuestions(Array.isArray(res) ? res : []);
+          }
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
+        }
+      };
+
+      fetchQuestionsList();
+
+      // Cleanup function to prevent setting state if the user leaves immediately
+      return () => {
+        isActive = false;
+      };
+    }, [token, subTopicId]),
+  );
 
   const handleOpenQuestion = async (q: Question) => {
     // console.log("Question:", q);
@@ -307,10 +334,7 @@ export default function SubTopicQuestions() {
                               label={getName(q)}
                               onPress={() => {
                                 if (q.is_locked) {
-                                  Alert.alert(
-                                    "Locked",
-                                    "This question is locked.",
-                                  );
+                                  setIsLockedPopupVisible(true);
                                 } else {
                                   handleOpenQuestion(q);
                                 }
@@ -390,7 +414,7 @@ export default function SubTopicQuestions() {
               <Text
                 style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
               >
-                Account Suspended
+                Disciplinary Suspension
               </Text>
             </View>
 
@@ -412,14 +436,88 @@ export default function SubTopicQuestions() {
               marginTop: 8,
             }}
           >
-            You are suspended from using the application due to a high number of
-            penalty messages.
+            You are temporarily suspended from answering due high number of
+            Inappropriate Language
           </Text>
         }
         primaryText="OK"
         onPrimary={() => {
           setIsSuspendedPopupVisible(false);
         }}
+        theme="dark"
+      />
+
+      {/* Locked Question Modal */}
+      <PopupModal
+        isVisible={isLockedPopupVisible}
+        onClose={() => setIsLockedPopupVisible(false)}
+        icon={
+          <View
+            style={{
+              width: Math.min(width * 0.85, 360),
+              alignItems: "center",
+              marginTop: -10,
+            }}
+          >
+            {/* Inline Icon & Title */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              {/* Orange Lock Circle */}
+              <LinearGradient
+                colors={["#F59E51", "#EA580C"]}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="lock-closed" size={20} color="white" />
+              </LinearGradient>
+
+              <Text
+                style={{ color: "white", fontSize: 22, fontWeight: "bold" }}
+              >
+                Question Locked
+              </Text>
+            </View>
+
+            {/* Full-width Orange Divider */}
+            <View
+              style={{
+                height: 2,
+                backgroundColor: "#EA580C",
+                width: "100%",
+                opacity: 0.8,
+              }}
+            />
+          </View>
+        }
+        content={
+          <Text
+            style={{
+              color: "white",
+              fontSize: 16,
+              textAlign: "center",
+              lineHeight: 22,
+              fontWeight: "500",
+              marginTop: 8,
+            }}
+          >
+            This question is currently locked. Complete previous requirements to
+            unlock it.
+          </Text>
+        }
+        primaryText="Understood"
+        onPrimary={() => setIsLockedPopupVisible(false)}
         theme="dark"
       />
     </LinearGradient>

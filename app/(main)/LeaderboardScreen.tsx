@@ -305,7 +305,7 @@ export default function LeaderboardScreen() {
             className={`text-[15px] font-medium text-center ${item.isMe ? "text-[#FF8D28]" : "text-white"}`}
             numberOfLines={1}
           >
-            {item.name}
+            {item.isMe ? "You" : item.name}
           </Text>
         </View>
 

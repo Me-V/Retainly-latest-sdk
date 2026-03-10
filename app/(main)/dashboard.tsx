@@ -404,9 +404,7 @@ const HomeDashboard: React.FC = () => {
                 {healthBalance}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => router.push("/(billings)/payment-options")}
-            >
+            <TouchableOpacity>
               <Ionicons name="notifications" size={22} color="white" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
@@ -506,7 +504,7 @@ const HomeDashboard: React.FC = () => {
                             numberOfLines={1}
                             ellipsizeMode="tail"
                           >
-                            {item.name}
+                            {item.isMe ? "You" : item.name}
                           </Text>
                         </View>
                         <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">

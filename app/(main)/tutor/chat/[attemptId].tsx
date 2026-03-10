@@ -194,7 +194,7 @@ export default function ChatScreen() {
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
-      console.log("API Response:", JSON.stringify(data, null, 2));
+      console.log("##########API Response:", JSON.stringify(data, null, 2));
 
       // Capture Suspension state from a successful request (like the 3rd API response)
       if (data?.is_suspended !== undefined) {
@@ -1222,27 +1222,81 @@ export default function ChatScreen() {
           theme="dark"
         />
 
-          {/* Account Suspended Modal */}
-          <PopupModal
-            isVisible={isSuspendedPopupVisible}
-            onClose={() => setIsSuspendedPopupVisible(false)}
-            icon={
-              <Text
-                style={{ fontSize: 60, textAlign: "center", marginBottom: -5 }}
+        {/* Account Suspended Modal */}
+        <PopupModal
+          isVisible={isSuspendedPopupVisible}
+          onClose={() => setIsSuspendedPopupVisible(false)}
+          // 1. Leave heading undefined to use custom inline layout inside the icon prop
+          icon={
+            <View
+              style={{
+                alignItems: "center",
+                marginTop: -10,
+              }}
+            >
+              {/* Inline Icon & Title */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
               >
-                🚫
-              </Text>
-            }
-            heading="Account Suspended"
-            content={
-              "You are temporarily suspended from answering\nthis question due to foul language."
-            }
-            primaryText="Understood"
-            onPrimary={() => {
-              setIsSuspendedPopupVisible(false);
-            }}
-            theme="dark"
-          />
+                {/* Red Exclamation Circle */}
+                <LinearGradient
+                  colors={["#E53935", "#B71C1C"]}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 12,
+                  }}
+                >
+                  <Text
+                    style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+                  >
+                    !
+                  </Text>
+                </LinearGradient>
+
+                <Text
+                  style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+                >
+                  Disciplinary Suspension
+                </Text>
+              </View>
+
+              {/* Full-width Red Divider */}
+              <View
+                style={{ height: 2, backgroundColor: "#991B1B", width: "100%" }}
+              />
+            </View>
+          }
+          // 2. Custom text styling to match the screenshot's lighter font weight
+          content={
+            <Text
+              style={{
+                color: "white",
+                fontSize: 16,
+                textAlign: "center",
+                lineHeight: 20,
+                fontWeight: "500",
+                marginTop: 8,
+              }}
+            >
+              You are temporarily suspended from answering due high number of
+              Inappropriate Language
+            </Text>
+          }
+          primaryText="OK"
+          onPrimary={() => {
+            setIsSuspendedPopupVisible(false);
+          }}
+          theme="dark"
+        />
       </SafeAreaView>
     </LinearGradient>
   );

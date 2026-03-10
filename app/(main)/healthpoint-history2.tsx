@@ -12,7 +12,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
 
 // Import your API functions
 import {
@@ -161,14 +161,18 @@ export default function HealthActivityScreen() {
         {/* --- HEADER --- */}
         <View className="flex-row items-center justify-between px-6 pt-4 pb-2 w-full mt-2">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push("/(main)/dashboard")}
             activeOpacity={0.8}
-            className="p-2 -ml-2 z-10"
           >
-            <Ionicons name="chevron-back" size={28} color="white" />
+            <Octicons
+              name="home-fill"
+              size={28}
+              color="#FFA629"
+              className="ml-2.5"
+            />
           </TouchableOpacity>
-          <View className="absolute inset-0 items-center justify-center pt-4 pointer-events-none">
-            <Text className="text-white text-[20px] font-bold tracking-wide">
+          <View className="absolute inset-0 items-center justify-center pt-2 pointer-events-none">
+            <Text className="text-white text-[19px] font-bold tracking-wide">
               Health Points Activity
             </Text>
           </View>
@@ -187,6 +191,7 @@ export default function HealthActivityScreen() {
                 <TouchableOpacity
                   className="flex-row items-center bg-[#FF8A33] rounded-xl px-3 py-1.5 shadow-lg"
                   activeOpacity={0.8}
+                  onPress={() => router.push("/payment-options")}
                 >
                   <MaterialCommunityIcons
                     name="heart-pulse"
