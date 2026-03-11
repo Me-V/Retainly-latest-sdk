@@ -133,21 +133,54 @@ export default function HealthActivityScreen() {
     return "Transaction";
   };
 
-  // Group transactions for the UI to match the screenshot clustering
+  // Group transactions for the UI using real API dates
   const groupedTransactions = useMemo(() => {
     if (!transactions.length) return [];
 
-    // Chunking array into groups of 2 for visual matching with screenshot
-    const groups = [];
-    for (let i = 0; i < transactions.length; i += 2) {
-      groups.push({
-        date: "4 March 2026", // Mocking date since it's missing in JSON
-        data: transactions.slice(i, i + 2).map((tx, idx) => ({
-          ...tx,
-          mockTime: idx % 2 === 0 ? "02:12 PM" : "01:35 PM", // Mocking time
-        })),
+    // Helper to format date (e.g. "4 March 2026")
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = date.toLocaleString("default", { month: "long" });
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    };
+
+    // Helper to format time (e.g. "02:12 PM")
+    const formatTime = (dateString: string) => {
+      const date = new Date(dateString);
+      let hours = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      return `${hours.toString().padStart(2, "0")}:${minutes} ${ampm}`;
+    };
+
+    const groups: { date: string; data: any[] }[] = [];
+
+    transactions.forEach((tx) => {
+      if (!tx.created_at) return;
+
+      const dateStr = formatDate(tx.created_at);
+      const timeStr = formatTime(tx.created_at);
+
+      // Find if we already have a group for this date
+      let existingGroup = groups.find((g) => g.date === dateStr);
+
+      if (!existingGroup) {
+        // Create new group
+        existingGroup = { date: dateStr, data: [] };
+        groups.push(existingGroup);
+      }
+
+      // Add transaction to group, injecting the parsed time
+      existingGroup.data.push({
+        ...tx,
+        mockTime: timeStr, // Reusing mockTime key so we don't have to change JSX below
       });
-    }
+    });
+
     return groups;
   }, [transactions]);
 

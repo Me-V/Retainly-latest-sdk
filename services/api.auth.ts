@@ -224,7 +224,7 @@ export async function getHealthPoints(token: string) {
 export async function getHealthPointsTransactions(
   token: string,
   page: number = 1,
-  pageSize: number = 100,
+  pageSize: number = 5,
 ) {
   try {
     const res = await axios.get(
