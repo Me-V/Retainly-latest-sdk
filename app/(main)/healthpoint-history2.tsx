@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -94,36 +96,53 @@ export default function HealthActivityScreen() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination States
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Fetch Balance (Runs ONLY on mount)
   useEffect(() => {
-    const fetchData = async () => {
-      if (!token) return;
+    if (!token) return;
+    getHealthPoints(token)
+      .then((data) => {
+        if (data && data.balance !== undefined) setBalance(data.balance);
+      })
+      .catch((err) => console.error("Error loading balance:", err));
+  }, [token]);
+
+  // Fetch Transactions (Runs on mount AND when `page` changes)
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!token || (!hasMore && page > 1)) return;
+
       try {
-        // Fetch Balance
-        const balanceData = await getHealthPoints(token);
-        if (balanceData && balanceData.balance !== undefined) {
-          setBalance(balanceData.balance);
-        }
+        if (page === 1) setLoading(true);
+        else setLoadingMore(true);
 
-        // Fetch Transactions
-        const txData = await getHealthPointsTransactions(token, 1, 100);
-
-        // console.log(
-        //   "----------------------->>>>>>>>>>>>>>>>>>>>>>>Transactions data",
-        //   txData,
-        //   JSON.stringify(txData, null, 2),
-        // );
+        // Fetch using the current page state, pageSize = 10 as per your Swagger UI
+        const txData = await getHealthPointsTransactions(token, page, 100);
 
         if (txData && txData.results) {
-          setTransactions(txData.results);
+          if (page === 1) {
+            setTransactions(txData.results);
+          } else {
+            // Append new results to the existing array
+            setTransactions((prev) => [...prev, ...txData.results]);
+          }
+          // The API returns `next: "url..."` if there is another page, or `null` if it's the end
+          setHasMore(txData.next !== null);
         }
       } catch (error) {
-        console.error("Error loading health data:", error);
+        console.error("Error loading transactions:", error);
       } finally {
         setLoading(false);
+        setLoadingMore(false);
       }
     };
-    fetchData();
-  }, [token]);
+
+    fetchTransactions();
+  }, [token, page]);
 
   // Helper to format transaction titles
   const getTransactionLabel = (tx: any) => {
@@ -184,6 +203,21 @@ export default function HealthActivityScreen() {
     return groups;
   }, [transactions]);
 
+  // Detect when user reaches the bottom of the ScrollView
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+
+    // Trigger fetch 50 pixels before they actually hit the bottom
+    const paddingToBottom = 50;
+    const isCloseToBottom =
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
+
+    if (isCloseToBottom && !loading && !loadingMore && hasMore) {
+      setPage((prevPage) => prevPage + 1);
+    }
+  };
+
   return (
     <LinearGradient
       // Deep dark purple background matching the screenshot
@@ -215,6 +249,9 @@ export default function HealthActivityScreen() {
           className="flex-1 mt-4"
           contentContainerStyle={{ paddingBottom: 50 }}
           showsVerticalScrollIndicator={false}
+          // Attach the scroll listener
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
         >
           {/* --- CURRENT HP CARD --- */}
           <View className="px-5 mb-8">
@@ -281,59 +318,71 @@ export default function HealthActivityScreen() {
                     No recent transactions
                   </Text>
                 ) : (
-                  groupedTransactions.map((group, groupIdx) => (
-                    <View key={`group-${groupIdx}`}>
-                      {/* --- Date Separator --- */}
-                      <View className="flex-row items-center justify-center py-3 px-2">
-                        <View className="h-[1px] bg-white/10 flex-1" />
-                        <View className="bg-white/5 rounded-full px-4 py-1 mx-3">
-                          <Text className="text-white/60 text-[12px] font-medium tracking-wider">
-                            {group.date}
-                          </Text>
+                  <>
+                    {/* Your mapped transactions */}
+                    {groupedTransactions.map((group, groupIdx) => (
+                      <View key={`group-${groupIdx}`}>
+                        {/* --- Date Separator --- */}
+                        <View className="flex-row items-center justify-center py-3 px-2">
+                          <View className="h-[1px] bg-white/10 flex-1" />
+                          <View className="bg-white/5 rounded-full px-4 py-1 mx-3">
+                            <Text className="text-white/60 text-[12px] font-medium tracking-wider">
+                              {group.date}
+                            </Text>
+                          </View>
+                          <View className="h-[1px] bg-white/10 flex-1" />
                         </View>
-                        <View className="h-[1px] bg-white/10 flex-1" />
-                      </View>
 
-                      {/* --- Transaction Cluster (Inner Box) --- */}
-                      <View className="bg-white/5 rounded-[20px] mx-5 mb-2">
-                        {group.data.map((tx: any, txIdx: number) => {
-                          const isCredit = tx.amount > 0;
-                          const isLastInGroup = txIdx === group.data.length - 1;
+                        {/* --- Transaction Cluster (Inner Box) --- */}
+                        <View className="bg-white/5 rounded-[20px] mx-5 mb-2">
+                          {group.data.map((tx: any, txIdx: number) => {
+                            const isCredit = tx.amount > 0;
+                            const isLastInGroup =
+                              txIdx === group.data.length - 1;
 
-                          return (
-                            <View
-                              key={tx.id}
-                              className={`flex-row items-center justify-between px-5 py-4 ${
-                                !isLastInGroup ? "border-b border-white/5" : ""
-                              }`}
-                            >
-                              {/* Left: Amount & Title */}
-                              <View className="flex-row items-center flex-1">
-                                <Text
-                                  className={`font-bold text-[16px] w-[75px] ${
-                                    isCredit
-                                      ? "text-[#4ADE80]"
-                                      : "text-[#FF8A33]"
-                                  }`}
-                                >
-                                  {isCredit ? "+" : ""}
-                                  {tx.amount} HP
-                                </Text>
-                                <Text className="text-white/90 text-[15px] font-medium ml-1">
-                                  {getTransactionLabel(tx)}
+                            return (
+                              <View
+                                key={tx.id}
+                                className={`flex-row items-center justify-between px-5 py-4 ${
+                                  !isLastInGroup
+                                    ? "border-b border-white/5"
+                                    : ""
+                                }`}
+                              >
+                                {/* Left: Amount & Title */}
+                                <View className="flex-row items-center flex-1">
+                                  <Text
+                                    className={`font-bold text-[16px] w-[75px] ${
+                                      isCredit
+                                        ? "text-[#4ADE80]"
+                                        : "text-[#FF8A33]"
+                                    }`}
+                                  >
+                                    {isCredit ? "+" : ""}
+                                    {tx.amount} HP
+                                  </Text>
+                                  <Text className="text-white/90 text-[15px] font-medium ml-1">
+                                    {getTransactionLabel(tx)}
+                                  </Text>
+                                </View>
+
+                                {/* Right: Time */}
+                                <Text className="text-white/40 text-[11px] font-medium">
+                                  {tx.mockTime}
                                 </Text>
                               </View>
-
-                              {/* Right: Time */}
-                              <Text className="text-white/40 text-[11px] font-medium">
-                                {tx.mockTime}
-                              </Text>
-                            </View>
-                          );
-                        })}
+                            );
+                          })}
+                        </View>
                       </View>
-                    </View>
-                  ))
+                    ))}
+                    {/* Small loading spinner at the bottom while fetching page 2, 3, etc. */}
+                    {loadingMore && (
+                      <View className="py-4 items-center justify-center">
+                        <ActivityIndicator size="small" color="#FF8A33" />
+                      </View>
+                    )}
+                  </>
                 )}
               </GlowCard>
             </View>
