@@ -693,6 +693,7 @@ const HomeDashboard: React.FC = () => {
           {/* Main Actions & Goal Row (Side by Side) */}
           <View className="flex-row gap-4 mb-6 items-stretch">
             {/* Left Column: Quick Actions */}
+            {/* Left Column: Quick Actions */}
             <View className="flex-1 flex-col justify-evenly">
               {/* Start Practice */}
               <TouchableOpacity
@@ -746,8 +747,8 @@ const HomeDashboard: React.FC = () => {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Math Olympics */}
-              {quizzes.length > 0 && (
+              {/* Math Olympics OR Invisible Placeholder */}
+              {quizzes.length > 0 ? (
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => handleQuickAction("olympics")}
@@ -783,6 +784,9 @@ const HomeDashboard: React.FC = () => {
                     <LiveBadge />
                   </View>
                 </TouchableOpacity>
+              ) : (
+                /* 🟢 NEW: Invisible placeholder matching the height of the button */
+                <View style={{ height: 56 }} pointerEvents="none" />
               )}
             </View>
 
