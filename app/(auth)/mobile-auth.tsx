@@ -84,8 +84,8 @@ const MobileLoginScreen = () => {
   const [successContent, setSuccessContent] = useState<string>("");
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.24)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   const showPopup = (opts: {
     heading?: string;

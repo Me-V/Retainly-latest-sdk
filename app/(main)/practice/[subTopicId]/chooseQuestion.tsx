@@ -1,5 +1,5 @@
 // app/(main)/practice/[subTopicId]/chooseQuestion.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -14,18 +14,25 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
 import { getQuestions } from "@/services/api.edu";
-import { BackIcon } from "@/assets/logo";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { GlassyListBtn } from "@/components/GlassyListBtn";
 import { startAttempt } from "@/services/api.chat";
 import { Octicons } from "@expo/vector-icons";
+import PopupModal from "@/components/Popup-modal";
 
 // --- TYPES ---
-type Question = { id?: string; name?: string; title?: string; text?: string };
+type Question = {
+  id?: string;
+  name?: string;
+  title?: string;
+  text?: string;
+  is_completed?: boolean;
+  is_locked?: boolean;
+};
 const getId = (q: Question) => String(q.id || "");
 const getName = (q: Question) => q.title || q.text || "Unnamed Question";
 
@@ -47,7 +54,12 @@ export default function SubTopicQuestions() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // State for the suspension popup
+  const [isSuspendedPopupVisible, setIsSuspendedPopupVisible] = useState(false);
+
   const [startingAttempt, setStartingAttempt] = useState(false);
+
+  const [isLockedPopupVisible, setIsLockedPopupVisible] = useState(false);
 
   // Inner scroll state
   const [containerH, setContainerH] = useState(0);
@@ -55,25 +67,50 @@ export default function SubTopicQuestions() {
   const [scrollY, setScrollY] = useState(0);
 
   // --- DESIGN CONSTANTS ---
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.1)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   // --- API LOGIC ---
-  useEffect(() => {
-    const load = async () => {
-      if (!token || !subTopicId) return;
-      setLoading(true);
-      try {
-        const res = await getQuestions(token, {
-          subTopicId: String(subTopicId),
+  // Using useFocusEffect so it refreshes data instantly when returning from the Chat Screen
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchQuestionsList = async () => {
+        if (!token || !subTopicId) return;
+
+        // Only show the loading spinner if the list is completely empty (first load)
+        setQuestions((currentQuestions) => {
+          if (currentQuestions.length === 0 && isActive) {
+            setLoading(true);
+          }
+          return currentQuestions;
         });
-        setQuestions(Array.isArray(res) ? res : []);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [token, subTopicId]);
+
+        try {
+          const res = await getQuestions(token, {
+            subTopicId: String(subTopicId),
+          });
+          if (isActive) {
+            setQuestions(Array.isArray(res) ? res : []);
+          }
+        } catch (error) {
+          console.error("Error fetching questions:", error);
+        } finally {
+          if (isActive) {
+            setLoading(false);
+          }
+        }
+      };
+
+      fetchQuestionsList();
+
+      // Cleanup function to prevent setting state if the user leaves immediately
+      return () => {
+        isActive = false;
+      };
+    }, [token, subTopicId]),
+  );
 
   const handleOpenQuestion = async (q: Question) => {
     // console.log("Question:", q);
@@ -96,9 +133,15 @@ export default function SubTopicQuestions() {
           },
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      Alert.alert("Error", "Could not start practice session.");
+
+      // Catch the 400 error to show the suspension modal
+      if (error?.response?.status === 400) {
+        setIsSuspendedPopupVisible(true);
+      } else {
+        Alert.alert("Error", "Could not start practice session.");
+      }
     } finally {
       setStartingAttempt(false);
     }
@@ -263,14 +306,47 @@ export default function SubTopicQuestions() {
                         No questions found.
                       </Text>
                     ) : (
-                      questions.map((q) => (
-                        <GlassyListBtn
-                          key={getId(q)}
-                          label={getName(q)}
-                          onPress={() => handleOpenQuestion(q)}
-                          numberOfLines={3} // 🟢 Questions get 3 lines
-                        />
-                      ))
+                      questions.map((q) => {
+                        // 🟢 1. Pre-determine the icon based on status
+                        let statusIcon = null;
+                        if (q.is_locked) {
+                          statusIcon = (
+                            <Ionicons
+                              name="lock-closed"
+                              size={20}
+                              color="rgba(255,255,255,0.4)"
+                            />
+                          );
+                        } else if (q.is_completed) {
+                          statusIcon = (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={24}
+                              color="#4ADE80" // Green tick
+                            />
+                          );
+                        }
+
+                        return (
+                          // 🟢 2. Remove "relative" container, we don't need absolute positioning anymore
+                          <View key={getId(q)}>
+                            <GlassyListBtn
+                              label={getName(q)}
+                              onPress={() => {
+                                if (q.is_locked) {
+                                  setIsLockedPopupVisible(true);
+                                } else {
+                                  handleOpenQuestion(q);
+                                }
+                              }}
+                              numberOfLines={3}
+                              // 🟢 3. Pass the icon into the component prop (assuming rightIcon exists)
+                              // This allows Flexbox inside GlassyListBtn to wrap the text correctly.
+                              rightIcon={statusIcon}
+                            />
+                          </View>
+                        );
+                      })
                     )}
                   </ScrollView>
                 </View>
@@ -294,6 +370,156 @@ export default function SubTopicQuestions() {
           )}
         </View>
       </ScrollView>
+      {/* Account Suspended Modal */}
+      <PopupModal
+        isVisible={isSuspendedPopupVisible}
+        onClose={() => setIsSuspendedPopupVisible(false)}
+        // 1. Leave heading undefined to use custom inline layout inside the icon prop
+        icon={
+          <View
+            style={{
+              width: Math.min(width * 0.85, 360),
+              alignItems: "center",
+              marginTop: -10,
+            }}
+          >
+            {/* Inline Icon & Title */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              {/* Red Exclamation Circle */}
+              <LinearGradient
+                colors={["#E53935", "#B71C1C"]}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Text
+                  style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+                >
+                  !
+                </Text>
+              </LinearGradient>
+
+              <Text
+                style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+              >
+                Disciplinary Suspension
+              </Text>
+            </View>
+
+            {/* Full-width Red Divider */}
+            <View
+              style={{ height: 2, backgroundColor: "#991B1B", width: "100%" }}
+            />
+          </View>
+        }
+        // 2. Custom text styling to match the screenshot's lighter font weight
+        content={
+          <Text
+            style={{
+              color: "white",
+              fontSize: 14,
+              textAlign: "center",
+              lineHeight: 20,
+              fontWeight: "500",
+              marginTop: 8,
+            }}
+          >
+            You are temporarily suspended from answering due high number of
+            Inappropriate Language
+          </Text>
+        }
+        primaryText="OK"
+        onPrimary={() => {
+          setIsSuspendedPopupVisible(false);
+        }}
+        theme="dark"
+      />
+
+      {/* Locked Question Modal */}
+      <PopupModal
+        isVisible={isLockedPopupVisible}
+        onClose={() => setIsLockedPopupVisible(false)}
+        icon={
+          <View
+            style={{
+              width: Math.min(width * 0.85, 360),
+              alignItems: "center",
+              marginTop: -10,
+            }}
+          >
+            {/* Inline Icon & Title */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              {/* Orange Lock Circle */}
+              <LinearGradient
+                colors={["#F59E51", "#EA580C"]}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons name="lock-closed" size={20} color="white" />
+              </LinearGradient>
+
+              <Text
+                style={{ color: "white", fontSize: 22, fontWeight: "bold" }}
+              >
+                Question Locked
+              </Text>
+            </View>
+
+            {/* Full-width Orange Divider */}
+            <View
+              style={{
+                height: 2,
+                backgroundColor: "#EA580C",
+                width: "100%",
+                opacity: 0.8,
+              }}
+            />
+          </View>
+        }
+        content={
+          <Text
+            style={{
+              color: "white",
+              fontSize: 16,
+              textAlign: "center",
+              lineHeight: 22,
+              fontWeight: "500",
+              marginTop: 8,
+            }}
+          >
+            This question is currently locked. Complete previous requirements to
+            unlock it.
+          </Text>
+        }
+        primaryText="Understood"
+        onPrimary={() => setIsLockedPopupVisible(false)}
+        theme="dark"
+      />
     </LinearGradient>
   );
 }

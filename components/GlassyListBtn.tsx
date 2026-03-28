@@ -1,17 +1,19 @@
 import React from "react";
-import { TouchableOpacity, Text, ViewStyle } from "react-native";
+import { TouchableOpacity, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 interface GlassyListBtnProps {
   label: string;
   onPress?: () => void;
   numberOfLines?: number; // 1 for Subjects, 3 for Questions
+  rightIcon?: React.ReactNode;
 }
 
 export const GlassyListBtn: React.FC<GlassyListBtnProps> = ({
   label,
   onPress,
   numberOfLines = 1,
+  rightIcon, // 🟢 1. Destructure rightIcon here
 }) => {
   return (
     <TouchableOpacity
@@ -31,17 +33,28 @@ export const GlassyListBtn: React.FC<GlassyListBtnProps> = ({
         colors={["rgba(255, 255, 255, 0.12)", "rgba(255, 255, 255, 0.04)"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        className="rounded-xl py-4 items-center justify-center border border-white/10"
+        // 🟢 2. Changed to flex-row and justify-between, moved padding to the container
+        className="flex-row items-center justify-between rounded-xl py-4 px-5 border border-white/10"
         style={{ borderRadius: 16 }}
       >
         <Text
-          className="text-white font-semibold text-[15px] leading-snug text-center px-4"
+          // 🟢 3. Added flex-1 to prevent overlap. Added conditional text-center.
+          className={`text-white font-semibold text-[15px] leading-snug flex-1 ${
+            !rightIcon ? "text-center" : "pr-2"
+          }`}
           adjustsFontSizeToFit={numberOfLines === 1} // Only adjust font size for single-line items
           numberOfLines={numberOfLines}
           ellipsizeMode="tail"
         >
           {label}
         </Text>
+
+        {/* 🟢 4. Render the icon cleanly on the right without getting squished */}
+        {rightIcon && (
+          <View className="items-center justify-center flex-shrink-0 ml-2">
+            {rightIcon}
+          </View>
+        )}
       </LinearGradient>
     </TouchableOpacity>
   );

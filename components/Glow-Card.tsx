@@ -12,10 +12,10 @@ interface GlowCardProps {
 export const GlowCard = ({
   children,
   className = "",
-  glowColor = "rgba(255, 255, 255, 0.15)", // Default white glow
+  glowColor = "rgba(255, 255, 255, 0.05)", // Default white glow
   style,
 }: GlowCardProps) => {
-  const GLOW_SIZE = 12;
+  const GLOW_SIZE =55;
 
   return (
     <LinearGradient

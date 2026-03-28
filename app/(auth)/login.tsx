@@ -57,7 +57,7 @@ export default function SignInScreen() {
           if (firebaseToken) {
             const backendResponse = await loginWithGoogle(
               firebaseToken,
-              googleUser.email
+              googleUser.email,
             );
 
             // console.log("#######backendResponse", backendResponse);
@@ -77,7 +77,7 @@ export default function SignInScreen() {
                 setUser({
                   token: backendResponse.token,
                   userInfo: backendResponse.user,
-                })
+                }),
               );
             } else {
               Alert.alert("Login failed", "Unexpected server response.");
@@ -111,17 +111,17 @@ export default function SignInScreen() {
       // Add the listener and keep the subscription
       const subscription = BackHandler.addEventListener(
         "hardwareBackPress",
-        onBackPress
+        onBackPress,
       );
 
       // Remove the listener using the subscription object (Fixes the deprecation error)
       return () => subscription.remove();
-    }, [])
+    }, []),
   );
 
   // Configuration for the glow
-  const GLOW_COLOR = "rgba(255, 255, 255, 0.15)";
-  const GLOW_SIZE = 12;
+  const GLOW_COLOR = "rgba(255, 255, 255, 0.04)";
+  const GLOW_SIZE = 25;
 
   return (
     <LinearGradient

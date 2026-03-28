@@ -89,10 +89,17 @@ export default function ChatScreen() {
   // Blinking Animation Ref for Low Health
   const blinkAnim = useRef(new Animated.Value(1)).current;
 
+  // Ref to track the Y position of the last message's starting point
+  const lastMessageYRef = useRef<number>(0);
+
   const [isKeyboardMode, setIsKeyboardMode] = useState(false);
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [isHealthPopupVisible, setIsHealthPopupVisible] = useState(false);
+
+  // Suspension States
+  const [isSuspended, setIsSuspended] = useState(false);
+  const [isSuspendedPopupVisible, setIsSuspendedPopupVisible] = useState(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const transcriptRef = useRef("");
@@ -148,6 +155,14 @@ export default function ChatScreen() {
     const textToSend = manualText || inputText.trim();
     if (!textToSend) return;
 
+    // Prevent sending API call completely if we know user is suspended
+    if (isSuspended) {
+      setIsSuspendedPopupVisible(true);
+      setInputText("");
+      transcriptRef.current = "";
+      return;
+    }
+
     isSendingRef.current = true;
     setIsKeyboardMode(false);
 
@@ -179,7 +194,12 @@ export default function ChatScreen() {
 
     try {
       const data = await sendChatMessage(token!, attemptId || "", textToSend);
-      console.log("API Response:", JSON.stringify(data, null, 2));
+      console.log("##########API Response:", JSON.stringify(data, null, 2));
+
+      // Capture Suspension state from a successful request (like the 3rd API response)
+      if (data?.is_suspended !== undefined) {
+        setIsSuspended(data.is_suspended);
+      }
 
       // Show modal ONLY if the API response contains the specific detail message
       if (
@@ -211,15 +231,16 @@ export default function ChatScreen() {
         setHealthPoints(data.health_balance);
       }
 
-      // 🟢 Determine Status
+      //  Determine Status
       const isAnswerCorrect = decision === "correct";
       const isAnswerWrong =
         decision === "need study" ||
         decision === "improvements" ||
         decision === "repeat_with_correction" ||
         decision === "penalty";
+      decision === "suspended"; // 'suspended' to trigger the red error styling
 
-      // 🟢 Show Next Button if answer is correct
+      // Show Next Button if answer is correct
       if (isAnswerCorrect) {
         setShowNextButton(true);
       }
@@ -251,6 +272,12 @@ export default function ChatScreen() {
         "Insufficient health points. Please recharge to continue."
       ) {
         setIsHealthPopupVisible(true);
+        setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
+      } // 🟢 NEW: Intercept 400 Bad Request error (happens on 4th attempt after suspension)
+      else if (error?.response?.status === 400) {
+        setIsSuspended(true);
+        setIsSuspendedPopupVisible(true);
+        // Remove the message the user just optimistically sent
         setMessages((prev) => prev.filter((m) => m.id !== userMsgId));
       } else {
         Alert.alert("Error", "Failed to send message.");
@@ -310,6 +337,11 @@ export default function ChatScreen() {
           setHealthPoints(data.health_balance);
         }
 
+        // Track suspension from history on initial load
+        if (data?.is_suspended !== undefined) {
+          setIsSuspended(data.is_suspended);
+        }
+
         if (
           data?.messages &&
           Array.isArray(data.messages) &&
@@ -342,6 +374,7 @@ export default function ChatScreen() {
                 decision === "improvements" ||
                 decision === "repeat_with_correction" ||
                 decision === "penalty";
+              decision === "suspended";
 
               // ...Apply that status to the PREVIOUS message (if it was from the user)
               if (i > 0 && history[i - 1].sender === "user") {
@@ -525,6 +558,7 @@ export default function ChatScreen() {
     lastMessage?.payload?.buttons &&
     lastMessage.payload.buttons.length > 0;
 
+  // Add isSuspended so inputs stay greyed out
   const isMicDisabled = sending || isBotOptionsInteraction;
 
   const hasUserMessage = messages.some((msg) => msg.sender === "user");
@@ -651,9 +685,18 @@ export default function ChatScreen() {
           ref={scrollViewRef}
           style={{ flex: 1, paddingHorizontal: 16, marginTop: 16 }}
           contentContainerStyle={{ paddingBottom: 350 }}
-          onContentSizeChange={() =>
-            scrollViewRef.current?.scrollToEnd({ animated: true })
-          }
+          onContentSizeChange={() => {
+            // 🟢 UPDATED: If the bot is typing, scroll to the bottom.
+            // Otherwise, scroll to the START (top) of the last message!
+            if (sending) {
+              scrollViewRef.current?.scrollToEnd({ animated: true });
+            } else {
+              scrollViewRef.current?.scrollTo({
+                y: lastMessageYRef.current,
+                animated: true,
+              });
+            }
+          }}
         >
           {loadingHistory && messages.length <= 1 ? (
             <ActivityIndicator
@@ -671,7 +714,19 @@ export default function ChatScreen() {
               const hasStatus = msg.isCorrect || msg.isError;
 
               return (
-                <View key={msg.id} className="w-full mb-6">
+                <View
+                  key={msg.id}
+                  className="w-full mb-6"
+                  onLayout={(event) => {
+                    if (isLastMessage) {
+                      // Subtracting 20 gives a little breathing room at the top
+                      lastMessageYRef.current = Math.max(
+                        0,
+                        event.nativeEvent.layout.y - 20,
+                      );
+                    }
+                  }}
+                >
                   <View
                     className={`flex-row items-start w-full ${isBot ? "justify-start" : "justify-end"}`}
                   >
@@ -1143,7 +1198,7 @@ export default function ChatScreen() {
           </View>
         </KeyboardAvoidingView>
 
-        {/* 🟢 UPDATED: Render the custom modal to match the new screenshot */}
+        {/* Render the custom modal to match the new screenshot */}
         <PopupModal
           isVisible={isHealthPopupVisible}
           onClose={() => setIsHealthPopupVisible(false)}
@@ -1164,6 +1219,82 @@ export default function ChatScreen() {
           }}
           secondaryText="Cancel"
           onSecondary={() => setIsHealthPopupVisible(false)}
+          theme="dark"
+        />
+
+        {/* Account Suspended Modal */}
+        <PopupModal
+          isVisible={isSuspendedPopupVisible}
+          onClose={() => setIsSuspendedPopupVisible(false)}
+          // 1. Leave heading undefined to use custom inline layout inside the icon prop
+          icon={
+            <View
+              style={{
+                alignItems: "center",
+                marginTop: -10,
+              }}
+            >
+              {/* Inline Icon & Title */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: 16,
+                }}
+              >
+                {/* Red Exclamation Circle */}
+                <LinearGradient
+                  colors={["#E53935", "#B71C1C"]}
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 19,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 12,
+                  }}
+                >
+                  <Text
+                    style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+                  >
+                    !
+                  </Text>
+                </LinearGradient>
+
+                <Text
+                  style={{ color: "white", fontSize: 24, fontWeight: "bold" }}
+                >
+                  Disciplinary Suspension
+                </Text>
+              </View>
+
+              {/* Full-width Red Divider */}
+              <View
+                style={{ height: 2, backgroundColor: "#991B1B", width: "100%" }}
+              />
+            </View>
+          }
+          // 2. Custom text styling to match the screenshot's lighter font weight
+          content={
+            <Text
+              style={{
+                color: "white",
+                fontSize: 14,
+                textAlign: "center",
+                lineHeight: 20,
+                fontWeight: "500",
+                marginTop: 8,
+              }}
+            >
+              You are temporarily suspended from answering due high number of
+              Inappropriate Language
+            </Text>
+          }
+          primaryText="OK"
+          onPrimary={() => {
+            setIsSuspendedPopupVisible(false);
+          }}
           theme="dark"
         />
       </SafeAreaView>
