@@ -785,7 +785,7 @@ const HomeDashboard: React.FC = () => {
                   </View>
                 </TouchableOpacity>
               ) : (
-                /* 🟢 NEW: Invisible placeholder matching the height of the button */
+                /* Invisible placeholder matching the height of the button */
                 <View style={{ height: 56 }} pointerEvents="none" />
               )}
             </View>
