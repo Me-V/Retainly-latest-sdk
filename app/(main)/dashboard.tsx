@@ -283,6 +283,7 @@ const HomeDashboard: React.FC = () => {
     if (key === "practice") router.push("/practice/chooseSubject");
     if (key === "olympics") router.push("/olympics/quizes");
     if (key === "tutorials") router.push("/tutor/chat");
+    if (key === "mock") router.push("/VoiceTester");
   };
 
   useEffect(() => {
@@ -723,7 +724,7 @@ const HomeDashboard: React.FC = () => {
               </TouchableOpacity>
 
               {/* Mock Test */}
-              <TouchableOpacity activeOpacity={0.8}>
+              <TouchableOpacity activeOpacity={0.8} onPress={() => handleQuickAction("mock")}>
                 <LinearGradient
                   // Dark to lighter brown/orange
                   colors={["#1B521E", "#3A863D"]}
