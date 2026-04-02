@@ -30,6 +30,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BotIcon } from "@/assets/logo2";
 import { Fontisto, MaterialCommunityIcons, Octicons } from "@expo/vector-icons";
+import * as Speech from "expo-speech";
 
 type Message = {
   id: string;
@@ -47,6 +48,19 @@ type Message = {
     progress_score?: number;
     penalty_score?: number;
   };
+};
+
+export const narrateBotResponse = (text: string) => {
+  Speech.stop(); // Stop any currently playing audio
+
+  // Clean up markdown characters so the bot doesn't say "asterisk asterisk"
+  const cleanText = text.replace(/[*#_]/g, "");
+
+  Speech.speak(cleanText, {
+    language: "en-IN", // Using Indian English as requested
+    pitch: 1.0,
+    rate: 1.0,
+  });
 };
 
 export default function ChatScreen() {
@@ -253,6 +267,9 @@ export default function ChatScreen() {
             : m,
         ),
       );
+
+      // Narrate the text as soon as it arrives!
+      narrateBotResponse(botText);
 
       // Add Bot Message
       if (botText) {
@@ -533,6 +550,13 @@ export default function ChatScreen() {
     };
   }, [healthPoints, blinkAnim]);
 
+  // Stop speaking if the user leaves the chat screen
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
+
   // Interpolate Animated Value into Percentages and Pixels
   const animatedProgressWidth = progressAnim.interpolate({
     inputRange: [0, 100],
@@ -754,6 +778,23 @@ export default function ChatScreen() {
                       >
                         {msg.text}
                       </Text>
+
+                      {/* 🟢 5. NEW: Add a Replay Button for Bot Messages */}
+                      {isBot && (
+                        <TouchableOpacity
+                          onPress={() => narrateBotResponse(msg.text)}
+                          className="mt-3 flex-row items-center opacity-60"
+                        >
+                          <Ionicons
+                            name="volume-high"
+                            size={14}
+                            color="white"
+                          />
+                          <Text className="text-white text-[11px] font-bold ml-1.5 uppercase tracking-wider">
+                            Listen
+                          </Text>
+                        </TouchableOpacity>
+                      )}
 
                       {!isBot && (
                         <View className="absolute bottom-3 left-3">
