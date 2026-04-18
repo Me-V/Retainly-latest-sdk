@@ -6,7 +6,11 @@ import {
   ScrollView,
   Image,
   BackHandler, // 🟢 Import BackHandler
+  Platform,
 } from "react-native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import { registerDeviceToken } from "@/services/api.auth";
 import { getLiveQuizzes, OlympicQuiz } from "@/services/api.olympics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSelector } from "react-redux";
@@ -108,6 +112,70 @@ const HomeDashboard: React.FC = () => {
 
   // Health Points State
   const [healthBalance, setHealthBalance] = useState<number | string>("--");
+
+  const getFirebaseToken = async () => {
+    // 🟢 1. Physical Device Check (Prevents crashes on simulators)
+    if (!Device.isDevice) {
+      console.log("Must use physical device for Push Notifications");
+      return;
+    }
+
+    // 🟢 2. Required Android Notification Channel Configuration
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C", // You can change this to match your app's brand color
+      });
+    }
+
+    // 🟢 3. Safe Permissions Flow
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") {
+      console.log("Permission not granted!");
+      return;
+    }
+
+    try {
+      // Fetch the raw device token (FCM token on Android)
+      const deviceTokenData = await Notifications.getDevicePushTokenAsync();
+      const firebaseToken = deviceTokenData.data;
+
+      console.log("My Firebase Token is: ", firebaseToken);
+
+      // 🔥 Call API
+      if (token) {
+        const data = await registerDeviceToken(token, {
+          token: firebaseToken,
+          platform: Platform.OS,
+          device_id: userInfo?.id?.toString() || "unknown-device",
+          app_version: "1.0.0",
+        });
+
+        console.log(
+          "Firebase token registered successfully",
+          JSON.stringify(data, null, 2),
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching Firebase token: ", error);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      getFirebaseToken();
+    }
+  }, [token]);
 
   useFocusEffect(
     useCallback(() => {
@@ -724,7 +792,10 @@ const HomeDashboard: React.FC = () => {
               </TouchableOpacity>
 
               {/* Mock Test */}
-              <TouchableOpacity activeOpacity={0.8} onPress={() => handleQuickAction("mock")}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => handleQuickAction("mock")}
+              >
                 <LinearGradient
                   // Dark to lighter brown/orange
                   colors={["#1B521E", "#3A863D"]}

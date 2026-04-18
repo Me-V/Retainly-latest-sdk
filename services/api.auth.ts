@@ -245,3 +245,34 @@ export async function getHealthPointsTransactions(
     throw err;
   }
 }
+
+// Register device token
+export async function registerDeviceToken(
+  token: string,
+  data: {
+    token: string;
+    platform: string;
+    device_id: string;
+    app_version: string;
+  },
+) {
+  try {
+    const res = await axios.post(
+      `${API_BASE}/backend/notifications/device/register/`, // adjust if your endpoint differs
+      data,
+      {
+        headers: {
+          Authorization: `Token ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    return res.data;
+  } catch (err: any) {
+    console.error(
+      "Register device token error:",
+      err.response?.data || err.message,
+    );
+    throw err;
+  }
+}
