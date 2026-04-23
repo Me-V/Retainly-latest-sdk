@@ -47,6 +47,9 @@ export default function SignInScreen() {
 
       if (isSuccessResponse(response)) {
         const { idToken } = response.data;
+         
+        console.log("#######idToken", idToken, JSON.stringify(response.data));
+
         const googleUser = response.data.user;
 
         if (idToken) {

@@ -8,21 +8,19 @@ type Props = {
   healthBalance: number | string;
 };
 
-const Header: React.FC<Props> = ({ displayName, healthBalance }) => {
+const HomeHeader: React.FC<Props> = ({ displayName, healthBalance }) => {
   return (
-    <View className="pt-2 pb-4 flex-row items-center justify-between my-2 px-6">
+    <View className="pt-2 pb-4 flex-row items-center justify-between mt-4 mb-2 px-6">
       {/* Left Side */}
       <View className="flex-row items-center flex-1 ml-2">
         <Text className="text-[18px] font-bold text-white">
           Hello,{" "}
-          <Text className="text-[#FF8D28]">
-            {displayName || "Username"}
-          </Text>
+          <Text className="text-[#FF8D28]">{displayName || "Username"}</Text>
         </Text>
       </View>
 
       {/* Right Side */}
-      <View className="flex-row items-center gap-4">
+      <View className="flex-row items-center space-x-4 gap-4">
         <TouchableOpacity
           onPress={() => router.push("/(main)/healthpoint-history2")}
           className="flex-row items-center"
@@ -42,7 +40,7 @@ const Header: React.FC<Props> = ({ displayName, healthBalance }) => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
-          <View className="w-9 h-9 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
+          <View className="w-10 h-10 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
             <Ionicons name="person" size={18} color="white" />
           </View>
         </TouchableOpacity>
@@ -51,4 +49,4 @@ const Header: React.FC<Props> = ({ displayName, healthBalance }) => {
   );
 };
 
-export default Header;
+export default HomeHeader;

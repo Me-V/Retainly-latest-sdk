@@ -32,6 +32,11 @@ import { GlowCard } from "@/components/Glow-Card";
 import { LiveBadge } from "@/components/dashboard/LiveBadge";
 import Svg, { Circle } from "react-native-svg";
 import { getHealthPoints } from "@/services/api.auth";
+import LeaderboardSection from "@/components/dashboard/LeaderboardSection";
+import QuickActionsLeft from "@/components/dashboard/QuickActionsLeft";
+import DailyProgressCard from "@/components/dashboard/DailyProgressCard";
+import FloatingBottomBar from "@/components/dashboard/FloatingBottomBar";
+import HomeHeader from "@/components/dashboard/Header";
 
 // Mock subjects (Ensure this block exists if you use it below)
 const palette = ["#FF8A33", "#F59E51", "#FFB74D", "#FFA726"];
@@ -444,223 +449,18 @@ const HomeDashboard: React.FC = () => {
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {/* Header */}
-        <View className="pt-2 pb-4 flex-row items-center justify-between my-2 px-6">
-          {/* Left Side: Health Points Placeholder & Greeting */}
-          <View className="flex-row items-center flex-1 ml-2">
-            {/* Health Points Indicator */}
-
-            {/* Greeting */}
-            <Text className="text-[18px] font-bold text-white">
-              Hello,{" "}
-              <Text className="text-[#FF8D28]">
-                {displayName || "Username"}
-              </Text>
-            </Text>
-          </View>
-
-          {/* Right Side: Notifications & Profile */}
-          <View className="flex-row items-center space-x-4 gap-4">
-            <TouchableOpacity
-              onPress={() => router.push("/(main)/healthpoint-history2")}
-              className="flex-row items-center"
-            >
-              <MaterialCommunityIcons
-                name="heart-pulse"
-                size={20}
-                color="#EF4444"
-              />
-              <Text className="text-white font-bold text-[16px] ml-1.5">
-                {healthBalance}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Ionicons name="notifications" size={22} color="white" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/(main)/profile")}>
-              <View className="w-9 h-9 rounded-full bg-[#F59E51] items-center justify-center border-2 border-[#3B0A52]">
-                <Ionicons name="person" size={18} color="white" />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <HomeHeader displayName={displayName} healthBalance={healthBalance} />
 
         <View className="px-6 space-y-5 gap-5">
           {/* Leaderboard Card */}
-          {/* 🟢 NEW: Wrapped in TouchableOpacity to make it clickable */}
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => router.push("/(main)/LeaderboardScreen")}
           >
-            {/* Leaderboard Card */}
-            <GlowCard className="p-4 py-5">
-              <View className="flex-row items-start">
-                {/* --- Reusable Render Function for Leaderboard Items --- */}
-                {(() => {
-                  const renderItem = (item: LeaderboardUser, key: string) => {
-                    const styles = getMedalStyles(item.rank);
-                    return (
-                      <View
-                        key={key}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          backgroundColor: "rgba(255, 255, 255, 0.04)",
-                          borderColor: "rgba(255, 255, 255, 0.08)",
-                          borderWidth: 1,
-                          borderRadius: 14,
-                          paddingVertical: 10,
-                          paddingHorizontal: 10,
-                          shadowColor: "rgba(255, 255, 255, 0.9)",
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.1,
-                          shadowRadius: 18,
-                        }}
-                      >
-                        <View className="flex-row items-center flex-1 pr-2 overflow-hidden">
-                          <View className="relative w-5 h-[22px] items-center justify-start mr-2.5 flex-shrink-0">
-                            <View className="absolute bottom-0 flex-row w-[12px] justify-between">
-                              <View
-                                style={{
-                                  width: 4,
-                                  height: 8,
-                                  backgroundColor: styles.ribbon,
-                                  transform: [{ rotate: "25deg" }],
-                                }}
-                              />
-                              <View
-                                style={{
-                                  width: 4,
-                                  height: 8,
-                                  backgroundColor: styles.ribbon,
-                                  transform: [{ rotate: "-25deg" }],
-                                }}
-                              />
-                            </View>
-                            <View
-                              style={{
-                                width: 16,
-                                height: 16,
-                                borderRadius: 8,
-                                backgroundColor: styles.bg,
-                                alignItems: "center",
-                                justifyContent: "center",
-                                zIndex: 10,
-                              }}
-                            >
-                              {item.rank === null || item.rank > 3 ? (
-                                <Ionicons
-                                  name="star"
-                                  size={8}
-                                  color={styles.text}
-                                  style={{ marginLeft: 0.5, marginTop: 0.5 }}
-                                />
-                              ) : (
-                                <Text
-                                  style={{
-                                    fontSize: 9,
-                                    fontWeight: "bold",
-                                    color: styles.text,
-                                  }}
-                                >
-                                  {item.rank}
-                                </Text>
-                              )}
-                            </View>
-                          </View>
-                          <Text
-                            className={`text-[13px] font-medium flex-shrink ${item.isMe ? "text-[#FF8D28]" : "text-white"}`}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {item.isMe ? "You" : item.name}
-                          </Text>
-                        </View>
-                        <Text className="text-[#FF8D28] text-[13px] font-bold ml-1 flex-shrink-0">
-                          {item.score}
-                        </Text>
-                      </View>
-                    );
-                  };
-
-                  return (
-                    <>
-                      {/* 🟢 Left Side: All time (Now Clickable independently) */}
-                      <TouchableOpacity
-                        className="flex-1 pr-2"
-                        activeOpacity={0.7}
-                        onPress={() =>
-                          router.push({
-                            pathname: "/(main)/LeaderboardScreen",
-                            params: { type: "all-time" },
-                          })
-                        }
-                      >
-                        <Text className="text-white font-semibold text-[14px] text-center mb-3">
-                          All-time{" "}
-                          <Text className="text-[#FF8D28]">Leaders</Text>
-                        </Text>
-                        <View className="gap-y-1.5">
-                          {allTimeLeaders.top.map((item, index) =>
-                            renderItem(item, `alltime-top-${index}`),
-                          )}
-                          {allTimeLeaders.top.length > 0 &&
-                            allTimeLeaders.me && (
-                              <View className="flex-row justify-center gap-1.5 my-1">
-                                {[1, 2, 3, 4].map((dot) => (
-                                  <View
-                                    key={dot}
-                                    className="w-[3px] h-[3px] rounded-full bg-white/30"
-                                  />
-                                ))}
-                              </View>
-                            )}
-                          {allTimeLeaders.me &&
-                            renderItem(allTimeLeaders.me, "alltime-me")}
-                        </View>
-                      </TouchableOpacity>
-
-                      {/* Vertical Divider */}
-                      <View className="w-[1px] h-[95%] bg-white/10 self-center rounded-full mx-1" />
-
-                      {/* 🟢 Right Side: Today (Now Clickable independently) */}
-                      <TouchableOpacity
-                        className="flex-1 pl-2"
-                        activeOpacity={0.7}
-                        onPress={() =>
-                          router.push({
-                            pathname: "/(main)/LeaderboardScreen",
-                            params: { type: "today" },
-                          })
-                        }
-                      >
-                        <Text className="text-white font-semibold text-[14px] text-center mb-3">
-                          Today's{" "}
-                          <Text className="text-[#FF8D28]">Leaders</Text>
-                        </Text>
-                        <View className="gap-y-1.5">
-                          {todayLeaders.top.map((item, index) =>
-                            renderItem(item, `today-top-${index}`),
-                          )}
-                          {todayLeaders.top.length > 0 && todayLeaders.me && (
-                            <View className="flex-row justify-center gap-1.5 my-1">
-                              {[1, 2, 3, 4].map((dot) => (
-                                <View
-                                  key={dot}
-                                  className="w-[3px] h-[3px] rounded-full bg-white/30"
-                                />
-                              ))}
-                            </View>
-                          )}
-                          {todayLeaders.me &&
-                            renderItem(todayLeaders.me, "today-me")}
-                        </View>
-                      </TouchableOpacity>
-                    </>
-                  );
-                })()}
-              </View>
-            </GlowCard>
+            <LeaderboardSection
+              todayLeaders={todayLeaders}
+              allTimeLeaders={allTimeLeaders}
+            />
           </TouchableOpacity>
 
           {/* Graph Section */}
@@ -762,173 +562,23 @@ const HomeDashboard: React.FC = () => {
           {/* Main Actions & Goal Row (Side by Side) */}
           <View className="flex-row gap-4 mb-6 items-stretch">
             {/* Left Column: Quick Actions */}
-            {/* Left Column: Quick Actions */}
-            <View className="flex-1 flex-col justify-evenly">
-              {/* Start Practice */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => handleQuickAction("practice")}
-              >
-                <LinearGradient
-                  colors={["#8E2622", "#D64536"]} // Dark to lighter red
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingHorizontal: 12,
-                    paddingVertical: 12,
-                    borderRadius: 16,
-                  }}
-                >
-                  <View className="w-8 h-8 rounded-full bg-black/20 items-center justify-center mr-3">
-                    <Ionicons name="play" size={16} color="#FF7A00" />
-                  </View>
-                  <Text className="flex-1 text-white text-[12px] font-semibold">
-                    Start Practice
-                  </Text>
-                  <Ionicons name="chevron-forward" size={18} color="white" />
-                </LinearGradient>
-              </TouchableOpacity>
+            <QuickActionsLeft
+              onQuickAction={handleQuickAction}
+              showOlympics={quizzes.length > 0}
+            />
 
-              {/* Mock Test */}
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => handleQuickAction("mock")}
-              >
-                <LinearGradient
-                  // Dark to lighter brown/orange
-                  colors={["#1B521E", "#3A863D"]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    paddingHorizontal: 12,
-                    paddingVertical: 12,
-                    borderRadius: 16,
-                  }}
-                >
-                  <View className="w-8 h-8 rounded-xl bg-black/20 items-center justify-center mr-3">
-                    <Ionicons name="book" size={16} color="#FFB300" />
-                  </View>
-                  <Text className="flex-1 text-white text-[12px] font-semibold">
-                    Mock Test
-                  </Text>
-                  <Ionicons name="chevron-forward" size={18} color="white" />
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {/* Math Olympics OR Invisible Placeholder */}
-              {quizzes.length > 0 ? (
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => handleQuickAction("olympics")}
-                  className="relative"
-                >
-                  <LinearGradient
-                    colors={["#875014", "#CA802E"]} // Dark to lighter green
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: 12,
-                      paddingVertical: 12,
-                      borderRadius: 16,
-                    }}
-                  >
-                    <View className="w-8 h-8 bg-black/20 rounded-xl items-center justify-center mr-3">
-                      <Image
-                        source={require("@/assets/olympiadLogo.png")}
-                        className="w-5 h-5"
-                        resizeMode="contain"
-                      />
-                    </View>
-                    <Text className="flex-1 text-white text-[12px] font-semibold">
-                      Math Olympics
-                    </Text>
-                    <Ionicons name="chevron-forward" size={18} color="white" />
-                  </LinearGradient>
-
-                  {/* Live Badge (Absolutely Positioned) */}
-                  <View className="absolute top-3 right-1 z-10">
-                    <LiveBadge />
-                  </View>
-                </TouchableOpacity>
-              ) : (
-                /* Invisible placeholder matching the height of the button */
-                <View style={{ height: 56 }} pointerEvents="none" />
-              )}
-            </View>
-
-            {/* Right Column: Daily Practice Goal */}
-            <View className="flex-1">
-              <GlowCard className="p-4 items-center justify-center flex-1 py-4">
-                <View className="relative w-[88px] h-[88px] items-center justify-center">
-                  <View className="absolute inset-0 items-center justify-center">
-                    <Svg width="88" height="88">
-                      <Circle
-                        stroke="rgba(255, 255, 255, 0.1)"
-                        fill="none"
-                        cx="44"
-                        cy="44"
-                        r="30"
-                        strokeWidth="3"
-                      />
-                      {/* Filled Progress Circle */}
-                      <Circle
-                        stroke="#FF8D28"
-                        fill="none"
-                        cx="44"
-                        cy="44"
-                        r="30"
-                        strokeWidth="3"
-                        strokeDasharray={2 * Math.PI * 36}
-                        strokeDashoffset={
-                          2 * Math.PI * 36 -
-                          (analyticsData.overall_average / 100) *
-                            (2 * Math.PI * 36)
-                        }
-                        strokeLinecap="round"
-                        transform="rotate(-90 44 44)" // Rotates so the stroke starts from the top
-                      />
-                    </Svg>
-                  </View>
-
-                  <Text className="text-white font-bold text-[18px] z-10">
-                    {Number(analyticsData.overall_average.toFixed(1))}%
-                  </Text>
-                </View>
-
-                <Text className="text-white text-[15px] font-bold text-center mb-1">
-                  Your Progress
-                </Text>
-                <Text className="text-white/60 text-[12px] text-center leading-[18px] mt-1 px-2">
-                  You've completed{"\n"}
-                  {analyticsData.attempted_question_count}/
-                  {analyticsData.total_question_count} questions today.
-                </Text>
-              </GlowCard>
-            </View>
+            <DailyProgressCard
+              overallAverage={analyticsData.overall_average}
+              attempted={analyticsData.attempted_question_count}
+              total={analyticsData.total_question_count}
+            />
           </View>
         </View>
       </ScrollView>
 
       {/* Floating Bottom Navigation Bar */}
       <View className="absolute bottom-6 left-6 right-6 h-[70px] bg-[#2A1C3E]/90 border border-white/10 rounded-[35px] flex-row items-center justify-around shadow-lg px-2 backdrop-blur-md">
-        <TouchableOpacity className="items-center justify-center">
-          <Ionicons name="home" size={24} color="#F59E51" />
-          <Text className="text-[10px] text-white mt-1">Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center justify-center opacity-60">
-          <MaterialIcons name="my-library-books" size={24} color="white" />
-          <Text className="text-[10px] text-white mt-1">Subjects</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="items-center justify-center opacity-60">
-          <Fontisto name="heartbeat-alt" size={24} color="white" />
-          <Text className="text-[10px] text-white mt-1">Progress</Text>
-        </TouchableOpacity>
+        <FloatingBottomBar />
       </View>
     </LinearGradient>
   );

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Retainly",
     "slug": "Retainly",
-    "owner": "hello_kitty33",
+    "owner": "hello_kitty34",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/AppLogo.png",
@@ -61,7 +61,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "63c7eb50-23a2-48cd-9a85-79ee1a776d8c"
+        "projectId": "069da916-1f45-4212-8555-1d915a1f0486"
       }
     }
   }
