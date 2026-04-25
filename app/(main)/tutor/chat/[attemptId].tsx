@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
+  AppState,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -51,6 +52,8 @@ type Message = {
 };
 
 export const narrateBotResponse = (text: string) => {
+  if (AppState.currentState !== "active") return;
+
   Speech.stop(); // Stop any currently playing audio
 
   // Clean up markdown characters so the bot doesn't say "asterisk asterisk"
@@ -70,6 +73,8 @@ export default function ChatScreen() {
     initialQuestion?: string;
   }>();
   const token = useSelector((s: RootState) => s.auth.token);
+
+  const appStateRef = useRef(AppState.currentState);
 
   // --- STATE ---
   const [messages, setMessages] = useState<Message[]>([
@@ -134,6 +139,30 @@ export default function ChatScreen() {
       setInputText(transcriptRef.current + text);
     }
   });
+
+  //for stopping the voice when the app is minimized
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      appStateRef.current = nextState;
+
+      if (nextState !== "active") {
+        Speech.stop();
+
+        try {
+          if (typeof ExpoSpeechRecognitionModule.abort === "function") {
+            ExpoSpeechRecognitionModule.abort();
+          } else {
+            ExpoSpeechRecognitionModule.stop();
+          }
+        } catch (e) {}
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      Speech.stop();
+    };
+  }, []);
 
   const handleToggleMic = async () => {
     setIsKeyboardMode(false);
@@ -269,7 +298,9 @@ export default function ChatScreen() {
       );
 
       // Narrate the text as soon as it arrives!
-      narrateBotResponse(botText);
+      if (appStateRef.current === "active" && botText) {
+        narrateBotResponse(botText);
+      }
 
       // Add Bot Message
       if (botText) {

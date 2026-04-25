@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  Image,
   BackHandler, // 🟢 Import BackHandler
   Platform,
 } from "react-native";
@@ -22,15 +21,7 @@ import {
   getLastNDaysAnalytics,
 } from "@/services/api.edu";
 import { router, Stack, useFocusEffect } from "expo-router";
-import {
-  Fontisto,
-  Ionicons,
-  MaterialCommunityIcons,
-  MaterialIcons,
-} from "@expo/vector-icons";
 import { GlowCard } from "@/components/Glow-Card";
-import { LiveBadge } from "@/components/dashboard/LiveBadge";
-import Svg, { Circle } from "react-native-svg";
 import { getHealthPoints } from "@/services/api.auth";
 import LeaderboardSection from "@/components/dashboard/LeaderboardSection";
 import QuickActionsLeft from "@/components/dashboard/QuickActionsLeft";
@@ -38,28 +29,12 @@ import DailyProgressCard from "@/components/dashboard/DailyProgressCard";
 import FloatingBottomBar from "@/components/dashboard/FloatingBottomBar";
 import HomeHeader from "@/components/dashboard/Header";
 
-// Mock subjects (Ensure this block exists if you use it below)
-const palette = ["#FF8A33", "#F59E51", "#FFB74D", "#FFA726"];
-const mockSubjects = Array.from({ length: 10 }, (_, i) => ({
-  name: `Subject ${i + 1}`,
-  value: Math.floor(Math.random() * 100),
-  fill: palette[Math.floor(Math.random() * palette.length)],
-}));
-
-// Helper function to get medal colors
-const getMedalStyles = (rank: number) => {
-  if (rank === 1) return { bg: "#FACC15", text: "#A16207", ribbon: "#EF4444" }; // Gold / Red
-  if (rank === 2) return { bg: "#E5E7EB", text: "#4B5563", ribbon: "#22C55E" }; // Silver / Green
-  if (rank === 3) return { bg: "#D97706", text: "#78350F", ribbon: "#3B82F6" }; // Bronze / Blue
-  return { bg: "#4B5563", text: "#E5E7EB", ribbon: "#374151" }; // Star / Grey
-};
-
 const HomeDashboard: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);
   const userInfo = useSelector((s: RootState) => s.auth.userInfo as any);
-  const [rowH, setRowH] = useState<number | null>(null);
-  const rowGap = 12;
-  const capHeight = useMemo(() => (rowH ? rowH * 4 + rowGap * 3 : 240), [rowH]);
+  // const [rowH, setRowH] = useState<number | null>(null);
+  // const rowGap = 12;
+  // const capHeight = useMemo(() => (rowH ? rowH * 4 + rowGap * 3 : 240), [rowH]);
 
   const getFirstWord = (s?: string) => {
     if (!s) return "";
@@ -90,16 +65,6 @@ const HomeDashboard: React.FC = () => {
     isMe?: boolean;
   };
   type LeaderboardData = { top: LeaderboardUser[]; me: LeaderboardUser | null };
-
-  const getMedalStyles = (rank: number | null) => {
-    if (rank === 1)
-      return { bg: "#FACC15", text: "#A16207", ribbon: "#EF4444" }; // Gold / Red
-    if (rank === 2)
-      return { bg: "#E5E7EB", text: "#4B5563", ribbon: "#22C55E" }; // Silver / Green
-    if (rank === 3)
-      return { bg: "#D97706", text: "#78350F", ribbon: "#3B82F6" }; // Bronze / Blue
-    return { bg: "#4B5563", text: "#E5E7EB", ribbon: "#374151" }; // Star / Grey
-  };
 
   const [todayLeaders, setTodayLeaders] = useState<LeaderboardData>({
     top: [],
@@ -155,21 +120,14 @@ const HomeDashboard: React.FC = () => {
       const deviceTokenData = await Notifications.getDevicePushTokenAsync();
       const firebaseToken = deviceTokenData.data;
 
-      console.log("My Firebase Token is: ", firebaseToken);
-
       // 🔥 Call API
       if (token) {
-        const data = await registerDeviceToken(token, {
+        await registerDeviceToken(token, {
           token: firebaseToken,
           platform: Platform.OS,
           device_id: userInfo?.id?.toString() || "unknown-device",
           app_version: "1.0.0",
         });
-
-        console.log(
-          "Firebase token registered successfully",
-          JSON.stringify(data, null, 2),
-        );
       }
     } catch (error) {
       console.error("Error fetching Firebase token: ", error);
@@ -201,11 +159,11 @@ const HomeDashboard: React.FC = () => {
     }, []),
   );
 
-  const radius = 36;
-  const strokeWidth = 6;
-  const circumference = 2 * Math.PI * radius;
-  const progressOffset =
-    circumference - (analyticsData.overall_average / 100) * circumference;
+  // const radius = 36;
+  // const strokeWidth = 6;
+  // const circumference = 2 * Math.PI * radius;
+  // const progressOffset =
+  //   circumference - (analyticsData.overall_average / 100) * circumference;
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -411,23 +369,12 @@ const HomeDashboard: React.FC = () => {
     fetchHealth();
   }, [token]);
 
-  const allFromApi = useMemo(() => {
-    return (list as any[]).map((s, i) => ({
-      name: s.name || s.title || `Subject ${i + 1}`,
-      value: Math.max(
-        0,
-        Math.min(100, Number(s.progress ?? s.percentage ?? s.completion ?? 0)),
-      ),
-      fill: palette[i % palette.length],
-    }));
-  }, [list]);
-
-  const displaySubjects = allFromApi.length > 0 ? allFromApi : mockSubjects;
-  const sortedSubjects = useMemo(
-    () => [...displaySubjects].sort((a, b) => b.value - a.value),
-    [displaySubjects],
-  );
-  const moreThanFour = sortedSubjects.length > 4;
+  // const displaySubjects = allFromApi.length > 0 ? allFromApi : mockSubjects;
+  // const sortedSubjects = useMemo(
+  //   () => [...displaySubjects].sort((a, b) => b.value - a.value),
+  //   [displaySubjects],
+  // );
+  // const moreThanFour = sortedSubjects.length > 4;
 
   return (
     <LinearGradient
